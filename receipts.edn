@@ -1,0 +1,85 @@
+[{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000000"
+  :receipt/time #inst "2026-07-11T00:00:00Z"
+  :receipt/actor :opencode
+  :receipt/event :workspace/note-decomposition
+  :receipt/subject "docs/inbox/clojure Natural Language Processing.md"
+  :receipt/summary "Decomposed the monolithic inbox note into categorized docs/notes/{kanban, design, research, decision} markdown files."
+  :receipt/artifacts
+  {:research ["docs/notes/research/nlp-fundamentals-and-classifiers.md"
+              "docs/notes/research/clojure-nlp-stack.md"
+              "docs/notes/research/vector-search-knowledge-graphs.md"
+              "docs/notes/research/auto-research-agent-loops.md"]
+   :design ["docs/notes/design/knowledge-platform-overview.md"
+            "docs/notes/design/phase-1-corpus-archaeology.md"
+            "docs/notes/design/phase-2-code-comprehension.md"
+            "docs/notes/design/phase-3-research-operations.md"
+            "docs/notes/design/phase-4-simulation-laboratory.md"]
+   :decision ["docs/notes/decision/infrastructure-stack-options.md"
+               "docs/notes/decision/data-model-and-provenance.md"
+               "docs/notes/decision/multi-agent-governance.md"
+               "docs/notes/decision/external-source-acquisition-policy.md"]
+   :kanban ["docs/notes/kanban/epic-01-archaeological-ledger.md"
+            "docs/notes/kanban/epic-02-markdown-evidence-extraction.md"
+            "docs/notes/kanban/epic-03-retrieval-substrate.md"
+            "docs/notes/kanban/epic-04-temporal-idea-lineage.md"
+            "docs/notes/kanban/epic-05-redundancy-tension-review.md"
+            "docs/notes/kanban/epic-06-temporal-research-workbench.md"
+            "docs/notes/kanban/cross-phase-1-operability.md"
+            "docs/notes/kanban/epic-07-polyglot-source-ledger.md"
+            "docs/notes/kanban/epic-08-syntax-forest.md"
+            "docs/notes/kanban/epic-09-clojure-semantic-intelligence.md"
+            "docs/notes/kanban/epic-10-program-relationship-graph.md"
+            "docs/notes/kanban/epic-11-concept-to-code-grounding.md"
+            "docs/notes/kanban/epic-12-architectural-boundary-inference.md"
+            "docs/notes/kanban/epic-13-code-archaeology-workbench.md"
+            "docs/notes/kanban/cross-phase-2-analyzer-quality.md"
+            "docs/notes/kanban/epic-14-governed-external-source-registry.md"
+            "docs/notes/kanban/epic-15-external-artifact-ingestion.md"
+            "docs/notes/kanban/epic-16-research-component-extraction.md"
+            "docs/notes/kanban/epic-17-research-knowledge-graph.md"
+            "docs/notes/kanban/epic-18-prior-art-gap-contradiction.md"
+            "docs/notes/kanban/epic-19-taxonomy-research-question-studio.md"
+            "docs/notes/kanban/epic-20-experiment-design-reproducibility.md"
+            "docs/notes/kanban/epic-21-bounded-research-agents.md"
+            "docs/notes/kanban/cross-phase-3-research-integrity.md"
+            "docs/notes/kanban/epic-22-simulation-kernel.md"
+            "docs/notes/kanban/epic-23-spatial-temporal-data-fabric.md"
+            "docs/notes/kanban/epic-24-weather-environmental-modeling.md"
+            "docs/notes/kanban/epic-25-agent-behavioral-modeling.md"
+            "docs/notes/kanban/epic-26-graph-dynamics-semantic-physics.md"
+            "docs/notes/kanban/epic-27-calibration-uncertainty-counterfactual.md"
+            "docs/notes/kanban/epic-28-distributed-experiment-scheduling.md"
+            "docs/notes/kanban/epic-29-simulation-visual-analytics.md"
+            "docs/notes/kanban/epic-30-bounded-autonomous-experiment-loops.md"
+            "docs/notes/kanban/cross-phase-4-simulation-safety.md"]}
+  :receipt/observations
+  ["The source note is an exploratory discussion that eventually informed ADR-000 (docs/adrs/ADR-000.md), which formalizes the infrastructure stack."
+   "The decision records here are proposed and should be reviewed/approved before becoming formal ADRs."
+   "The kanban cards are sized 8 and require breakdown before implementation per PROCESS.md."]}
+ {:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000001"
+  :receipt/time #inst "2026-07-11T01:00:00Z"
+  :receipt/actor :opencode
+  :receipt/event :workspace/decision-review
+  :receipt/subject "docs/notes/decision/"
+  :receipt/summary "Reviewed decision notes against ADR-000; archived resolved decisions and kept multi-agent governance as unresolved."
+  :receipt/artifacts
+  {:archived ["docs/notes/decision/archive/infrastructure-stack-options.md"
+              "docs/notes/decision/archive/data-model-and-provenance.md"
+              "docs/notes/decision/archive/external-source-acquisition-policy.md"]
+   :unresolved ["docs/notes/decision/multi-agent-governance.md"]}
+  :receipt/observations
+  ["Resolved decisions superseded by ADR-000: infrastructure stack, data model/provenance principles, external source acquisition policy."
+   "Unresolved decision: multi-agent governance and autonomy boundaries (not covered by ADR-000)."]}
+ {:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000002"
+  :receipt/time #inst "2026-07-11T06:20:00Z"
+  :receipt/actor :opencode
+  :receipt/event :research/deep-synthesis
+  :receipt/subject "docs/notes/research/nlp-and-code-intelligence-deep-research.md"
+  :receipt/summary "Conducted external research on NLP classifier pipelines, Clojure NLP tooling, Tree-sitter, clj-kondo analysis, and code-comprehension methods; wrote a synthesis note evaluating the Phase 1 and Phase 2 designs."
+  :receipt/artifacts
+  {:new-file ["docs/notes/research/nlp-and-code-intelligence-deep-research.md"]}
+  :receipt/observations
+  ["Fine-tuned encoders and even lexical baselines are often more cost-effective than LLM-as-classifier for fixed-label structured classification."
+   "Tree-sitter and clj-kondo are well-supported choices for the syntax forest and Clojure semantic layers, but require explicit handling of macro/dynamic gaps."
+   "Multi-view architecture recovery (dependency + text + folder structure) is supported by SARIF; co-change and AST signals are useful but not sufficient alone."]}
+]

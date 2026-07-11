@@ -1,0 +1,5 @@
+{
+  "tasksDir": "./kanban",
+  "boardFile": "kanban/.kanban/board.json",
+  "fsm": "promethean"
+}
