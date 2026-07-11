@@ -1,0 +1,280 @@
+---
+slug: adr-002-dual-mode-cli-position
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000210
+title: "ADR 002 Position: Direct CLI Default with Explicit REST Mode"
+kind: design
+description: "Recommends a dual-mode CLI with direct application-service default and explicit REST mode, avoiding silent fallback."
+labels: [architecture, phase-1, cli, api, adr]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.06.29.09.md"
+---
+
+I would choose a **dual-mode CLI with a direct application-service default**, plus an explicit REST mode—not “CLI always calls HTTP.”
+
+That gives you a first-class Clojure operator tool that works during bootstrap, repair, offline work, and testing, while still forcing the REST adapter to use the same command/query contracts. One-off administrative processes should share the application’s code and configuration, but they do not inherently need to traverse an HTTP server to be valid operations. [12factor](https://12factor.net/admin-processes)
+
+## Recommendation
+
+```text
+Default:
+  CLI -> application service directly
+
+Explicit remote mode:
+  CLI -> REST API -> application service
+
+Never:
+  CLI -> MongoDB/Git/search engine directly
+```
+
+The invariant is:
+
+> **The application service is the only domain boundary the CLI and REST adapters may invoke.**
+
+So the choice is not “two code paths with duplicated behavior.” It is:
+
+```text
+Direct CLI:
+  command parser
+    -> validated EDN command/query
+      -> application service
+        -> ports/adapters
+          -> Git, MongoDB, LMDB, search, job dispatch
+
+REST CLI:
+  command parser
+    -> same validated EDN command/query
+      -> HTTP JSON/EDN adapter
+        -> REST API
+          -> same application service
+            -> same ports/adapters
+```
+
+The difference is transport only.
+
+## Why direct by default
+
+Phase 1 needs reliable operational commands before the API is necessarily healthy.
+
+You will need commands such as:
+
+```bash
+ca doctor
+ca resource register ~/notes
+ca ingest request res_...
+ca projection replay markdown-extraction-v1 --resource res_...
+ca failures list
+ca repair reconcile-resource res_...
+```
+
+If the CLI *always* calls the local REST service, then:
+
+- you cannot use it comfortably to diagnose an API startup/binding/configuration failure;
+- a broken HTTP layer blocks direct repair or inspection;
+- local tests must boot an HTTP server for every CLI behavior test;
+- bootstrap becomes circular: “start enough infrastructure to use the tool that tells you why infrastructure did not start.”
+
+A direct one-off process using the same code, configuration, schemas, and persistence adapters is a normal operational pattern; the key requirement is code/config parity, not HTTP indirection. [dreamfactory](https://www.dreamfactory.com/resources/whitepapers/implementing-the-twelve-factor-app-methodology)
+
+## Why keep REST mode
+
+REST mode is still essential once the system is distributed.
+
+Use it when:
+
+- the CLI runs from a laptop or a different cluster node;
+- the command concerns a resource whose Git checkout/cache is available only on a particular service node;
+- the local web workbench calls the application;
+- an automation process should operate against the central deployment;
+- you want the request to inherit server-side authentication, authorization, audit identity, and rate controls;
+- you need a single central command ingress for a multi-user future.
+
+Example:
+
+```bash
+ca --api http://archivist.internal:8080 \
+  search "path continuity across notes"
+
+ca --api http://archivist.internal:8080 \
+  review decide cand_... accept \
+  --note "Direct elaboration of the 2024 design note"
+```
+
+## Do not make it automatic fallback
+
+I would **not** quietly fall back from direct mode to REST mode, or vice versa.
+
+That causes dangerous ambiguity:
+
+```text
+Did ca resource register mutate the local repo?
+Or did it ask a remote server to register a path that exists only locally?
+Did ca search query a local incomplete projection?
+Or a centralized indexed corpus?
+```
+
+Require the mode to be explicit in user intent:
+
+```bash
+# Direct application-service mode; default
+ca resource register ~/notes
+
+# Remote HTTP mode
+ca --api https://node-a.internal/api/v1 resource register /mnt/corpus/notes
+
+# Optional explicit alias for clarity
+ca remote search "continuity"
+ca local doctor
+```
+
+The output should always report the execution target:
+
+```text
+Target: direct application service
+Profile: local
+Database: mongodb://localhost/...
+```
+
+or:
+
+```text
+Target: REST API
+Endpoint: https://archivist.internal/api/v1
+Server request: req_01J...
+```
+
+## The real distinction: locality of Git
+
+This is particularly important because Git source access is local.
+
+A command like:
+
+```bash
+ca resource register ~/projects/notes
+```
+
+has a filesystem-bearing argument. In remote REST mode, that path names a path on the **server node**, not on the CLI machine.
+
+That must be explicit:
+
+```bash
+# Register a path on this machine through direct mode
+ca resource register ~/projects/notes
+
+# Register a path on node-a, where node-a owns that checkout
+ca --api https://node-a.internal/api/v1 \
+  resource register /srv/corpus/notes
+```
+
+Later, if you want a remote client to register a repository from its own machine, that is not the same endpoint. It is an **import/agent protocol**:
+
+```text
+remote client
+  -> identifies/copies/exposes source repository
+  -> source-owning ingest agent reads Git
+  -> central service receives observations
+```
+
+Do not let an innocent REST `location` field pretend the central service can read arbitrary client filesystem paths.
+
+## Command classification
+
+Use the execution mode based on the command’s nature.
+
+| Command type | Direct default | REST supported | Notes |
+|---|---:|---:|---|
+| Local repository registration | Yes | Only for server-local paths | Filesystem locality must be explicit |
+| Git discovery/extraction | Yes | Yes, as a request to owning node | Never assume shared filesystem |
+| Search | Yes | Yes | Results differ if direct node has different index scope; expose scope |
+| Evidence display | Yes | Yes | REST source may need object access or archived source |
+| Review decision | Yes | Yes | Both append the same durable decision event |
+| Projection status | Yes | Yes | REST is often more useful for cluster aggregate |
+| Projection replay | Yes | Yes | REST creates central durable work request |
+| Doctor/repair | Yes | Limited | Direct mode is essential when HTTP is unhealthy |
+| Backup verification | Yes | Yes | Operational context determines location |
+| User-facing web UI | No | Yes | Browser consumes REST only |
+
+## Client configuration
+
+Use explicit named profiles rather than hidden environment-based behavior:
+
+```edn
+;; ~/.config/corpus-archaeology/config.edn
+{:profiles
+ {:local
+  {:mode :direct
+   :mongo-uri "mongodb://localhost:27017/corpus_archaeology"
+   :git-access :local}
+
+  :cluster
+  {:mode :http
+   :api-url "https://archivist.internal/api/v1"}}}
+```
+
+Then:
+
+```bash
+ca --profile local resource register ~/notes
+ca --profile cluster search "event sourcing"
+ca --profile cluster review decide cand_... accept
+```
+
+Default profile can be `:local`, but each command prints the resolved profile and target under `--verbose`.
+
+Do not put long-lived secrets in the EDN profile. Reference environment variables or a later secrets mechanism.
+
+## Contract discipline
+
+Use one Malli schema per command/query, with the same schema validated before direct service invocation and at the REST boundary.
+
+```clojure
+(def RegisterResource
+  [:map
+   [:location [:and string? [:fn #(absolute-path? %)]]]
+   [:display-name {:optional true} string?]
+   [:request-id {:optional true} uuid?]])
+
+(def SearchCorpus
+  [:map
+   [:query string?]
+   [:mode [:enum :lexical :semantic :hybrid]]
+   [:scope {:optional true} SearchScope]
+   [:page {:optional true} PageRequest]])
+```
+
+This means:
+
+- direct mode validates exactly what remote mode validates;
+- generated documentation can describe both CLI flags and REST payloads;
+- the core can be tested without networking;
+- REST gets a formal language-agnostic contract through OpenAPI when you are ready to publish it. OpenAPI is explicitly designed as a language-agnostic description of HTTP APIs. [spec.openapis](https://spec.openapis.org/oas/v3.2.0.html)
+
+## Narrow exception: event tailing
+
+There is one area where the modes should intentionally differ.
+
+```bash
+ca events tail
+```
+
+In direct mode, this may subscribe to local event/projection instrumentation. In remote mode, it should use a server stream—SSE or WebSocket—not periodic REST polling.
+
+But this is an observability feature, not part of the core user-story loop. Defer it until basic command/query behavior is solid.
+
+## First implementation
+
+Build these layers in order:
+
+```text
+1. Domain command/query schemas
+2. Application service functions
+3. Direct CLI adapter
+4. HTTP REST adapter
+5. HTTP CLI profile/client
+6. Local web workbench
+```
+
+That sequence gives you a usable system immediately and avoids making web transport a prerequisite for corpus archaeology.
+
+The concrete decision I would record is:
+
+> **ADR 002 — The CLI is a dual-mode adapter. It invokes application services directly by default and invokes the REST API only under an explicit HTTP profile or `--api` option. Both modes use the same versioned Malli command/query contracts; neither mode may access infrastructure stores directly outside application ports.**

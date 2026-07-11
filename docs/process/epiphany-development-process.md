@@ -1,0 +1,105 @@
+---
+slug: epiphany-development-process
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000212
+title: "Epiphany Development Process"
+kind: design
+description: "Draft of the Epiphany actor development process, describing roles, modes of understanding, and phase workflow."
+labels: [process, meta, workflow, phase-1]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.12.28.37.md"
+---
+
+Maybe this first pass was a bit too ambitious. But, I think it gets the point across.
+
+
+## Epiphany Tools
+
+We mention them somewhere.
+The idea here, is that most these concepts don't come with regular coding tools.
+Some have to, yes.
+
+But most won't need to, even if the objective is to create some piece of software.
+This process, emphasizes reseach, preperation, auditible deliberate decisions decisions
+
+## Roles
+
+- Developer
+- Tester
+- UX researcher
+- Data scientist
+- Facilitator
+
+## Modes
+
+Modes are the common states that describe how understanding is increased at every phase of development.
+
+- explore
+- orient
+- act
+- verify
+- reflect
+
+
+### Explore
+
+Search the codebase to understand the current state of the objective you have been tasked with
+- Have we already done research on the topic?
+- Is there a design that aligns with the request?
+- Are there any unresolved open technical decisions required for the design?
+- Are there existing tasks on the board referencing this design?
+- What is their status?
+- Are they well scoped?
+- Have they been kept recent?
+- Do these tasks have active conversations?
+- etc
+
+### Orient
+
+After initial exploration of the repo, evaluate your observations against the request made of you.
+- Is the user asking for new work?
+- uncertain about something?
+- Which artifacts most closely align with the request?
+- What kind of artifacts are these?
+- What does that imply about the likely state of the target of the request is?
+- Did they explicitly ask for research, designs, plans, decisions?
+
+You are trying to understand:
+- What is the expected outcome?
+- Where are you starting?
+- how do you get to there from here?
+- Which artifact or artifacts most closely align with the request that was made of you?
+
+If you are uncertain, you ask clarifying questions.
+If it's obvious to you, commit to take action on
+the artifact most closely related to the task at hand.
+
+### Commit
+
+The actor agent make a commitment to take a certain course of action. The nature of the commitment is phase dependent,
+but the presentation of the tool is the same regardless.
+
+Usually, the effect will be to Append a comment `---` to the artifact describing the nature of your commitment, citing the observations
+that most influenced your decision to commit.
+
+Tell the team what you are doing, why you are doing it, how you are doing it.
+Now that you've committed, you do a more focused exploration grounded in your commitment,
+and the phase of the artifact.
+
+
+### Action
+
+After you have oriented yourself, you pick up the work at what ever phase of completion it was at, and you continue to work
+until you believe the phases definition of done has been met and the acceptance criteria for the requested work has been satisfied.
+or new information reduces the confidence you have
+in the plan you committed to, or your understanding of the objective enough you have to stop, and reorient.
+
+### Verify
+
+You run through every check required by the phase process artifacts governing the type of resource
+you made your commitment to, use sub agents to get a second opinion, and finally
+present an efficient plan to review and verify the end result of the work.
+
+### Reflect
+
+Look back on the actions yuo've taken...
+this is session_mycology

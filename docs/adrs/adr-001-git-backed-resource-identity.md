@@ -1,0 +1,370 @@
+---
+slug: adr-001-git-backed-resource-identity
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000101
+title: "ADR 001: Git-Backed Resource Identity and Continuity"
+kind: decision
+status: accepted
+description: "Establishes repository identity, family joining, path continuity, and continuity gradients for Git-backed corpus archaeology."
+labels: [adr, architecture, phase-1, identity, git]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.06.04.47.md"
+---
+
+# ADR 001: Git-Backed Resource Identity and Continuity
+
+- **Status:** Accepted
+- **Date:** 2026-07-11
+- **Deciders:** Epifany maintainers
+- **Scope:** Phase 1 Git and Markdown corpus ingestion
+- **Related:** ADR 000 — Authoritative Data and Rebuildability Boundary *(to be completed)*
+
+## Context
+
+The platform must trace a present-day idea across years of local Git-backed notes and commits while preserving inspectable evidence. Local repositories may be moved, cloned, mirrored, forked, rewritten, and reorganized; files may persist at one path while their content changes completely, or move/copy paths while retaining identical content. Phase 1 treats Git repositories as canonical for Git-originated source history and uses derived indices and caches as rebuildable projections.
+
+Git provides immutable commit, tree, and blob object identities, but rename/copy labels are inferred from comparisons rather than durably stored as Git facts. Git’s `-M100%` setting limits rename detection to exact content matches; ordinary rename detection uses a similarity threshold, with 50 percent as the documented default. [git-scm](https://git-scm.com/docs/git-diff/2.12.5)
+
+The system therefore must distinguish:
+
+- immutable Git observations;
+- platform resource identity across a local directory move;
+- persistent document-role identity through a stable path;
+- inferred continuity and discontinuity relations;
+- human-accepted interpretation.
+
+## Decision
+
+### 1. Register each repository with a minimal Git-local identity record
+
+When a local Git repository is registered, the system automatically writes a metadata file in its resolved common Git directory:
+
+```text
+<common-git-dir>/corpus-archaeology/repository.edn
+```
+
+For a standard working repository:
+
+```text
+my-repository/
+  .git/
+    corpus-archaeology/
+      repository.edn
+```
+
+The v1 file contains exactly one required durable field:
+
+```clojure
+{:resource-id #uuid "7a6b0d26-1000-4000-8000-000000000001"}
+```
+
+The `:resource-id` identifies the platform resource across filesystem relocation. The file contains no operational cursor, paths, current refs, cache state, credentials, configuration, or user annotations.
+
+If a repository is moved, the indexer resolves the Git directory, reads `repository.edn`, and associates the new filesystem location with the existing resource. Worktree-aware implementations must write to the resolved common Git directory, because a worktree’s `.git` may be a pointer rather than the shared Git directory. [chromium.googlesource](https://chromium.googlesource.com/external/gitster/git-htmldocs/+/188ae81bab23d645a02ed4f442ddafe9099d6e97/git-worktree.adoc)
+
+If the metadata cannot be written—for example, the repository is read-only—the system registers an external MongoDB fallback record and marks the resource identity persistence mode as external. Registration must not fail solely because the Git directory cannot be modified.
+
+### 2. Store all evolving platform knowledge in MongoDB
+
+MongoDB stores the platform’s observations and projections, including:
+
+- registered repository locations and availability;
+- common Git directory locations;
+- repository instances and family membership;
+- observed commits, trees, paths, blobs, and refs;
+- ingestion state;
+- per-projection cursors/checkpoints;
+- extraction and index status;
+- event ledger records;
+- review decisions;
+- cache metadata;
+- rewrite/replacement observations.
+
+A repository-level `:cursor-commit` is explicitly rejected. A cursor belongs to a particular projection, not to the repository as a whole.
+
+Example projection checkpoint:
+
+```clojure
+{:projection/id :markdown-extraction-v1
+ :resource-id #uuid "7a6b0d26-1000-4000-8000-000000000001"
+ :checkpoint {:last-processed-revision-at-path-id #uuid "..."}
+ :status :healthy
+ :updated-at #inst "2026-07-11T11:00:00Z"}
+```
+
+### 3. Model repository instances and repository families separately
+
+A **repository instance** is one observed local Git object database or working directory. It has a platform resource ID and mutable location observations.
+
+A **repository family** is the connected historical commit space shared by one or more repository instances.
+
+A newly registered repository instance joins an existing family automatically only when it shares at least one commit OID with that family:
+
+```text
+shared commit OID
+  -> observed shared commit history
+  -> automatic family membership
+```
+
+Remote URLs, directory names, matching files, and similar content may be recorded as hints, but do not automatically establish family identity.
+
+This prevents unrelated repositories from being merged because they share a remote name or template while avoiding duplicate treatment of clones, mirrors, and divergent local representations of shared history.
+
+Family membership is checked at registration only. It is not continuously recomputed during ordinary indexing.
+
+### 4. Reassess family relationships only after suspected history replacement
+
+If the system observes a likely history rewrite or replacement—such as a previously observed ref resolving to an unrelated new tip—it emits a rewrite-suspected event and schedules family reassessment.
+
+```clojure
+{:event/type :repository/history-rewrite-suspected
+ :resource-id #uuid "..."
+ :old-observed-tip "..."
+ :new-observed-tip "..."
+ :reason :no-common-ancestor-at-known-ref}
+```
+
+The reassessment must:
+
+1. Preserve all prior observations.
+2. Compare newly reachable commits against known repository families.
+3. Preserve family membership if overlap remains.
+4. Record a history-replacement/rewrite observation if overlap no longer exists.
+5. Never silently merge, split, or discard repository families.
+
+History-rewriting tools can change commit IDs, including when removing leaked material, so commit overlap may no longer establish continuity after such an event. [github](https://github.com/newren/git-filter-repo/blob/main/Documentation/git-filter-repo.txt)
+
+### 5. Preserve paths exactly as observed
+
+For Git-backed Phase 1 source material, paths are read from Git tree entries and retained exactly as provided.
+
+```clojure
+{:path/raw ".ημ/architecture/identity.md"
+ :path/source :git-tree-entry
+ :path/comparison :exact}
+```
+
+The identity layer must not:
+
+- transliterate Unicode path names;
+- Unicode-normalize strings;
+- case-fold paths;
+- rewrite path separators;
+- resolve symlinks into alternate spellings;
+- substitute ASCII aliases for observed paths.
+
+Thus, these are distinct identity values:
+
+```text
+.ημ/spec.md
+.ημ/Spec.md
+.ημ/specs.md
+```
+
+The filesystem-access and future search-alias layers may require their own compatibility behavior, but neither may replace the canonical observed path string.
+
+### 6. Treat persistent paths as default document-role continuity
+
+Within a repository family, the same exact path in a direct parent-child commit transition establishes an observed **path continuity**.
+
+This means a path has a stable platform-level document role by default even when its content changes substantially:
+
+```clojure
+{:document/id #uuid "..."
+ :repository-family/id #uuid "..."
+ :document/anchor {:kind :persistent-path
+                   :initial-path "docs/architecture.md"}
+ :identity-policy :path-persistent}
+```
+
+Each revision remains a separate immutable observation:
+
+```clojure
+{:revision-at-path/id #uuid "..."
+ :document/id #uuid "..."
+ :repository-family/id #uuid "..."
+ :commit/oid "..."
+ :path/raw "docs/architecture.md"
+ :blob/oid "..."
+ :relation-to-parent :same-path}
+```
+
+Path continuity is a claim about durable document role or location. It is **not** a claim of semantic equivalence, unchanged purpose, or persistent idea identity.
+
+### 7. Model path repurposing as a continuity gradient
+
+A file at a persistent path may gradually become discontinuous with its prior purpose, especially for code. Therefore, the platform does not assume an all-or-nothing epoch break.
+
+For each relevant revision transition, it stores raw signals and a versioned, artifact-specific continuity score:
+
+```clojure
+{:revision-transition/id #uuid "..."
+ :document/id #uuid "..."
+ :from/revision-at-path-id #uuid "..."
+ :to/revision-at-path-id #uuid "..."
+
+ :continuity/model :markdown-continuity-v1
+ :continuity/signals
+ {:text/similarity 0.43
+  :frontmatter/stability 0.10
+  :links/overlap 0.04
+  :time/gap-days 231
+  :entities/overlap 0.13}
+
+ :continuity/score 0.28
+ :continuity/class :weak}
+```
+
+A document epoch boundary is a reviewable candidate, not an automatic identity mutation:
+
+```clojure
+{:epoch-boundary-candidate/id #uuid "..."
+ :document/id #uuid "..."
+ :between {:from/revision-at-path-id #uuid "..."
+           :to/revision-at-path-id #uuid "..."}
+ :boundary/score 0.91
+ :boundary/threshold 0.90
+ :status :proposed}
+```
+
+Accepted epoch boundaries alter the logical document view while preserving all original path and revision observations.
+
+### 8. Use distinct continuity policies by artifact kind
+
+Markdown and code do not share a universal definition of continuity. The policy map must support separate defaults from the outset.
+
+Markdown v1 uses these signal classes:
+
+- text similarity;
+- front matter stability/change;
+- explicit-link overlap/change;
+- time gaps;
+- named-entity overlap/change.
+
+```clojure
+{:continuity/policy :markdown-continuity-v1
+ :signals [:text/similarity
+           :frontmatter/stability
+           :links/overlap
+           :time/gap
+           :entities/overlap]
+ :epoch-boundary-threshold 0.90}
+```
+
+Code has a separate, initially deferred policy based on signals suitable for program structure:
+
+```clojure
+{:continuity/policy :code-continuity-v1
+ :signals [:ast/shape-overlap
+           :symbols/public-overlap
+           :dependencies/overlap
+           :tests/overlap
+           :comments/overlap
+           :time/gap]
+ :epoch-boundary-threshold 0.95}
+```
+
+Scores, weights, thresholds, configuration, and model versions are derived metadata. They may be recomputed without altering source facts or prior review decisions.
+
+### 9. Treat exact content relocation as strong evidence, not automatic document-purpose identity
+
+When the same blob OID occurs at a different path, the platform records an exact-content relationship. It does not automatically declare document-role continuity because templates and copies can yield the same bytes without sharing ongoing purpose.
+
+When a parent-to-child transition contains:
+
+- source path removed;
+- destination path added;
+- identical blob OID;
+- source absent from its prior path in the child;
+
+the system records:
+
+```clojure
+{:relation/type :exact-relocation-observed
+ :from/revision-at-path-id #uuid "..."
+ :to/revision-at-path-id #uuid "..."
+ :evidence {:blob/oid "..."
+            :similarity 1.0
+            :detector :git-diff
+            :threshold 1.0}
+ :status :observed}
+```
+
+If the original path remains, the relation is:
+
+```clojure
+{:relation/type :exact-copy-observed
+ :status :observed}
+```
+
+Git’s exact rename mode is a useful signal here, but it remains a diff-derived classification rather than a permanent Git identity fact. [kernel](https://www.kernel.org/pub/software/scm/git/docs/git-diff.html)
+
+### 10. Include provisional continuity in logical views
+
+Logical document/history views may include:
+
+- observed path continuities and exact relocations;
+- accepted continuity and epoch decisions;
+- provisional candidates.
+
+The presentation must clearly distinguish them:
+
+```text
+Solid: observed Git/path fact
+Solid, distinct style: accepted human interpretation
+Dashed: provisional inferred candidate
+Hidden by default/audit mode: rejected candidate
+```
+
+A candidate must always retain its evidence, generator/model/configuration version, score components, and review state.
+
+## Consequences
+
+### Positive
+
+- A local-only repository retains a stable platform identity after being moved.
+- The `.git` mutation is small, explicit, and narrowly scoped.
+- Git remains authoritative for Git content and history.
+- MongoDB remains the central durable platform store for observations, events, projections, and review state.
+- Clones/mirrors/forks with shared history can share indexed commit/blob work without being collapsed into one local instance.
+- Long-lived paths retain useful document-role histories even through extensive rewrites.
+- Gradual semantic drift is visible rather than forced into arbitrary binary boundaries.
+- Exact moves/copies become high-quality evidence without being mistaken for purpose identity.
+- Unicode filenames such as `.ημ/` remain exactly represented rather than “corrected” by the platform.
+- Future parser, index, embedding, and continuity-model changes can rebuild derived projections without changing observed Git facts.
+
+### Negative
+
+- One resource has two state locations by design: a minimal Git-local identity file and MongoDB operational metadata.
+- A copied repository carries the same `:resource-id`; the system must validate Git evidence before treating it as the same instance/family.
+- Exact-path equality intentionally does not compensate for filesystem case/Unicode quirks.
+- The system must build and version continuity scoring rather than rely solely on Git rename detection.
+- UI/query code must communicate observed, inferred, and accepted relations clearly.
+- Path-persistent document identity can require later epoch boundaries when a path is repurposed.
+
+## Non-goals
+
+This ADR does not decide:
+
+- MongoDB collection schemas, indexes, or event-envelope design;
+- cache implementation or cache key format;
+- container orchestration, job queues, worker placement, or K3s adoption;
+- Markdown parser, section/block extraction schema, or AST strategy;
+- lexical/vector search engine selection;
+- dedicated graph datastore selection;
+- embedding models or LLM-driven candidate generation;
+- external non-Git material identity;
+- full backup/archive policy;
+- user authentication and multi-user authorization.
+
+## Implementation notes
+
+1. On registration, resolve the common Git directory before reading or writing metadata.
+2. Create `<common-git-dir>/corpus-archaeology/` if absent.
+3. Create `repository.edn` atomically with a generated UUID if absent.
+4. Validate the file as EDN containing a UUID `:resource-id`.
+5. Record registration, filesystem location, Git HEAD/ref observations, and family-match result in MongoDB.
+6. Compare the repository’s reachable commit set with known families only during registration or an explicit rewrite-reassessment job.
+7. Store all Git source paths from Git tree entries exactly as returned.
+8. Emit immutable revision-at-path observations before any extraction, indexing, continuity, or review work.
+9. Compute Markdown continuity only from the v1 signal set and persist raw signals with the resulting score.
+10. Keep automatic exact-relocation relations separate from document-role continuity and concept/idea relations.

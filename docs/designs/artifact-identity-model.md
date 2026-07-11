@@ -1,0 +1,291 @@
+---
+slug: artifact-identity-model
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000205
+title: "Artifact Identity Model"
+kind: design
+description: "Separates things Git proves from continuities the platform infers, defining four identity layers: repository, revision-at-path, extraction expression, and continuity claim."
+labels: [architecture, phase-1, identity, git]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.05.09.14.md"
+---
+
+Agreed: defer the non-Git authority question. For now, **Phase 1’s source universe is Git repositories, including local-only repositories**; their commit/tree/blob history is sufficient to define observed identity.
+
+## Artifact identity
+
+The important move is to separate **things Git proves** from **continuities the platform infers**.
+
+Git natively gives us immutable commits, trees, paths-in-trees, and blob objects. It does *not* store a permanent “this file was renamed” record; rename/copy status is calculated later from content similarity, with Git’s default rename threshold at 50 percent and configurable thresholds such as exact-only `-M100%`. [git-scm](https://git-scm.com/docs/git-diff/2.12.5)
+
+So we should not make “a document” a primitive Git fact.
+
+### Four identity layers
+
+```text
+1. Repository
+   A particular Git object universe, observed through a local clone/mirror.
+
+2. Revision-at-path
+   “At commit C, path P resolved to blob B.”
+   Fully observed and immutable.
+
+3. Extraction expression
+   “Parser/extractor version E found this section/block/span in blob B.”
+   Deterministic but versioned/rebuildable.
+
+4. Continuity claim
+   “This revision/path/section continues that earlier revision/path/section.”
+   Inferred, scored, reviewable, and never silently upgraded to fact.
+```
+
+That lets you inspect the historical record without forcing a false answer to “is this really the same document?” when a note is renamed, split, merged, or extensively rewritten.
+
+## Repository identity
+
+A local-only Git repository cannot rely on remote URL as identity. The platform should assign a stable internal ID when it first registers a repository.
+
+```clojure
+{:repository/id #uuid "..."
+ :repository/origin :local-only
+ :repository/first-seen-path "/home/me/projects/foo"
+ :repository/git-dir-fingerprint "..."
+ :repository/object-format :sha1
+ :repository/first-observed-commit "..."
+ :repository/registered-at ...}
+```
+
+### Open details
+
+1. **Move detection for the repository itself:** if `/home/me/notes` moves to `/mnt/archive/notes`, how do we know it is the same repo?
+2. **Clone identity:** if two local clones point at the same history, do we treat them as two observations of one repository or two repository instances?
+3. **Fork identity:** if a repo begins as a clone but later diverges, do we use a shared “repository family” relation?
+4. **History rewrites:** does a newly observed ref set become another observation, while old commits remain retained in platform metadata?
+
+### Proposed initial rule
+
+```text
+repository identity = generated platform UUID
+repository location = mutable observation
+Git commit/blob IDs = immutable evidence identities
+```
+
+Do not make filesystem path or remote URL the primary key.
+
+For Phase 1, we can defer repository families/fork logic and simply preserve each registered local Git repository as a separate repository entity.
+
+## Revision-at-path identity
+
+This is the durable, factual unit for Git-backed content:
+
+```clojure
+{:revision-at-path/id ...
+ :repository/id ...
+ :commit/oid "a1b2..."
+ :path "docs/retrieval.md"
+ :blob/oid "c3d4..."
+ :mode "100644"
+ :parent-commit/oids ["..."]
+ :observed-at ...}
+```
+
+It means only:
+
+> At this commit, this path pointed to this blob.
+
+It does **not** mean:
+
+- this is the same logical file as the path in the previous commit;
+- this blob has the same semantic content as another blob;
+- the note is a continuation of any earlier note;
+- a parser’s current section model is the only correct interpretation.
+
+### Why this is enough initially
+
+It allows you to reconstruct:
+
+```text
+Current note -> exact blob -> commit -> parent commits
+```
+
+even if name/path history becomes ambiguous. You can always examine the exact source bytes, commit metadata, and diff.
+
+## Document identity
+
+This is the key question: **do we create a durable logical-document ID early, or only create continuity claims between revision-at-path facts?**
+
+There are two viable models.
+
+| Model | Meaning of “document” | Strength | Cost |
+|---|---|---|---|
+| Path-lineage document | Platform maintains a stable logical document ID across revisions | Easy UI/history | Risk of treating heuristic rename detection as truth |
+| Revision-first graph | No permanent document identity; relation edges connect revision-at-path nodes | Faithful to evidence and splits/merges | More graph-like UI/query logic |
+| Hybrid | A logical document is a user-approved projection over continuity claims | Honest by default; simple once reviewed | Needs review/projection semantics |
+
+### Recommended model: hybrid
+
+Use **revision-first facts** and create a `:document/lineage` only as a projection over accepted continuity edges.
+
+```clojure
+{:continuity-claim/id ...
+ :relation/type :path-rename-candidate
+ :from/revision-at-path-id ...
+ :to/revision-at-path-id ...
+ :evidence {:git-similarity 0.93
+            :detector :git-diff
+            :threshold 0.90}
+ :status :proposed}
+```
+
+After you accept it:
+
+```clojure
+{:continuity-decision/id ...
+ :claim/id ...
+ :decision :accepted
+ :decided-at ...
+ :basis {:user/id ...}}
+```
+
+The “logical document” view is then generated from accepted edges:
+
+```text
+logical document = connected component of accepted
+                   :continues-document edges
+```
+
+No mutable `document-id` has to be written into historical Git facts. You gain a useful document timeline without making Git’s rename heuristic into ontology.
+
+## Rename detection policy
+
+Git’s rename detection is an input signal, not the truth. It is computed from changes between snapshots and depends on the selected similarity threshold; Git documents 50 percent as the default and supports exact-only matching with `-M100%`. [git-scm](https://git-scm.com/docs/git-log)
+
+### Good initial policy
+
+| Case | System action |
+|---|---|
+| Same path in parent and child commit | Emit an observed `:path-continuation` fact |
+| Same blob at different path | Emit a high-confidence rename/move candidate |
+| Git reports rename at >= 90% similarity | Emit `:path-rename-candidate`; auto-link only for navigation, not semantics |
+| Git reports rename at 50–89% | Emit candidate only if relevant to active indexing/review scope |
+| Delete + add with low similarity | No document-continuity assertion |
+| Split one file into several | Emit one-to-many candidate relations only when evidence supports them |
+| Merge several files into one | Emit many-to-one candidate relations only when evidence supports them |
+| Copy while original remains | Emit `:copy-candidate`, never a primary document continuation automatically |
+
+The threshold should be a versioned configuration, e.g.:
+
+```clojure
+{:rename-detector :git-diff
+ :rename-threshold 0.90
+ :copy-threshold 0.95
+ :config-version "rename-v1"}
+```
+
+That makes later recalculation possible without rewriting history.
+
+## Section identity
+
+A section is more unstable than a file: headings change, content moves under different headings, two headings merge, or a paragraph moves into another note.
+
+For Phase 1, make each extracted section **revision-scoped**:
+
+```clojure
+{:section-expression/id ...
+ :revision-at-path/id ...
+ :extraction/version "markdown-v1"
+ :heading-path ["Corpus archaeology" "Identity"]
+ :ordinal 7
+ :span {:byte-start ...
+        :byte-end ...
+        :line-start ...
+        :line-end ...}
+ :content-hash "..."}
+```
+
+This is an observed/extracted fact: parser version X found a heading-delimited section at an exact source span in blob B.
+
+### What we should not do yet
+
+Do **not** assign a permanent `section-id` across revisions at ingestion time.
+
+Instead, build candidate edges later:
+
+```clojure
+{:continuity-claim/id ...
+ :relation/type :section-continuation-candidate
+ :from/section-expression-id ...
+ :to/section-expression-id ...
+ :evidence {:same-document-lineage? true
+            :heading-similarity ...
+            :content-overlap ...
+            :embedding-similarity ...
+            :git-diff-hunks [...]}
+ :status :proposed}
+```
+
+This is necessary because “same heading” is not always “same thought,” and “different heading” does not always mean a new thought.
+
+## Idea identity
+
+An **idea** is even more clearly a hypothesis rather than an observed object.
+
+For Phase 1, avoid a global canonical “idea” object at ingestion. Store:
+
+- section expressions;
+- observed Git/path links;
+- explicit Markdown links/tags;
+- generated candidate relationships;
+- human accepted/rejected decisions.
+
+When a review process establishes a meaningful cluster, create an explicit user-owned concept record:
+
+```clojure
+{:concept/id ...
+ :concept/name "Evidence-backed corpus archaeology"
+ :created-from {:section-expression-ids [...]}
+ :status :user-curated}
+```
+
+The concept is not “discovered truth.” It is a durable interpretive lens connected to evidence.
+
+## Identity rules
+
+This is the core proposed contract:
+
+| Object | Identity basis | Status |
+|---|---|---|
+| Repository | Platform UUID | Durable administrative identity |
+| Repository location | Filesystem observation | Mutable |
+| Commit | Git OID | Observed immutable fact |
+| Tree | Git OID | Observed immutable fact |
+| Blob | Git OID | Observed immutable fact |
+| Revision-at-path | Repository + commit OID + path | Observed immutable fact |
+| Extracted section | Revision-at-path + extractor/config version + span | Derived, reproducible |
+| File/document continuity | Relation among revisions | Inferred/reviewable |
+| Section continuity | Relation among section expressions | Inferred/reviewable |
+| Idea/concept | User-created or review-approved cluster | Interpretive, versioned |
+| Search result/ranking | Query + index/model/version | Rebuildable projection |
+
+This gives you a model that can accommodate:
+- a note changing names,
+- a note moving between repos,
+- a note being split or merged,
+- copied templates,
+- rewritten concepts,
+- later LLM proposals,
+- and humans disagreeing with automatic grouping.
+
+## Open questions within ADR 001
+
+We have narrowed ADR 001 to six decisions:
+
+1. **Repository relocation:** What observation data should identify a moved local-only repository as the same registered repository?
+2. **Clone/fork handling:** In Phase 1, do we treat each local clone as independently registered, even if commit histories overlap?
+3. **Same-path behavior:** Is same path across parent/child commits an observed path continuation, even if content is totally rewritten?
+4. **Exact blob move:** Should an identical blob at a different path automatically become an accepted document-continuity edge, or only a high-confidence candidate?
+5. **Git rename threshold:** What threshold is eligible for automatically generated navigation edges: 100%, 95%, 90%, or none?
+6. **Logical document view:** Is it built only from accepted continuity edges, or may it include clearly marked provisional candidate edges?
+
+The decision that changes the most downstream behavior is #3:
+
+> If `docs/foo.md` exists at the same path in a child commit but has been completely rewritten, do we treat that as the same document’s revision history, or as a new document expression at a reused path?

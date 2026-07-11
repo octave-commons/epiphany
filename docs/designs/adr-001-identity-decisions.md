@@ -1,0 +1,284 @@
+---
+slug: adr-001-identity-decisions
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000206
+title: "ADR 001 Identity Decisions: Repository, Path, and Continuity"
+kind: design
+description: "Working decisions for ADR 001 covering repository metadata, family joining, path treatment, and path repurposing as a gradient."
+labels: [architecture, phase-1, identity, adr]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.05.43.46.md"
+---
+
+That gives us a coherent identity policy. The unifying idea is: **location and history establish a default continuity; content similarity and human review qualify or challenge it.** That matches how long-lived working notes tend to behave better than a purely content-addressed document model.
+
+## ADR 001 decisions
+
+| Question | Decision | Status |
+|---|---|---|
+| Repository relocation | Store platform repository identity in Git-local metadata | Decided, with placement detail open |
+| Clone/fork handling | Treat overlapping histories as one repository tree/family, not unrelated repos | Decided conceptually |
+| Same path across commits | Same path carries default persistent document identity despite rewrites | Decided |
+| Same blob at new path | High-confidence continuity signal, not automatic identity | Decided |
+| Automatic rename rule | Exact 100% content move can be automatic only with corroborating evidence | Decided direction |
+| Logical-document view | Show accepted continuity plus clearly marked provisional candidates | Decided |
+
+## Repository relocation
+
+Your `meta.edn` idea is good because a filesystem path is an observation, not identity. When a local-only repository moves, the platform can rediscover its stable repository ID from metadata stored alongside the Git object database.
+
+I would use a **namespaced subdirectory**, not a lone `.git/meta.edn`:
+
+```text
+.git/
+  corpus-archaeology/
+    repository.edn
+```
+
+For linked worktrees, `.git` may be a file that points elsewhere, and Git distinguishes the worktree’s Git directory from the common Git directory. Put the canonical repository metadata in the resolved **common Git directory**, not blindly beside the worktree checkout. Git documents that worktree-specific configuration and common configuration can live in separate Git directories. [manpages.ubuntu](https://manpages.ubuntu.com/manpages/focal/man1/git-worktree.1.html)
+
+```clojure
+{:schema/version 1
+ :repository/id #uuid "..."
+ :repository/created-at #inst "..."
+ :repository/object-format :sha1
+ :repository/first-observed-head "..."
+ :platform {:name :corpus-archaeology
+            :version "..."}}
+```
+
+### Remaining relocation details
+
+- **Opt-in mutation:** Should the indexer create this metadata automatically on registering any local repo, or only after you explicitly mark a repo as platform-managed?
+- **Read-only repositories:** If it cannot write into `.git`, it needs a fallback external registry mapping repository fingerprints to platform IDs.
+- **Git metadata preservation:** The metadata is administrative identity, not part of Git’s commit graph; moving/copying a repository preserves it, but cloning from a remote ordinarily does not.
+
+I recommend: **write it automatically for local repositories you register as managed sources; otherwise use a MongoDB-side external registration record.** Do not write arbitrary metadata into every third-party repository just because it was indexed.
+
+## One history, split representations
+
+Your answer to clone/fork handling is stronger than “same repository ID”:
+
+> A clone, mirror, or fork is a representation of one or more shared commit histories; divergence creates new branches in a shared history space rather than an unrelated tree.
+
+So we need three concepts:
+
+```text
+Repository family
+  The broader historical object universe.
+
+Repository instance
+  A concrete local Git directory / clone / worktree observed by the system.
+
+History segment
+  A connected commit graph available through one or more instances.
+```
+
+```clojure
+{:repository-family/id #uuid "..."
+ :repository-instance/id #uuid "..."
+ :repository-instance/family-id #uuid "..."
+ :repository-instance/git-common-dir "/..."
+ :repository-instance/repo-meta-id #uuid "..."}
+```
+
+A local clone that shares ancestry with an existing source should normally join the same **repository family**, while retaining its own instance record for local refs, availability, remotes, and observed path. This avoids duplicate indexing of shared commits/blobs while preserving divergent branches.
+
+### Open rule
+
+The remaining question is **how conservative family joining should be**:
+
+- **Exact shared commit rule:** Join families only when a newly registered repository shares at least one commit OID with an existing family.
+- **Remote-identity assist:** Also use normalized remote identity as a candidate hint, never as decisive proof.
+- **Manual merge:** Let the user declare that two unrelated Git histories belong to the same conceptual project family.
+
+I recommend exact shared commit overlap as the automatic rule. Remote URL can support a suggested merge; it should not prove identity.
+
+## Same path means continuity
+
+Your reasoning is correct for a personal corpus. A file path that persists for years often names a durable *role*: a roadmap, index, design document, research log, project glossary, or planning surface. It can be completely rewritten while remaining “the same place where this kind of thought lives.”
+
+So the default rule should be:
+
+> Within a repository family, the same normalized path across parent-child commits establishes an **observed path continuity** and therefore carries a stable logical-document identity by default.
+
+```clojure
+{:document/id #uuid "..."
+ :document/family-id #uuid "..."
+ :document/anchor {:kind :repository-path
+                   :repository-family/id #uuid "..."
+                   :initial-path "docs/architecture.md"}
+ :document/identity-policy :path-persistent}
+```
+
+Each exact observation remains independently factual:
+
+```clojure
+{:revision-at-path/id ...
+ :document/id ...
+ :commit/oid "..."
+ :path "docs/architecture.md"
+ :blob/oid "..."
+ :relation-to-parent :same-path}
+```
+
+This does **not** claim semantic sameness. It claims document-role continuity through a stable location.
+
+### Escape hatch
+
+A same path can eventually be reused for an entirely different purpose. Rather than denying same-path continuity, model the exceptional case as a **document epoch boundary**:
+
+```clojure
+{:document-epoch/id ...
+ :document/id ...
+ :starts-at {:commit/oid "..."}
+ :reason :path-repurposed
+ :status :proposed}
+```
+
+Then the UI can say:
+
+```text
+docs/research.md
+  Epoch 1 — 2023–2024: personal research notes
+  Epoch 2 — 2025–present: generated experiment registry
+```
+
+An epoch boundary is a reviewable interpretation that overrides the normal default without destroying the ordinary useful case.
+
+## Exact blob at a new path
+
+Agreed: an exact blob match is strong evidence that the same bytes moved, but templates, copies, and boilerplate mean it does not by itself prove that the *document role* continued.
+
+Git supports exact-only rename matching with `-M100%`; normal rename detection is similarity-based and defaults to 50 percent, so an exact content move is a notably stronger but still incomplete signal. [git-scm](https://git-scm.com/docs/git-log)
+
+The relation should be:
+
+```clojure
+{:continuity-claim/id ...
+ :relation/type :exact-content-relocation
+ :from/revision-at-path-id ...
+ :to/revision-at-path-id ...
+ :evidence {:blob/oid "same-oid"
+            :similarity 1.0
+            :detector :git-diff
+            :threshold 1.0}
+ :status :proposed
+ :confidence :high}
+```
+
+It should never silently become `:same-document` just because the blob OID matches.
+
+## Automatic rename rule
+
+You set the right baseline: **100% similarity is eligible for automatic handling, but only with another correlating signal.**
+
+The rule must distinguish a **navigation shortcut** from a **document identity mutation**.
+
+### Correlating evidence options
+
+| Corroboration | Why it helps |
+|---|---|
+| Source path disappears in parent-to-child diff while target path appears | Distinguishes move from a copy retained at both locations |
+| Same Git commit contains delete + add | Anchors the observation in one transition |
+| Same filename or basename | Helpful but weak |
+| Same parent directory lineage | Helpful for reorganizations |
+| Commit message mentions rename/move | Useful, but not authoritative |
+| No previous target-path history | Reduces accidental template collision |
+| Temporal adjacency | Ensures the relation describes a single historical transition |
+| Same explicit metadata/front matter identifier | Very strong where available |
+| Human acceptance | Converts a candidate into interpretive authority |
+
+### Proposed automatic policy
+
+```text
+Automatic observed relation:
+  exact blob match
+  + source path deleted in the same commit transition
+  + destination path added in that transition
+  + source blob no longer exists at its former path in child
+
+Result:
+  :exact-relocation-observed
+
+Not automatic:
+  merge into same logical document identity
+  semantic continuation
+  section/idea continuity
+```
+
+This gives the interface permission to show a solid “moved from” path event while preserving the distinction between file relocation and a durable document-role judgment.
+
+If the source remains at its old path, emit `:exact-copy-observed`, not relocation.
+
+## Provisional logical-document view
+
+Yes: the document view should include provisional candidates, but the display must make their status impossible to miss.
+
+```text
+Document: docs/retrieval.md
+Identity basis: persistent path
+
+Observed history
+  ✓ Same-path continuation: 2024-02-10 → 2024-07-08
+  ✓ Exact relocation: docs/search.md → docs/retrieval.md
+
+Provisional continuity
+  ? 93% similarity: docs/indexing.md → docs/retrieval.md
+  ? Shared heading lineage: “Hybrid retrieval”
+
+Rejected connections
+  × Template copy: templates/retrieval.md
+```
+
+The default timeline should show:
+
+- **Observed** edges as solid.
+- **Accepted interpretation** edges as solid but visually distinct.
+- **Provisional** candidates as dashed.
+- **Rejected** candidates only on request or in audit mode.
+
+This satisfies the evidence-first requirement: a person can see not only what the system thinks, but what kind of claim it is making.
+
+## Revised identity contract
+
+```text
+Repository family:
+  Shared commit-history universe.
+
+Repository instance:
+  A specific local Git directory, mirror, clone, or worktree.
+
+Document:
+  A persistent repository-family + path role by default.
+
+Document epoch:
+  A reviewable boundary when a stable path is repurposed.
+
+Revision-at-path:
+  Immutable fact: commit C maps path P to blob B.
+
+Section expression:
+  Versioned extraction from one revision-at-path.
+
+Exact relocation:
+  Observed file transition based on exact blob identity plus
+  same-commit deletion/addition evidence.
+
+Continuity candidate:
+  A scored, reviewable claim joining documents, epochs, sections,
+  or concepts.
+
+Concept:
+  A user-curated or accepted interpretive cluster over source expressions.
+```
+
+## Remaining questions for ADR 001
+
+We have reduced the open part of identity design to four practical decisions:
+
+1. **Repository metadata write policy:** Auto-create `.git/corpus-archaeology/repository.edn` for every registered local repository, or require explicit “managed source” registration?
+2. **Repository-family rule:** Automatically join two local repositories only on shared commit OIDs, or also automatically on matching remote identity?
+3. **Path normalization:** How do we normalize case, Unicode, separator style, symlinks, and case-only renames before declaring two paths “the same path”?
+4. **Path-repurpose detection:** What evidence should propose a document-epoch boundary—complete content discontinuity, changed front matter/type, changed title/heading, a long time gap, or an explicit user action?
+
+The next one with the greatest practical impact is **repository metadata write policy**: do you want registration to mutate the `.git` directory automatically, or should a repo only acquire platform metadata after you deliberately designate it as a managed corpus source?

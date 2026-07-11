@@ -1,85 +1,140 @@
-[{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000000"
-  :receipt/time #inst "2026-07-11T00:00:00Z"
-  :receipt/actor :opencode
-  :receipt/event :workspace/note-decomposition
-  :receipt/subject "docs/inbox/clojure Natural Language Processing.md"
-  :receipt/summary "Decomposed the monolithic inbox note into categorized docs/notes/{kanban, design, research, decision} markdown files."
-  :receipt/artifacts
-  {:research ["docs/notes/research/nlp-fundamentals-and-classifiers.md"
-              "docs/notes/research/clojure-nlp-stack.md"
-              "docs/notes/research/vector-search-knowledge-graphs.md"
-              "docs/notes/research/auto-research-agent-loops.md"]
-   :design ["docs/notes/design/knowledge-platform-overview.md"
-            "docs/notes/design/phase-1-corpus-archaeology.md"
-            "docs/notes/design/phase-2-code-comprehension.md"
-            "docs/notes/design/phase-3-research-operations.md"
-            "docs/notes/design/phase-4-simulation-laboratory.md"]
-   :decision ["docs/notes/decision/infrastructure-stack-options.md"
-               "docs/notes/decision/data-model-and-provenance.md"
-               "docs/notes/decision/multi-agent-governance.md"
-               "docs/notes/decision/external-source-acquisition-policy.md"]
-   :kanban ["docs/notes/kanban/epic-01-archaeological-ledger.md"
-            "docs/notes/kanban/epic-02-markdown-evidence-extraction.md"
-            "docs/notes/kanban/epic-03-retrieval-substrate.md"
-            "docs/notes/kanban/epic-04-temporal-idea-lineage.md"
-            "docs/notes/kanban/epic-05-redundancy-tension-review.md"
-            "docs/notes/kanban/epic-06-temporal-research-workbench.md"
-            "docs/notes/kanban/cross-phase-1-operability.md"
-            "docs/notes/kanban/epic-07-polyglot-source-ledger.md"
-            "docs/notes/kanban/epic-08-syntax-forest.md"
-            "docs/notes/kanban/epic-09-clojure-semantic-intelligence.md"
-            "docs/notes/kanban/epic-10-program-relationship-graph.md"
-            "docs/notes/kanban/epic-11-concept-to-code-grounding.md"
-            "docs/notes/kanban/epic-12-architectural-boundary-inference.md"
-            "docs/notes/kanban/epic-13-code-archaeology-workbench.md"
-            "docs/notes/kanban/cross-phase-2-analyzer-quality.md"
-            "docs/notes/kanban/epic-14-governed-external-source-registry.md"
-            "docs/notes/kanban/epic-15-external-artifact-ingestion.md"
-            "docs/notes/kanban/epic-16-research-component-extraction.md"
-            "docs/notes/kanban/epic-17-research-knowledge-graph.md"
-            "docs/notes/kanban/epic-18-prior-art-gap-contradiction.md"
-            "docs/notes/kanban/epic-19-taxonomy-research-question-studio.md"
-            "docs/notes/kanban/epic-20-experiment-design-reproducibility.md"
-            "docs/notes/kanban/epic-21-bounded-research-agents.md"
-            "docs/notes/kanban/cross-phase-3-research-integrity.md"
-            "docs/notes/kanban/epic-22-simulation-kernel.md"
-            "docs/notes/kanban/epic-23-spatial-temporal-data-fabric.md"
-            "docs/notes/kanban/epic-24-weather-environmental-modeling.md"
-            "docs/notes/kanban/epic-25-agent-behavioral-modeling.md"
-            "docs/notes/kanban/epic-26-graph-dynamics-semantic-physics.md"
-            "docs/notes/kanban/epic-27-calibration-uncertainty-counterfactual.md"
-            "docs/notes/kanban/epic-28-distributed-experiment-scheduling.md"
-            "docs/notes/kanban/epic-29-simulation-visual-analytics.md"
-            "docs/notes/kanban/epic-30-bounded-autonomous-experiment-loops.md"
-            "docs/notes/kanban/cross-phase-4-simulation-safety.md"]}
-  :receipt/observations
-  ["The source note is an exploratory discussion that eventually informed ADR-000 (docs/adrs/ADR-000.md), which formalizes the infrastructure stack."
-   "The decision records here are proposed and should be reviewed/approved before becoming formal ADRs."
-   "The kanban cards are sized 8 and require breakdown before implementation per PROCESS.md."]}
- {:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000001"
-  :receipt/time #inst "2026-07-11T01:00:00Z"
-  :receipt/actor :opencode
-  :receipt/event :workspace/decision-review
-  :receipt/subject "docs/notes/decision/"
-  :receipt/summary "Reviewed decision notes against ADR-000; archived resolved decisions and kept multi-agent governance as unresolved."
-  :receipt/artifacts
-  {:archived ["docs/notes/decision/archive/infrastructure-stack-options.md"
-              "docs/notes/decision/archive/data-model-and-provenance.md"
-              "docs/notes/decision/archive/external-source-acquisition-policy.md"]
-   :unresolved ["docs/notes/decision/multi-agent-governance.md"]}
-  :receipt/observations
-  ["Resolved decisions superseded by ADR-000: infrastructure stack, data model/provenance principles, external source acquisition policy."
-   "Unresolved decision: multi-agent governance and autonomy boundaries (not covered by ADR-000)."]}
- {:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000002"
-  :receipt/time #inst "2026-07-11T06:20:00Z"
-  :receipt/actor :opencode
-  :receipt/event :research/deep-synthesis
-  :receipt/subject "docs/notes/research/nlp-and-code-intelligence-deep-research.md"
-  :receipt/summary "Conducted external research on NLP classifier pipelines, Clojure NLP tooling, Tree-sitter, clj-kondo analysis, and code-comprehension methods; wrote a synthesis note evaluating the Phase 1 and Phase 2 designs."
-  :receipt/artifacts
-  {:new-file ["docs/notes/research/nlp-and-code-intelligence-deep-research.md"]}
-  :receipt/observations
-  ["Fine-tuned encoders and even lexical baselines are often more cost-effective than LLM-as-classifier for fixed-label structured classification."
-   "Tree-sitter and clj-kondo are well-supported choices for the syntax forest and Clojure semantic layers, but require explicit handling of macro/dynamic gaps."
-   "Multi-view architecture recovery (dependency + text + folder structure) is supported by SARIF; co-change and AST signals are useful but not sufficient alone."]}
-]
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000000"
+ :receipt/time #inst "2026-07-11T00:00:00Z"
+ :receipt/actor :opencode
+ :receipt/event :workspace/note-decomposition
+ :receipt/subject "docs/inbox/clojure Natural Language Processing.md"
+ :receipt/summary "Decomposed the monolithic inbox note into categorized docs/notes/{kanban, design, research, decision} markdown files."
+ :receipt/artifacts
+ {:research ["docs/notes/research/nlp-fundamentals-and-classifiers.md"
+             "docs/notes/research/clojure-nlp-stack.md"
+             "docs/notes/research/vector-search-knowledge-graphs.md"
+             "docs/notes/research/auto-research-agent-loops.md"]
+  :design ["docs/notes/design/knowledge-platform-overview.md"
+           "docs/notes/design/phase-1-corpus-archaeology.md"
+           "docs/notes/design/phase-2-code-comprehension.md"
+           "docs/notes/design/phase-3-research-operations.md"
+           "docs/notes/design/phase-4-simulation-laboratory.md"]
+  :decision ["docs/notes/decision/infrastructure-stack-options.md"
+             "docs/notes/decision/data-model-and-provenance.md"
+             "docs/notes/decision/multi-agent-governance.md"
+             "docs/notes/decision/external-source-acquisition-policy.md"]
+  :kanban ["docs/notes/kanban/epic-01-archaeological-ledger.md"
+           "docs/notes/kanban/epic-02-markdown-evidence-extraction.md"
+           "docs/notes/kanban/epic-03-retrieval-substrate.md"
+           "docs/notes/kanban/epic-04-temporal-idea-lineage.md"
+           "docs/notes/kanban/epic-05-redundancy-tension-review.md"
+           "docs/notes/kanban/epic-06-temporal-research-workbench.md"
+           "docs/notes/kanban/cross-phase-1-operability.md"
+           "docs/notes/kanban/epic-07-polyglot-source-ledger.md"
+           "docs/notes/kanban/epic-08-syntax-forest.md"
+           "docs/notes/kanban/epic-09-clojure-semantic-intelligence.md"
+           "docs/notes/kanban/epic-10-program-relationship-graph.md"
+           "docs/notes/kanban/epic-11-concept-to-code-grounding.md"
+           "docs/notes/kanban/epic-12-architectural-boundary-inference.md"
+           "docs/notes/kanban/epic-13-code-archaeology-workbench.md"
+           "docs/notes/kanban/cross-phase-2-analyzer-quality.md"
+           "docs/notes/kanban/epic-14-governed-external-source-registry.md"
+           "docs/notes/kanban/epic-15-external-artifact-ingestion.md"
+           "docs/notes/kanban/epic-16-research-component-extraction.md"
+           "docs/notes/kanban/epic-17-research-knowledge-graph.md"
+           "docs/notes/kanban/epic-18-prior-art-gap-contradiction.md"
+           "docs/notes/kanban/epic-19-taxonomy-research-question-studio.md"
+           "docs/notes/kanban/epic-20-experiment-design-reproducibility.md"
+           "docs/notes/kanban/epic-21-bounded-research-agents.md"
+           "docs/notes/kanban/cross-phase-3-research-integrity.md"
+           "docs/notes/kanban/epic-22-simulation-kernel.md"
+           "docs/notes/kanban/epic-23-spatial-temporal-data-fabric.md"
+           "docs/notes/kanban/epic-24-weather-environmental-modeling.md"
+           "docs/notes/kanban/epic-25-agent-behavioral-modeling.md"
+           "docs/notes/kanban/epic-26-graph-dynamics-semantic-physics.md"
+           "docs/notes/kanban/epic-27-calibration-uncertainty-counterfactual.md"
+           "docs/notes/kanban/epic-28-distributed-experiment-scheduling.md"
+           "docs/notes/kanban/epic-29-simulation-visual-analytics.md"
+           "docs/notes/kanban/epic-30-bounded-autonomous-experiment-loops.md"
+           "docs/notes/kanban/cross-phase-4-simulation-safety.md"]}
+ :receipt/observations
+ ["The source note is an exploratory discussion that eventually informed ADR-000 (docs/adrs/ADR-000.md), which formalizes the infrastructure stack."
+  "The decision records here are proposed and should be reviewed/approved before becoming formal ADRs."
+  "The kanban cards are sized 8 and require breakdown before implementation per PROCESS.md."]}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000001"
+ :receipt/time #inst "2026-07-11T01:00:00Z"
+ :receipt/actor :opencode
+ :receipt/event :workspace/decision-review
+ :receipt/subject "docs/notes/decision/"
+ :receipt/summary "Reviewed decision notes against ADR-000; archived resolved decisions and kept multi-agent governance as unresolved."
+ :receipt/artifacts
+ {:archived ["docs/notes/decision/archive/infrastructure-stack-options.md"
+             "docs/notes/decision/archive/data-model-and-provenance.md"
+             "docs/notes/decision/archive/external-source-acquisition-policy.md"]
+  :unresolved ["docs/notes/decision/multi-agent-governance.md"]}
+ :receipt/observations
+ ["Resolved decisions superseded by ADR-000: infrastructure stack, data model/provenance principles, external source acquisition policy."
+  "Unresolved decision: multi-agent governance and autonomy boundaries (not covered by ADR-000)."]}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000002"
+ :receipt/time #inst "2026-07-11T06:20:00Z"
+ :receipt/actor :opencode
+ :receipt/event :research/deep-synthesis
+ :receipt/subject "docs/notes/research/nlp-and-code-intelligence-deep-research.md"
+ :receipt/summary "Conducted external research on NLP classifier pipelines, Clojure NLP tooling, Tree-sitter, clj-kondo analysis, and code-comprehension methods; wrote a synthesis note evaluating the Phase 1 and Phase 2 designs."
+ :receipt/artifacts
+ {:new-file ["docs/notes/research/nlp-and-code-intelligence-deep-research.md"]}
+ :receipt/observations
+ ["Fine-tuned encoders and even lexical baselines are often more cost-effective than LLM-as-classifier for fixed-label structured classification."
+  "Tree-sitter and clj-kondo are well-supported choices for the syntax forest and Clojure semantic layers, but require explicit handling of macro/dynamic gaps."
+  "Multi-view architecture recovery (dependency + text + folder structure) is supported by SARIF; co-change and AST signals are useful but not sufficient alone."]}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000000003"
+ :receipt/time #inst "2026-07-11T14:40:00Z"
+ :receipt/actor :opencode
+ :receipt/event :workspace/inbox-organization
+ :receipt/subject "docs/inbox/"
+ :receipt/summary "Organized 22 inbox notes into categorized docs (adrs, designs, process, research) and broke down Phase 1 user stories into 21 kanban story cards."
+ :receipt/artifacts
+ {:adrs ["docs/adrs/adr-000-authoritative-data-boundary.md"
+         "docs/adrs/adr-001-git-backed-resource-identity.md"
+         "docs/adrs/adr-002-cli-rest-adapter-boundary.md"
+         "docs/adrs/adr-003-unified-executable-tui-browser.md"]
+  :designs ["docs/designs/phase-1-decision-inventory.md"
+            "docs/designs/phase-1-narrowed-decisions.md"
+            "docs/designs/phase-1-decision-status.md"
+            "docs/designs/phase-1-cache-policy.md"
+            "docs/designs/artifact-identity-model.md"
+            "docs/designs/adr-001-identity-decisions.md"
+            "docs/designs/continuity-gradient-model.md"
+            "docs/designs/repository-metadata-v1.md"
+            "docs/designs/cli-rest-api-design.md"
+            "docs/designs/adr-002-dual-mode-cli-position.md"
+            "docs/designs/interface-strategy-tui-gui.md"]
+  :process ["docs/process/epiphany-development-process.md"
+            "docs/process/epiphany-meta-workflow.md"
+            "docs/process/epiphany-agent-ledgers.md"]
+  :research ["docs/notes/research/clojure-nlp-practical-stack.md"
+             "docs/notes/research/nlp-fundamentals-overview.md"
+             "docs/notes/research/classifier-design-patterns.md"
+             "docs/notes/research/knowledge-platform-architecture-survey.md"
+             "docs/notes/research/auto-research-agent-loop-design.md"]
+  :stories ["docs/kanban/stories/story-01-register-local-repository.md"
+            "docs/kanban/stories/story-02-rediscover-moved-repository.md"
+            "docs/kanban/stories/story-03-recognize-shared-history.md"
+            "docs/kanban/stories/story-04-discover-git-backed-markdown-revisions.md"
+            "docs/kanban/stories/story-05-resume-and-replay-projections.md"
+            "docs/kanban/stories/story-06-detect-potential-history-replacement.md"
+            "docs/kanban/stories/story-07-extract-revision-scoped-sections.md"
+            "docs/kanban/stories/story-08-extract-deterministic-continuity-features.md"
+            "docs/kanban/stories/story-09-propose-path-repurpose-boundaries.md"
+            "docs/kanban/stories/story-10-search-current-and-historical-notes.md"
+            "docs/kanban/stories/story-11-inspect-search-evidence.md"
+            "docs/kanban/stories/story-12-compare-historical-expressions.md"
+            "docs/kanban/stories/story-13-generate-candidate-lineage-links.md"
+            "docs/kanban/stories/story-14-trace-idea-through-time.md"
+            "docs/kanban/stories/story-15-identify-research-gaps.md"
+            "docs/kanban/stories/story-16-review-proposed-relationships.md"
+            "docs/kanban/stories/story-17-curate-concept-from-evidence.md"
+            "docs/kanban/stories/story-18-export-evidence-packet.md"
+            "docs/kanban/stories/story-19-use-minimal-local-workbench.md"
+            "docs/kanban/stories/story-20-observe-ingestion-and-indexing.md"
+            "docs/kanban/stories/story-21-recover-corpus-archaeology-view.md"]
+  :board-snapshot "docs/kanban/board.json"}
+ :receipt/observations
+ ["Removed empty file docs/inbox/2026.07.11.09.27.05.md and its Emacs lockfile."
+  "21 Phase 1 story cards mapped to existing epics 1-6 are now in docs/kanban/stories/ with incoming status."
+  "NLP research dump was split into 5 focused research notes in docs/notes/research/."]}

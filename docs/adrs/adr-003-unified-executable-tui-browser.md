@@ -1,0 +1,367 @@
+---
+slug: adr-003-unified-executable-tui-browser
+uuid: 01900d7c-7f3a-7e8b-9c4d-000000000103
+title: "ADR 003: Unified epiphany Executable, TUI, and Browser Workbench"
+kind: decision
+status: accepted
+description: "Names the executable epiphany, places the TUI inside it, and sets interface delivery order: CLI, TUI, browser GUI."
+labels: [adr, architecture, phase-1, ui, cli, tui]
+created: "2026-07-11"
+source: "docs/inbox/2026.07.11.06.37.21.md"
+---
+
+# ADR 003: Unified `epiphany` Executable, TUI, and Browser Workbench
+
+- **Status:** Accepted
+- **Date:** 2026-07-11
+- **Deciders:** Epiphany maintainers
+- **Scope:** Phase 1 human interfaces: CLI, TUI, browser GUI, and executable naming
+- **Related:** ADR 001 — Git-Backed Resource Identity and Continuity; ADR 002 — Dual-Mode CLI and REST Adapter Boundary
+
+## Context
+
+Epiphany is a local-first, Git-backed corpus archaeology system. Its Phase 1 purpose is to help a corpus owner recover, inspect, compare, review, and curate the evolution of ideas across local Git-backed Markdown history.
+
+The system already distinguishes:
+
+- immutable Git observations from inferred continuity;
+- provisional candidates from accepted user interpretations;
+- local/direct application operation from explicit remote REST operation;
+- durable commands from read-only queries.
+
+The system needs more than a scriptable CLI. Corpus archaeology is an interactive loop:
+
+```text
+Search
+  -> inspect evidence
+  -> compare revisions
+  -> follow lineage
+  -> review a candidate
+  -> capture a research question
+  -> continue searching
+```
+
+A TUI is suitable for fast keyboard-driven research, remote SSH usage, operations, and review. A browser GUI is suitable for evidence-rich Markdown reading, side-by-side comparisons, timelines, and later graph/geospatial visualizations.
+
+Lanterna is a pure-Java text-based GUI library for terminal environments and supports xterm-compatible terminals without native dependencies.  Clojure’s `tools.cli` supports command-line argument parsing and nested command/argument groups, making it suitable for the outer CLI parser. [github](https://github.com/clojure/tools.cli)
+
+## Decision
+
+### 1. Name the executable `epiphany`
+
+The canonical command-line executable is:
+
+```bash
+epiphany
+```
+
+The supported short alias is:
+
+```bash
+ep
+```
+
+Both names invoke the same executable, version, configuration resolution, command parser, application service, and exit-code behavior.
+
+Examples:
+
+```bash
+epiphany resource register ~/notes
+ep resource register ~/notes
+
+epiphany search "repository identity"
+ep search "repository identity"
+
+epiphany tui
+ep tui
+```
+
+Documentation, scripts, error messages, examples, and generated shell completion use `epiphany` as the canonical name. `ep` is an officially supported convenience alias, not a separate client or compatibility layer.
+
+The project must avoid a shell alias that changes semantics or hardcodes a local profile. The distribution should install both command names as wrappers or symlinks to the same launch artifact.
+
+### 2. Put the TUI inside the primary executable
+
+The TUI is launched as a first-class subcommand:
+
+```bash
+epiphany tui
+ep tui
+```
+
+It is not a separately versioned executable such as `epiphany-tui` or `ep-tui`.
+
+The TUI inherits the same global configuration and execution-mode selection as every other command:
+
+```bash
+# Default direct/local application-service mode.
+ep tui
+
+# Explicit remote REST profile.
+ep --profile cluster tui
+
+# Explicit REST API target.
+ep --api https://archivist.internal/api/v1 tui
+```
+
+This ensures the user can move naturally between non-interactive command execution and interactive work without learning a second tool, configuring a second client, or risking inconsistent target selection.
+
+### 3. Treat CLI, TUI, and browser GUI as presentation adapters
+
+All user interfaces invoke the command/query application boundary established by ADR 002.
+
+```text
+CLI ──────────────┐
+TUI ──────────────┼─> command/query application boundary
+Browser GUI ──────┘               │
+                                  ├─> Git source access
+                                  ├─> MongoDB
+                                  ├─> caches
+                                  ├─> lexical/vector indices
+                                  ├─> graph projections
+                                  └─> durable work dispatch
+```
+
+The interfaces must not implement independent domain behavior.
+
+They must not directly access:
+
+- Git object databases or working-tree files;
+- MongoDB collections;
+- search/vector indexes;
+- graph storage;
+- worker queues;
+- cache storage;
+- event streams.
+
+The CLI and TUI may use direct application-service mode by default. The browser GUI uses REST only. The REST adapter remains the browser’s sole application boundary.
+
+### 4. Maintain a complete non-interactive equivalent for TUI actions
+
+Every durable TUI action must have an equivalent scriptable CLI command.
+
+Examples:
+
+| TUI action | CLI equivalent |
+|---|---|
+| Register a source | `ep resource register PATH` |
+| Request ingestion | `ep ingest request RESOURCE-ID` |
+| Search corpus | `ep search QUERY` |
+| Open evidence | `ep evidence show EXPRESSION-ID` |
+| Compare expressions | `ep compare LEFT-ID RIGHT-ID` |
+| Show lineage | `ep lineage show EXPRESSION-ID` |
+| Accept/reject/relabel candidate | `ep review decide CANDIDATE-ID DECISION` |
+| Create concept | `ep concept create NAME EXPRESSION-ID...` |
+| Create research question | `ep question create TEXT --evidence ID` |
+| Replay a projection | `ep projection replay PROJECTION --resource ID` |
+| Inspect health | `ep status`, `ep doctor` |
+
+The TUI is a high-speed interaction layer, not the only place where system state can be created, repaired, or understood.
+
+### 5. Build the TUI before the browser GUI
+
+Phase 1 interface delivery order is:
+
+```text
+1. Scriptable CLI
+2. TUI inside `epiphany`
+3. Browser evidence workbench
+4. Visual extensions
+5. Native desktop shell, only if justified
+```
+
+The TUI is the first interactive interface after the CLI because it:
+
+- supports the keyboard-centric research loop;
+- works locally and over SSH;
+- supports source-owning compute nodes without a graphical desktop;
+- exercises the command/query contracts before a browser application adds UI complexity;
+- provides operational visibility and review capability early;
+- keeps Phase 1 usable while REST/OpenAPI/browser work matures.
+
+### 6. Constrain the Phase 1 TUI to the archaeology loop
+
+The TUI must focus on the workflows needed to make corpus archaeology useful. It must not attempt to reproduce all future GUI visualization capabilities.
+
+Required TUI views:
+
+| View | User purpose | Minimum functions |
+|---|---|---|
+| Search | Find relevant historical sections | Query, retrieval mode, scope, ranked results, filters |
+| Evidence | Validate a result | Source text, path, commit, date, heading, exact span, context |
+| Compare | Evaluate change or relationship | Side-by-side source, diff, continuity features, candidate actions |
+| Lineage | Trace an idea through time | Chronological nodes and edges, evidence status, filters |
+| Review inbox | Evaluate proposals | Accept, reject, relabel, defer, suppress similar, annotate |
+| Research questions | Capture next inquiry | Create and inspect user-owned questions tied to evidence |
+| Sources | Inspect repository registration | Resource/family/location status, source availability, ingest state |
+| Operations | Diagnose/recover the system | Projection status, failures, retry/replay actions, health summary |
+
+Required global TUI capabilities:
+
+- command palette or discoverable help;
+- keyboard navigation;
+- visible focused control;
+- search-result selection;
+- status notifications;
+- confirmation before irreversible or high-impact commands;
+- Unicode-safe rendering where terminal capability permits;
+- profile/target visibility;
+- accessible non-color-only distinction of evidence/relation status.
+
+The TUI must never imply that inferred candidates are observed Git facts.
+
+### 7. Display epistemic status consistently
+
+The CLI, TUI, and browser GUI use a shared status vocabulary:
+
+| Status | Meaning | Presentation rule |
+|---|---|---|
+| `OBSERVED` | Directly observed from Git or other canonical source | Solid/default factual presentation |
+| `ACCEPTED` | Explicitly accepted by a user review decision | Clearly marked human interpretation |
+| `PROVISIONAL` | Model/heuristic-generated candidate | Visibly tentative; evidence and rationale available |
+| `REJECTED` | Candidate rejected by review | Hidden in default views; visible in audit mode |
+| `STALE` | Derived projection uses outdated parser/model/index policy | Visible warning; never silently treated as current |
+| `UNAVAILABLE` | Required source or service cannot be accessed | Clearly state limitation; do not fabricate source text |
+
+The status must be conveyed by text labels and structural style, not color alone.
+
+### 8. Use a Clojure/JVM TUI implementation over Lanterna
+
+The initial TUI implementation uses Java Lanterna through a Clojure-compatible integration layer.
+
+Lanterna is selected because it:
+
+- runs on the JVM alongside Epiphany’s Clojure application;
+- supports text-mode terminal interfaces;
+- is pure Java rather than relying on native terminal UI libraries;
+- supports xterm-compatible terminal emulators and terminal GUI components. [github](https://github.com/mabe02/lanterna)
+
+The exact Clojure wrapper may be selected during implementation. The wrapper is an implementation detail and must not leak into Epiphany’s application-domain interfaces.
+
+The TUI maintains presentation state separately from domain state:
+
+```clojure
+{:tui/state
+ {:screen :search
+  :focus :results
+  :query ""
+  :selected-expression-id nil
+  :search-request nil
+  :notice nil
+  :modal nil}
+
+ :target
+ {:mode :direct
+  :profile :local}
+
+ :view-data
+ {:results []
+  :evidence nil
+  :lineage nil
+  :review-candidates []}}
+```
+
+TUI presentation state is ephemeral and must not be written as canonical corpus data.
+
+### 9. Build a browser GUI as the rich evidence workbench
+
+After the core CLI and TUI archaeology flows are stable, Epiphany provides a local browser GUI backed solely by the versioned REST API.
+
+The Phase 1 browser GUI must provide:
+
+- hybrid search workspace;
+- evidence reader with rendered and raw Markdown;
+- source metadata and exact-span display;
+- revision/section comparison;
+- lineage timeline;
+- candidate review workspace;
+- repository/projection health views;
+- evidence-packet export;
+- research-question navigation.
+
+The browser GUI is the primary rich-rendering interface for:
+
+- long Markdown documents;
+- tables and code blocks;
+- side-by-side diffs;
+- timeline/lineage visualization;
+- future curated concept graphs;
+- future geospatial views.
+
+The GUI must keep evidence visible near every inferred or accepted relation. It must not begin with a generic graph visualization or a map visualization merely because graph/geospatial storage exists.
+
+### 10. Defer native desktop GUI development
+
+Epiphany does not build a native desktop GUI in Phase 1.
+
+Native desktop development is reconsidered only when one or more of these needs is explicit:
+
+- a distributable offline-first research workstation;
+- a bundled local service and browser-independent experience;
+- deep OS integration such as filesystem integration, notifications, tray control, or local file association;
+- a reason that the browser workbench cannot satisfy.
+
+If approved later, the native application must be a thin shell around the local Epiphany service and browser workbench, not a separately implemented domain client.
+
+## Consequences
+
+### Positive
+
+- `epiphany` and `ep` provide one memorable, coherent entry point for all local workflows.
+- The TUI is immediately discoverable as `ep tui`.
+- Users can use CLI automation and TUI exploration against the same selected profile and corpus.
+- The direct/REST boundary from ADR 002 remains intact.
+- The project gains an interactive evidence and review workflow before browser frontend work is complete.
+- The TUI remains useful over SSH and on compute/source-owning nodes.
+- The browser GUI can specialize in visual reading and lineage without becoming a replacement implementation of the system.
+- A native GUI is not allowed to fragment product behavior or delay Phase 1 delivery.
+- The status vocabulary prevents similarity, candidate generation, and human acceptance from being silently conflated with source identity.
+
+### Negative
+
+- The single executable becomes broader and requires disciplined command/help organization.
+- The project must test TUI behavior, terminal resizing, terminal capability differences, and Unicode rendering.
+- Terminal UI rendering cannot match browser quality for complex Markdown, side-by-side visuals, timelines, maps, or graph interaction.
+- Maintaining consistent actions and status semantics across CLI, TUI, and browser GUI requires shared view-model and contract discipline.
+- `ep` could collide with an existing user-level command or shell alias; installation must detect/report collisions and allow users to disable the alias wrapper.
+- Initial work includes both a command-line parser and a TUI rendering/input layer before browser GUI work begins.
+
+## Non-goals
+
+This ADR does not decide:
+
+- the precise Clojure wrapper around Lanterna;
+- a ClojureScript framework or browser GUI component library;
+- browser visual design system;
+- OpenAPI schema generation strategy;
+- authentication, authorization, multi-user collaboration, or permissions;
+- remote source-import/source-agent protocol;
+- graph visualization, map visualization, or external geopolitical/scientific data UI;
+- native desktop distribution/packaging;
+- mobile support;
+- terminal event streaming, WebSockets, or server-sent events;
+- shell-completion implementation details.
+
+## Implementation notes
+
+1. Install `epiphany` as the canonical executable and `ep` as a same-version wrapper or symlink.
+2. Define `epiphany --help` and `ep --help` from the same command tree.
+3. Implement all Phase 1 durable actions as non-interactive CLI commands before adding their TUI controls.
+4. Implement `ep tui` as a command that resolves profile and execution mode before initializing terminal state.
+5. Render the selected target visibly, for example:
+
+   ```text
+   Epiphany · direct · local
+   ```
+
+   or:
+
+   ```text
+   Epiphany · REST · cluster · archivist.internal
+   ```
+
+6. Keep TUI screen state ephemeral; use command/query IDs to reload durable state after each action.
+7. Define one shared status-to-view-model mapping for CLI renderers, TUI renderers, and browser GUI API responses.
+8. Add direct-mode and REST-mode TUI integration tests using the same command/query fixtures.
+9. Treat terminal resize, unsupported Unicode width behavior, and unavailable color capability as first-class graceful-degradation cases.
+10. Start browser GUI design only after search, evidence, comparison, lineage, and review are usable through both `ep` commands and `ep tui`.
