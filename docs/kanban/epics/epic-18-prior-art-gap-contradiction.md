@@ -1,7 +1,7 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000020
 title: "Epic 18: Prior-Art, Gap, and Contradiction Analysis"
-status: incoming
+status: icebox
 type: epic
 priority: medium
 phase: 3

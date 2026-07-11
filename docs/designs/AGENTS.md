@@ -14,4 +14,5 @@ status: implemented | superceded | rejected | open | approved
 requires-decisions: ["ADR-000", "ADR-001"]
 dependendents: [design-slug-path-or-uuids]
 dependencies: [design-slug-path-or-uuids]
+epics: [epic-id]
 ```

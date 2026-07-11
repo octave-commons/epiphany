@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001018"
 title: "US-018: Export an evidence packet"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000006"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [ui, workbench, export, evidence, packet, edn]
+points: 3
+labels: [ui, workbench, export, evidence, packet, edn, decomposed]
 category: "stories"
 ---
 
@@ -29,3 +29,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want to export a compact evidence-backed research packet so that I can use the result in planning, writing, or later agent-assisted work.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-005F** `story-05f-export-evidence-packet.md` — `ep export` packets (3)

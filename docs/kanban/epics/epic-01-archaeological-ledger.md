@@ -1,7 +1,7 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000001
 title: "Epic 1: Archaeological Ledger"
-status: incoming
+status: accepted
 type: epic
 priority: high
 phase: 1
@@ -25,9 +25,9 @@ Ingest Git repositories and Markdown revisions into an immutable, replayable art
 - Walk the reachable Git commit graph.
 - Persist commits, parents, author/committer timestamps, message, tree hash.
 - Persist file-at-commit revisions, blob hash, path, add/modify/delete status.
-- Store raw source blob in object storage.
+- Read raw source bytes through Git object access; use operation-specific caches and explicit Git mirror/bundle preservation rather than default per-blob object storage.
 - Record ingestion run, tool version, configuration, and failures.
-- Create initial file-lineage candidates from Git diff rename detection at multiple similarity thresholds.
+- Create policy-versioned revision-level file-lineage candidates from explicit Git diff comparisons; candidates are not document identity.
 - Never overwrite existing source observations; reruns add an ingestion run and deduplicate by content hash/provenance.
 
 ## Core events
@@ -51,6 +51,14 @@ Do not attempt semantic idea lineage here. This epic establishes revision lineag
 - A failure in one repository or revision is recorded and does not prevent other repositories from being processed.
 - An ingestion can be replayed into empty projections from retained source artifacts.
 
-## Next step
+## Delivery breakdown
 
-Move to Breakdown and split into smaller implementation tasks (ingestor service, repository registration, event schemas, object storage layout).
+See `docs/kanban/epics/epic-01-engineering-breakdown.md`. The ENG-001 cards supply dependency order and engineering acceptance boundaries; this epic remains the product outcome.
+
+## Explicit constraints
+
+- Git is canonical for Git-originated commits, trees, blobs, and exact paths-at-commit.
+- MongoDB holds Epiphany-owned observations, idempotency records, run state, checkpoints, and review state.
+- Raw Git bytes are read through Git object access; caches are operation-specific and rebuildable.
+- A Git rename/copy comparison is comparison evidence. It never silently establishes document-purpose or idea identity.
+- Default object storage is not part of ordinary Phase 1 Git ingestion.

@@ -1,299 +1,97 @@
-# AGENTS.md — Epiphany Engineering Guide
+# Epiphany — Engineering Guide
 
-This repository contains **Epiphany**, a local-first, Git-backed knowledge archaeology system. The purpose of the system is to recover, search, compare, and review the history of ideas across Git-backed personal and technical corpora.
+Local-first, Git-backed knowledge archaeology: recover, search, compare, and review the history of ideas across Git repositories. Markdown first (phase 1), code later. Greenfield **JVM Clojure** — favor simple, explicit, rebuildable over clever.
 
-This is a greenfield project. Favor simple, explicit, rebuildable designs over premature generalization.
+## Ground truth
 
-## Prime directive
+- There is no application code yet. The first card is **US-000A** (scaffold + green tests). Until it lands, nothing below about commands is real — build it to make them real.
+- Work comes from the board: `docs/kanban/` — pick from `ready`, respect `dependency:`. Full board contract: `docs/kanban/AGENTS.md`. Delivery order: `docs/kanban/BOARD-BREAKDOWN.md`.
+- ADRs in `docs/adrs/` are architecturally authoritative. Cards and this file never override them.
 
-**Do not silently turn similarity into identity.**
+## This is JVM Clojure, not ClojureScript
 
-Epiphany must always distinguish:
+Most prior work in this space (`../eta-mu`, `../Truth`) skews CLJS. Here:
 
-1. **Observed facts** — directly obtained from Git or another canonical source.
-2. **Derived signals** — parser outputs, text similarity, embeddings, AST features, entity extraction, rank scores, and model outputs.
-3. **Provisional claims** — inferred candidate relationships or proposed epoch boundaries.
-4. **Accepted interpretations** — explicit human review decisions.
+- No `^:async`, no `js/` interop, no shadow-cljs. Build tool is **Clojure CLI + `deps.edn`** aliases.
+- Interop is Java: JGit, Lucene, the Mongo sync driver. Wrap interop at the `infra/` edge; never let Java types leak into `domain/`.
+- Concurrency: virtual threads (JDK 21+) or `future`; no `core.async` unless a card justifies it.
+- Tests run with **kaocha**. REPL is `clojure -M:repl` (nREPL for editor attach).
 
-No layer may promote a lower-certainty item to a higher-certainty item without an explicit, durable transition and preserved evidence.
-
-## Current scope
-
-Phase 1 covers local Git repositories and Markdown history.
-
-Primary workflows:
-
-- Register a repository
-- Discover Git-backed Markdown history
-- Extract revision-scoped source expressions
-- Search lexical, semantic, and hybrid indexes
-- Open exact historical evidence
-- Compare expressions/revisions
-- Trace a lineage
-- Review proposed relationships
-- Create evidence-backed research questions
-- Inspect/replay derived projections
-
-Do not expand Phase 1 into external data ingestion, autonomous agents, code AST systems, graph visualization, maps, or a native desktop product unless the task explicitly requires it.
-
-## Architecture boundaries
-
-### Canonical source and rebuildable projections
-
-- Git is canonical for Git-originated commits, trees, blobs, and paths-at-commit.
-- MongoDB is durable for platform observations, append-only events, review decisions, jobs, and projection checkpoints.
-- Search indexes, vector indexes, graph projections, and caches are rebuildable derived state.
-- A cache must never be the only copy of a source fact or user decision.
-
-### Application boundary
-
-CLI, TUI, REST, and the browser GUI are adapters over the same versioned command/query application boundary.
-
-```text
-CLI / TUI / REST / GUI
-        -> command/query services
-        -> ports
-        -> Git, MongoDB, indexes, cache, dispatch
-```
-
-Never let a UI adapter directly access MongoDB collections, Git storage, search indexes, graph storage, queues, or caches.
-
-### Direct and HTTP modes
-
-- Direct mode is the CLI/TUI default and calls application services in-process.
-- HTTP mode is explicit via `--profile` or `--api`.
-- Never silently fall back between modes.
-- A filesystem path is evaluated on the selected target machine. Do not imply that an API server can read a client machine’s local path.
-
-## Data and identity rules
-
-### Repository identity
-
-The only intended Git-local Epiphany metadata is a minimal resource identity record:
-
-```clojure
-{:resource-id #uuid "..."}
-```
-
-It belongs under:
-
-```text
-<resolved-common-git-dir>/corpus-archaeology/repository.edn
-```
-
-Do not add cursors, paths, credentials, cache hints, user notes, configuration, or operational state to this file. Those belong in MongoDB.
-
-### Git worktrees
-
-Resolve the **common Git directory** before reading/writing Epiphany repository metadata. A worktree `.git` may be a pointer file.
-
-### Paths
-
-Preserve Git path strings exactly as observed.
-
-Never:
-
-- Unicode-normalize paths
-- Transliterate paths
-- Case-fold paths
-- Rewrite separators
-- Resolve symlinks into canonical spellings
-- Substitute display aliases for canonical observed paths
-
-Canonical identity must preserve paths such as `.ημ/architecture/identity.md` exactly.
-
-### Repository families
-
-Automatically join repository instances into the same family only when they share observed commit OIDs. Remote URLs, directory names, similar content, and matching templates are hints only.
-
-Do family assessment on registration. Reassess only after a suspected rewrite/history replacement. Never silently merge or split families.
-
-## Continuity rules
-
-Do not assume a file path is an idea, a document, or a permanent semantic identity.
-
-Keep these relations separate:
-
-- Same path across an adjacent parent/child commit: observed path continuity
-- Same blob OID at another path: exact relocation/copy evidence
-- Similar content: derived similarity
-- Semantic relationship: provisional or accepted relation
-- Path repurposing: proposed/accepted epoch boundary
-
-Git rename/copy detection is evidence from a comparison, not permanent Git identity. An exact content move is strong evidence but does not automatically establish document-purpose identity.
-
-### Markdown continuity
-
-Phase 1 Markdown continuity signals are:
-
-- text similarity
-- front-matter stability/change
-- explicit-link overlap/change
-- time gap
-- named-entity overlap/change
-
-Persist raw signals, policy/configuration version, and resulting score. Scores must be recomputable and must not overwrite prior decisions.
-
-### Code continuity
-
-Code is deferred. When introduced, it must use a distinct policy namespace; do not reuse Markdown thresholds or semantics.
-
-## Public status vocabulary
-
-Use the shared status labels consistently in CLI, TUI, REST, and GUI:
-
-| Status | Meaning |
-| --- | --- |
-| `OBSERVED` | Canonical-source observation |
-| `PROVISIONAL` | Inferred candidate, not established |
-| `ACCEPTED` | Explicit user review acceptance |
-| `REJECTED` | Explicit review rejection; audit-visible |
-| `STALE` | Derived by obsolete policy/model/extractor |
-| `UNAVAILABLE` | Required source/service cannot be read |
-
-Never present `PROVISIONAL` results as observed history. Never use color alone to express status.
-
-## Commands, queries, and events
-
-### Queries
-
-Queries do not create durable state. They retrieve observations/projections.
-
-Examples:
-
-```clojure
-{:query/type :corpus/search
- :query "repository identity"
- :mode :hybrid}
-
-{:query/type :evidence/get
- :expression-id "sec_..."}
-```
-
-### Commands
-
-Commands represent explicit durable intent. They create records, events, decisions, or work requests.
-
-Examples:
-
-```clojure
-{:command/type :resource/register
- :location "/home/user/notes"}
-
-{:command/type :review/record-decision
- :candidate-id "cand_..."
- :decision :accept}
-```
-
-Review decisions are append-only interpretive events. Do not model them as a generic mutable `PATCH` to a candidate’s status.
-
-### Idempotency
-
-All durable commands need a request/idempotency ID. Command retry must not duplicate registration, review decisions, ingest requests, or replay requests.
-
-## Interface conventions
-
-Canonical executable:
+## Commands (canonical once US-000A lands)
 
 ```bash
-epiphany
+clojure -M:test              # full suite — the green baseline
+clojure -M:unit-test         # no Docker, no network
+clojure -M:integration-test  # needs local services started, else exits UNAVAILABLE
+clojure -M:repl              # dev REPL
+clojure -M:run -- --help     # the epiphany executable (alias: ep)
 ```
 
-Supported short alias:
+## Namespace law (four quadrants, no junk drawers)
 
-```bash
-ep
+| Layer     | Contents                                            | Rule                        |
+|-----------|-----------------------------------------------------|-----------------------------|
+| `domain/` | Continuity, lineage, status, ranking decisions      | Pure. Zero I/O.             |
+| `infra/`  | Git (JGit), MongoDB, Lucene, Ollama HTTP, CLI/HTTP  | No domain policy.           |
+| `shape/`  | Parsing, spans, hashing, (de)serialization morphisms| Pure, domain-agnostic.      |
+| `law/`    | Malli schemas, validators, guards                   | No I/O. Contracts only.     |
+
+No `utils/`, no `helpers/`. Schemas before adapters — a `law/` contract exists before the `infra/` code that persists it. See `STYLE.md` for construction order and idioms.
+
+## Dependency policy
+
+Starting set — do not add beyond it without a one-line justification in the card and its design doc:
+
+```clojure
+org.clojure/clojure                {:mvn/version "1.12.x"}
+metosin/malli                      ; law/ schemas
+org.eclipse.jgit/org.eclipse.jgit  ; Git object access — read objects, never shell out, never checkout history
+org.mongodb/mongodb-driver-sync    ; durable observations/events (direct interop; no wrapper lib)
+org.apache.lucene/lucene-core      ; lexical index + KNN vectors (add analyzers/queryparser as needed)
+com.vladsch.flexmark/flexmark      ; Markdown with exact source offsets (decide vs commonmark-java in ENG-002A)
+lambdaisland/kaocha                ; tests
+org.clojure/tools.cli              ; CLI parsing
 ```
 
-The alias must invoke the same artifact and behavior. Documentation should prefer `epiphany` when clarity matters and may use `ep` in compact examples.
+Sanctioned when their card arrives, not before: `ring` + `reitit` + `jsonista` (ENG-006A HTTP), htmx-or-cljs choice for the workbench UI (ENG-006B). Ollama is called over plain HTTP (`java.net.http`) — no SDK.
 
-The TUI is part of the executable:
+## Local services
 
-```bash
-ep tui
-```
+- **MongoDB** — already running on this machine. Connection settings come only from the profile/config boundary (US-000C); never hardcode, never commit credentials.
+- **Ollama** — running locally (`localhost:11434`); embeddings and any bounded LLM step go through it. Model name + version are recorded on every derived record.
+- A second machine exists for clustering later. Phase 1 targets **one strong machine**; don't design for the cluster yet.
+- Profiles: `:local` = in-process/in-memory, `:services` = real local adapters. Selection is explicit; an unreachable selected service is `UNAVAILABLE`, never a silent fallback.
 
-Every durable TUI action needs a scriptable CLI equivalent.
+## Data authority (ADR-000)
 
-CLI output:
+Git is canonical for commits/trees/blobs/paths-at-commit. MongoDB is durable for observations, append-only events, review decisions, jobs, checkpoints. Lucene/vector/graph projections are rebuildable — a cache or index is never the only copy of a fact or decision.
 
-- results: stdout
-- diagnostics/errors: stderr
-- default: human-readable text/table
-- machine output: `--format edn|json`
-- verbose output includes target/profile/request ID and relevant projection versions
+## The one domain rule
 
-## API conventions
+**Never silently turn similarity into identity.** Every record is one of: *observed* (from Git/canonical source) → *derived* (parser/similarity/embedding output) → *provisional* (candidate relation, proposed boundary) → *accepted* (explicit human decision). Promotion up this ladder only happens through an explicit, durable event with preserved evidence. UI, ranking, and export must always show which tier a thing is.
 
-- REST is versioned under `/api/v1`.
-- JSON is the default external format; EDN may be accepted for trusted local clients.
-- Use RFC 9457-style `application/problem+json` for REST errors.
-- Use resource-oriented reads and explicit command/request resources for writes and asynchronous work.
-- Use `POST /review-decisions`, not mutable candidate status updates.
-- `POST /searches` is acceptable for complex hybrid search requests.
-- Keep OpenAPI in version control once the initial HTTP contract is stable; do not let it drift from application schemas.
+## Identity & idempotency
 
-## Clojure implementation guidance
+- The only Git-local metadata is `<common-git-dir>/corpus-archaeology/repository.edn` containing `{:resource-id #uuid "..."}` — nothing else, ever (ADR-001).
+- Resolve the **common Git directory** first; a worktree `.git` is a pointer file.
+- Every durable command carries a request/idempotency ID; retry must not duplicate anything.
+- Exact path strings are preserved byte-for-byte — no normalization, Unicode included (`.ημ/` is a test case).
 
-- Prefer small pure functions around immutable maps at the domain edge.
-- Use Malli schemas for versioned command/query contracts and external payload validation.
-- Keep I/O behind ports/protocols or narrow adapter namespaces.
-- Keep `clojure.tools.cli` at the parsing edge; it must not become the domain model.
-- Keep TUI state ephemeral and separate from durable corpus records.
-- Design jobs/projections to be idempotent and resumable.
-- Store provenance: source identifiers, source spans, extractor/model/policy version, generated time, and configuration identity where relevant.
+## Quality gate
 
-## Testing requirements
+- Zero warnings: clj-kondo, tests, all of it. Warnings are failed contracts.
+- Every adapter has parity tests (direct CLI vs HTTP produce equivalent outcomes) once HTTP exists.
+- Idempotency and replay behavior are tested, not asserted.
+- Done = acceptance criteria demonstrated + epistemic tier explicit + failure mode observable. Full checklist: `PROCESS.md`.
 
-Every change involving a claim, projection, or interface should have tests at the appropriate boundary.
+## Where everything else lives
 
-Minimum expectations:
-
-- Unit tests for pure continuity, status, and schema behavior
-- Integration tests for Git object traversal and exact path preservation
-- Idempotency tests for durable commands
-- Replay tests for projections
-- Adapter parity tests: direct CLI and REST must produce equivalent application outcomes for the same command/query
-- Tests that inferred candidates never appear as observed facts
-- Tests for moved repository identity and worktree common-directory resolution
-- Unicode path tests, including `.ημ/`
-
-Do not require an HTTP server to test core application services.
-
-## Documentation expectations
-
-When adding a new feature, document:
-
-- whether its output is observed, derived, provisional, or accepted;
-- canonical source(s) and rebuild path;
-- identifiers and provenance retained;
-- idempotency/replay behavior;
-- direct vs HTTP behavior, if it handles filesystem paths or commands;
-- user-visible status and error behavior.
-
-Write an ADR for decisions that change identity, continuity, source authority, storage responsibility, interface boundary, or long-term operational commitment.
-
-## Avoid
-
-- “Just use embeddings” designs
-- Hidden inference presented as truth
-- Direct database access from UI code
-- Replacing exact Git facts with normalized display values
-- Treating a path rename as proof of semantic identity
-- Treating exact-copy detection as proof of ongoing document identity
-- Deleting rejected candidates or old derived outputs without audit/rebuild policy
-- Making one global cursor stand in for independent projection checkpoints
-- Premature graph/map UI before evidence inspection and review work
-- Adding an LLM to a pipeline without retaining prompt/model/version/evidence provenance
-
-## Definition of done
-
-A feature is not done until:
-
-1. Its source authority and epistemic status are explicit.
-2. Its input/output schemas are validated.
-3. Its provenance and versioning are retained where it creates derived knowledge.
-4. Its operation is idempotent or its non-idempotence is intentional and documented.
-5. It is reachable through the proper application boundary.
-6. Its failure mode is observable and actionable.
-7. It does not silently convert similarity, model output, or UI convenience into identity.
+| Doc | Purpose |
+|-----|---------|
+| `STYLE.md` | Clojure house rules, categories-vs-contracts, construction order |
+| `PROCESS.md` | Intake→Ready→Done workflow, grounding chain |
+| `docs/kanban/AGENTS.md` | Board contract: FSM, 5-point cap, how agents pick work |
+| `docs/kanban/BOARD-BREAKDOWN.md` | Phase/gate delivery map, critical path |
+| `docs/adrs/` | ADR-000 data boundary, ADR-001 identity, ADR-002 CLI/REST, ADR-003 unified executable |
+| `docs/designs/` | Feature designs (cite research + ADRs) |
+| `docs/AGENTS.md` | docs/ directory conventions and frontmatter |

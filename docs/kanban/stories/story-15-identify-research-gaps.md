@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001015"
 title: "US-015: Identify research gaps"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [lineage, research, gaps, contradiction, questions]
+points: 5
+labels: [lineage, research, gaps, contradiction, questions, decomposed]
 category: "stories"
 ---
 
@@ -30,3 +30,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to show where a line of thought became unresolved, contradictory, or weakly supported so that I can decide what to research next.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-005E** `story-05e-research-gap-surfacing.md` — gap heuristics over trace/review (3)

@@ -1,7 +1,7 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000010
 title: "Epic 9: Clojure Semantic Intelligence"
-status: incoming
+status: icebox
 type: epic
 priority: high
 phase: 2

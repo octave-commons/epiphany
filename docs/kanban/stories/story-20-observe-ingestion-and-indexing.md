@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001020"
 title: "US-020: Observe ingestion and indexing"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [operations, observability, ingestion, indexing, monitoring]
+points: 8
+labels: [operations, observability, ingestion, indexing, monitoring, decomposed]
 category: "stories"
 ---
 
@@ -26,3 +26,10 @@ category: "stories"
 ## Notes
 
 **As an operator,** I want to see health and throughput for each processing stage so that a large corpus does not become silently incomplete.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-001J** `story-01j-ledger-operational-diagnostics.md` — ledger outcomes + recovery evidence (3)
+- **ENG-020A** `story-20a-cross-stage-status-query.md` — cross-stage `ep status` (2)

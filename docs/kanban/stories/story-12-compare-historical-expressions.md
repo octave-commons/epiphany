@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001012"
 title: "US-012: Compare historical expressions"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000003"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [search, comparison, diff, evidence, provenance]
+points: 5
+labels: [search, comparison, diff, evidence, provenance, decomposed]
 category: "stories"
 ---
 
@@ -26,3 +26,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want to compare two historical sections or revisions side by side so that I can see whether an apparent continuity, contradiction, or rewrite is real.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-004B** `story-04b-compare-expressions.md` — comparison + `ep diff` (3)

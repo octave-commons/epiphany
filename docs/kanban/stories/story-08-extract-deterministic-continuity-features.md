@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001008"
 title: "US-008: Extract deterministic continuity features"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000002"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [markdown, extraction, continuity, features, provenance]
+points: 5
+labels: [markdown, extraction, continuity, features, provenance, decomposed]
 category: "stories"
 ---
 
@@ -31,3 +31,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to calculate inspectable Markdown continuity features so that I can understand why it thinks a document changed gradually or discontinuously.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-002D** `story-02d-deterministic-continuity-features.md` — raw signals + versioned score (5)

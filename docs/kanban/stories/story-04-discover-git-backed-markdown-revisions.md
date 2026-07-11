@@ -1,13 +1,13 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001004"
 title: "US-004: Discover Git-backed Markdown revisions"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
+points: 8
 labels: [git, markdown, ingestion, provenance, history]
 category: "stories"
 ---

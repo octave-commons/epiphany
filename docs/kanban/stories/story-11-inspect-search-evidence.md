@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001011"
 title: "US-011: Inspect search evidence"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000003"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [search, evidence, ui, provenance]
+points: 5
+labels: [search, evidence, ui, provenance, decomposed]
 category: "stories"
 ---
 
@@ -27,3 +27,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want every search hit to open at the exact historical source span so that I can decide whether the result actually supports my question.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-004A** `story-04a-evidence-reader.md` — evidence reader + `ep show` (4)

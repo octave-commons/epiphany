@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001007"
 title: "US-007: Extract revision-scoped sections"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000002"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [markdown, extraction, parsing, provenance, sections]
+points: 8
+labels: [markdown, extraction, parsing, provenance, sections, decomposed]
 category: "stories"
 ---
 
@@ -28,3 +28,11 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want Markdown revisions split into inspectable sections so that retrieval and evidence point to meaningful source regions rather than whole files.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-002A** `story-02a-parse-markdown-blob-typed-tree.md` — typed tree + source spans (4)
+- **ENG-002B** `story-02b-persist-section-extraction-records.md` — versioned section records (4)
+- **ENG-002C** `story-02c-extraction-projection-runner.md` — checkpointed projection runner (3)

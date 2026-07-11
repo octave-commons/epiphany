@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Canonical executable. Runs from the project root; packaging comes later.
+set -euo pipefail
+project_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+cd "$project_root"
+exec clojure -M:run "$@"

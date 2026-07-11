@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001009"
 title: "US-009: Propose path-repurpose boundaries"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000002"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [markdown, extraction, boundaries, epochs, provenance]
+points: 5
+labels: [markdown, extraction, boundaries, epochs, provenance, decomposed]
 category: "stories"
 ---
 
@@ -26,3 +26,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to flag likely purpose changes in a long-lived path without erasing its ordinary history.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-002E** `story-02e-path-repurpose-boundary-proposals.md` — threshold proposals + review events (3)

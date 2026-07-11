@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001013"
 title: "US-013: Generate candidate lineage links"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [lineage, graph, inference, candidates, provenance]
+points: 8
+labels: [lineage, graph, inference, candidates, provenance, decomposed]
 category: "stories"
 ---
 
@@ -33,3 +33,9 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to propose plausible historical relationships between note sections so that I can rapidly discover what an idea became.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-004C** `story-04c-candidate-lineage-links.md` — deterministic candidate links (5)

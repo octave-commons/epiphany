@@ -177,6 +177,22 @@ Epiphany is Clojure-first. The intended deployment is a small local cluster with
 - JVM terminal UI via Lanterna or a compatible Clojure integration
 - Local GPU inference for embeddings, reranking, extraction assistance, taxonomy prototyping, and evidence-grounded QA
 
+## Development
+
+Supported toolchain: **JDK 21+** (virtual threads are the sanctioned concurrency primitive) and **Clojure CLI 1.12+**. No other bootstrap steps — a fresh clone runs:
+
+```bash
+clojure -M:test              # full suite — the green baseline
+clojure -M:unit-test         # no Docker, no network
+clojure -M:integration-test  # needs local services (real semantics arrive with US-000C)
+clojure -M:repl              # nREPL for editor attach
+clojure -M:dev               # nREPL with dev/ and test/ on the classpath
+clojure -M:run -- --help     # the epiphany executable
+bin/ep --help                # short alias; same entry point (also bin/epiphany)
+```
+
+Tests run with kaocha; suites are defined in `tests.edn` (`unit` skips `^:integration` tests, `integration` selects only them). CI runs the unit suite headlessly on every push and pull request (`.github/workflows/test.yml`).
+
 ## Development status
 
 Epiphany is in greenfield design. The first implementation target is the Phase 1 corpus-archaeology loop, not a generalized autonomous research agent.

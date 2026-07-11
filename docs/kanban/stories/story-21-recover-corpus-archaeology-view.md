@@ -1,14 +1,14 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001021"
 title: "US-021: Recover the corpus archaeology view"
-status: "incoming"
+status: "breakdown"
 type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/notes/design/phase-1-corpus-archaeology.md"
-points: 1
-labels: [operations, recovery, backup, restore, durability]
+points: 5
+labels: [operations, recovery, backup, restore, durability, decomposed]
 category: "stories"
 ---
 
@@ -26,3 +26,9 @@ category: "stories"
 ## Notes
 
 **As an operator,** I want to restore core metadata and rebuild projections so that a machine failure does not permanently destroy evidence navigation.
+
+## Decomposed into
+
+Product-outcome card; do not implement directly. The engineering slices:
+
+- **ENG-021A** `story-21a-backup-restore-rebuild-drill.md` — backup/restore + rebuild drill (3)
