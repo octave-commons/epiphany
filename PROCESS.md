@@ -211,18 +211,18 @@ The following policy areas implement this charter and may evolve independently:
 - **Kanban workflow** — board intake, triage, planning, transition rules, WIP,
   handoff, and completion mechanics (`docs/process/kanban.md`).
 - **Research practice** — research tiers, source/finding records, methods,
-  confidence, and disposition. This policy is to be established.
+  confidence, and disposition (`docs/process/research.md`).
 - **Documentation governance** — document kinds, templates, exemplars,
-  anti-exemplars, document analysis, and exception handling. This policy is to
-  be established.
+  anti-exemplars, document analysis, and exception handling
+  (`docs/process/document-governance.md`).
 - **Decision practice** — ADR thresholds, decision review, supersession, and
-  architecture-compliance checks. This policy is to be established.
+  architecture-compliance checks (`docs/process/decision.md`).
 - **Review and acceptance** — reviewer roles, evidence expectations, and
-  acceptance recording. This policy is to be established.
+  acceptance recording (`docs/process/review-and-acceptance.md`).
 - **Engineering practice** — coding conventions, static checks, test selection,
   release/process evidence, and environment operations. Operational guidance is
-  currently in `AGENTS.md`; an Epiphany-specific engineering policy is to be
-  established.
+  currently in `AGENTS.md`; engineering evidence and operations practice is
+  defined in `docs/process/engineering.md`.
 
 Until a delegated policy exists, use the charter, existing approved ADRs, and
 explicitly recorded judgment. Do not manufacture a detailed rule and represent

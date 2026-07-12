@@ -1,11 +1,13 @@
 (Π-state
-  (timestamp "2026-07-12T14:37:01Z")
+  (timestamp "2026-07-12T15:50:00Z")
   (branch "main")
-  (base-commit "1c9fc42")
-  (staged-count 18)
+  (base-commit "62dbf10")
+  (staged-count 34)
   (unstaged
     (.lsp/.cache/db.transit.json "LSP cache — not committed"))
-  (untracked-count 0)
+  (untracked-count 1)
+  (untracked
+    (docs/inbox/.#2026.07.12.10.17.57.md "Emacs lockfile symlink — not committed"))
   (test-result
     (total 528)
     (assertions 1336)

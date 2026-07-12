@@ -4,3 +4,4 @@
 .clj-kondo/.cache/
 target/
 data/
+.claude/
