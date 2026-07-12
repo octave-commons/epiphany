@@ -324,3 +324,4 @@
  :card "workbench-service"
  :ts #inst "2026-07-12T00:00:00Z"
  :summary "Epiphany workbench as systemd user service. Added serve subcommand to main.clj, systemd unit at ~/.config/systemd/user/epiphany-workbench.service. Fixed Clojure 1.12 keyword parsing bug (::services). Reads MONGODB_URI/MONGODB_DATABASE from env. Runs on port 5197, all endpoints 200."}
+{:pi "eta-mu", :tests "528 tests, 1336 assertions, 9 failures (pre-existing)", :refs "e92e389,pi/2026-07-12T17-08-54Z-e92e389", :dod "epiphany", :manifest "none", :note "Fork tax paid: inbox docs, inbox-synthesis skill, process policy refs. 39 files changed. Tag: pi/2026-07-12T17-08-54Z-e92e389", :ts "2026-07-12T17:09:18.031Z", :host "local", :kind :push-truth, :origin "opencode", :repo "/home/err/spaces/epiphany", :owner "epiphany"}

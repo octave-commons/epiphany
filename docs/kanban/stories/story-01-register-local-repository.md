@@ -31,4 +31,6 @@ category: "stories"
 
 ---
 Decomposed into 4 stories (ENG-001C, ENG-001B1, ENG-001A, ENG-001B2). Do not implement directly. --tasks-dir docs/kanban
+
+AUDIT ADDENDUM 2026-07-12 (after clj -M:test): status=done but a latent return-contract bug surfaced. epiphany.application.registration/register! returns two different shapes: the idempotent path (registration.clj:15-16) returns the full stored observation record; the fresh path (:33-36) returns a thin {:resource-id :repository-path :common-git-dir :request-id}. So register! twice with the same request-id yields first-result != second-result (profile_test.clj:73 red). Idempotency 'works' as dedup but not as a stable contract. Not demoting (deliverable exists and largely functions); flagging as a real defect for ENG-017G (command-result contract) / ENG-017D (adapter laws) to gate. Also: registration_test fake keys by :request-id while code emits :observation/request-id — test-fake bug; the real in_memory adapter keys correctly (in_memory.clj:54). --tasks-dir docs/kanban
 ---

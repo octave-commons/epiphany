@@ -40,4 +40,6 @@ No ingestion traversal, parsing, job queue, REST endpoint, or TUI action. No ext
 
 ---
 Completed. CLI subcommand dispatch, register command with --profile/--request-id flags, :local and :services profile wiring, bin/ep alias, 6 new CLI tests (25 assertions). Total: 137 tests/407 assertions, 0 failures.
+
+AUDIT ADDENDUM 2026-07-12: see US-001 addendum — register! has a shape-inconsistent return contract (full observation on idempotent path vs thin map on fresh path). This is the service this card delivered; the bug is latent in done work. Owner for the fix: ENG-017G command-result normalization. --tasks-dir docs/kanban
 ---

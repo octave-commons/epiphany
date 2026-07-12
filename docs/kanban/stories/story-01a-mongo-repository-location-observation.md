@@ -55,4 +55,6 @@ Re-scored during board triage. The original subtask table totaled 14 but double-
 
 ---
 Completed. MongoDB adapter with idempotent inserts, versioned indexes, Unicode path preservation, and 9 integration tests (16 assertions). Fixed: MongoWriteException API (.getCode not .getWriteError), Document.getInteger→getLong for MongoDB 5.x, keyword→string encoding, collection-prefix for test isolation.
+
+AUDIT 2026-07-12: status=done graded C+. Deliverable verified: mongo.clj defines and applies validate-location-observation for observation/repository-location-v1 (mongo.clj:26,413) with idempotency handling. No completion evidence comment recorded. Systemic finding: this card's validation pattern was never generalized — it is the ONLY validated observation type in the Mongo adapter; later persistence cards (e.g. ENG-002B section extractions, ENG-001G runs/checkpoints) wrote unvalidated record types. This upgrades the defect-inventory claim 'Mongo validates only repository-location' from provisional to observed. Gate: ENG-017E (align all Mongo observations with shared contract laws) cites this card as both precedent and boundary. --tasks-dir docs/kanban
 ---

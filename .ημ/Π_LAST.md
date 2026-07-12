@@ -1,25 +1,25 @@
-# Π Handoff — 2026-07-12T15:50:00Z
+# Π Handoff — 2026-07-12T17:30:00Z
 
 - **Branch:** `main`
-- **Base commit:** `62dbf10`
+- **Base commit:** `e92e389`
 - **Tests:** 528 tests, 1336 assertions, 9 failures (pre-existing regressions)
 
 ## Modified docs
-- `PROCESS.md` — process documentation updates (policy areas now reference established docs)
-- `.gitignore` — added `.claude/` to prevent accidental commits
+- `docs/kanban/board.json` — board state refresh
+- `docs/kanban/stories/engineering-assurance-*.md` — 10 assurance stories updated
+- `docs/kanban/stories/story-*.md` — 8 story files updated with status/metadata changes
+- `receipts.edn` — append-only receipt log updated
 
 ## New docs
-- `docs/process/inbox.md` — inbox processing documentation
-- `docs/process/notes.md` — notes processing documentation
-
-## New skills
-- `.agents/skills/inbox-synthesis/SKILL.md` — skill for processing inbox notes
-
-## Inbox notes (25 files)
-- `docs/inbox/2026.07.12.*.md` — timestamped inbox entries
+- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md` — new assurance story
+- `docs/notes/inbox-synthesis-2026-07-12-agent-gaming-pattern.md` — gaming pattern analysis
+- `docs/notes/inbox-synthesis-2026-07-12-board-audit.md` — board audit notes
+- `docs/notes/inbox-synthesis-2026-07-12-defect-inventory.md` — defect inventory
+- `docs/notes/inbox-synthesis-2026-07-12-source-map.md` — source map notes
+- `docs/standards/examples/` — new standards examples directory
+- `docs/inbox/.observations/2026-07.jsonl` — observation corpus entry
 
 ## Intentionally unstaged/untracked
-- `.lsp/.cache/db.transit.json` — LSP runtime cache, not repo-relevant
 - `docs/inbox/.#2026.07.12.10.17.57.md` — Emacs lockfile symlink, not committed
 
 ## Known regressions (pre-existing, not introduced this Π)
