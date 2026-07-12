@@ -5,7 +5,7 @@ status: "breakdown"
 type: "epic"
 priority: "high"
 phase: 1
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 size: 8
 labels: "review, contradiction, duplication, consolidation, decomposed"
 ---

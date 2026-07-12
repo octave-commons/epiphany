@@ -1,13 +1,13 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000001
 title: "Epic 1: Archaeological Ledger"
-status: accepted
+status: breakdown
 type: epic
 priority: high
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
-labels: [ingestion, git, markdown, provenance]
+labels: [ingestion, git, markdown, provenance, decomposed]
 ---
 
 # Epic 1: Archaeological Ledger
@@ -54,6 +54,10 @@ Do not attempt semantic idea lineage here. This epic establishes revision lineag
 ## Delivery breakdown
 
 See `docs/kanban/epics/epic-01-engineering-breakdown.md`. The ENG-001 cards supply dependency order and engineering acceptance boundaries; this epic remains the product outcome.
+
+---
+Decomposed into ENG-001C, ENG-001B1, ENG-001A, ENG-001B2, ENG-001D, ENG-001E, ENG-001F, ENG-001G, ENG-001H, ENG-001I, ENG-001J. Engineering breakdown in `epic-01-engineering-breakdown.md`. --tasks-dir docs/kanban
+---
 
 ## Explicit constraints
 

@@ -6,9 +6,9 @@ type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 points: 3
-labels: [git, ingestion, provenance, history-rewrite, audit]
+labels: [git, ingestion, provenance, history-rewrite, audit, decomposed]
 category: "stories"
 ---
 
@@ -25,3 +25,8 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to preserve historical observations and call attention to a likely rewrite instead of silently treating a rewritten repository as ordinary new commits.
+
+---
+
+Decomposed into 1 story (ENG-001H). Do not implement directly. --tasks-dir docs/kanban
+---

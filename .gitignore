@@ -3,3 +3,4 @@
 .lsp/.cache/
 .clj-kondo/.cache/
 target/
+data/

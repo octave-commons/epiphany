@@ -6,9 +6,9 @@ type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 points: 8
-labels: [git, markdown, ingestion, provenance, history]
+labels: [git, markdown, ingestion, provenance, history, decomposed]
 category: "stories"
 ---
 
@@ -27,3 +27,8 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want the system to discover every eligible Markdown revision in selected Git history so that historical notes are not limited to the current checkout.
+
+---
+
+Decomposed into 3 stories (ENG-001D, ENG-001E, ENG-001F). Do not implement directly. --tasks-dir docs/kanban
+---

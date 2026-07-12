@@ -1,16 +1,17 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000000000-b"
 title: "US-000B: Profile contract, storage ports, and in-memory adapters"
-status: ready
+status: "done"
 type: "story"
-priority: P0
+priority: "P0"
 phase: 0
 parent: "01900d7c-7f3a-7e8b-9c4d-000000000000"
 points: 5
-labels: [bootstrap, clojure, ports, profiles, local-first, phase-0]
+labels: ["bootstrap", "clojure", "ports", "profiles", "local-first", "phase-0"]
 category: "stories"
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000000000-a"]
 ---
+
 # US-000B: Profile contract, storage ports, and in-memory adapters
 
 Second slice of US-000. Defines how the application composes against infrastructure before any real infrastructure exists.
@@ -33,3 +34,7 @@ The MongoDB/S3 service manifest and health diagnostics (US-000C). Any real adapt
 - The initial storage ports distinguish append-only observed facts/commands from rebuildable projections, consistent with `AGENTS.md`.
 - Service connection settings are obtained only from a documented profile/config boundary; credentials and machine-specific paths are not committed.
 - The bootstrap test passes under `clojure -M:unit-test`.
+
+---
+US-000B implemented 2026-07-11. New files: law/ports.clj (Malli schemas for git, repository-metadata, observations, and composite application-ports), infra/adapters/in_memory.clj (isolated in-memory adapter constructor), infra/profile.clj (:local/:services profile contract with explicit selection and UNAVAILABLE semantics). Updated law/registry.clj to register port schemas. Tests: 126 tests, 380 assertions, 0 failures. Clj-kondo 0 warnings on new files. Bootstrap test proves :local profile composes in-memory adapters with registration layer; :services profile throws UNAVAILABLE; adapter worlds are independent. Acceptance criteria met: :local/:services explicit, UNAVAILABLE on missing service, storage ports distinguish append-only observations from rebuildable projections, credentials not committed, bootstrap test passes. --tasks-dir docs/kanban
+---

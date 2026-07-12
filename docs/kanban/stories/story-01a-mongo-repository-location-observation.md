@@ -1,17 +1,18 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001101"
 title: "ENG-001A: Persist idempotent repository-location observations"
-status: ready
+status: "done"
 type: "story"
 priority: "P0"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/adrs/adr-001-git-backed-resource-identity.md"
 points: 5
-labels: [phase-1, archaeological-ledger, engineering-breakdown, mongodb]
+labels: ["phase-1", "archaeological-ledger", "engineering-breakdown", "mongodb"]
 category: "stories"
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001103", "01900d7c-7f3a-7e8b-9c4d-000000000000-b", "01900d7c-7f3a-7e8b-9c4d-000000000000-c"]
 ---
+
 # ENG-001A: Persist idempotent repository-location observations
 
 Implement the MongoDB adapter required by the registration application service.
@@ -51,3 +52,7 @@ Re-scored during board triage. The original subtask table totaled 14 but double-
 - This is the first MongoDB adapter; establish patterns for future adapters.
 - Use the Epiphany-owned integration-test database; clean only owned collections.
 - Preserve exact path strings (no normalization); design for concurrent/retried writes.
+
+---
+Completed. MongoDB adapter with idempotent inserts, versioned indexes, Unicode path preservation, and 9 integration tests (16 assertions). Fixed: MongoWriteException API (.getCode not .getWriteError), Document.getInteger→getLong for MongoDB 5.x, keyword→string encoding, collection-prefix for test isolation.
+---

@@ -1,13 +1,13 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000002
 title: "Epic 2: Markdown Evidence Extraction"
-status: accepted
+status: breakdown
 type: epic
 priority: high
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
-labels: [parsing, markdown, provenance, extraction]
+labels: [parsing, markdown, provenance, extraction, decomposed]
 ---
 
 # Epic 2: Markdown Evidence Extraction
@@ -43,3 +43,7 @@ A section is not “the concept.” It is an evidence-bearing expression of one 
 ## Next step
 
 Select or implement a Markdown parser with source-span preservation and design the section/chunk schema.
+
+---
+Decomposed into 5 stories (ENG-002A–ENG-002E). All children are ready. Epic moves to breakdown per board contract. --tasks-dir docs/kanban
+---

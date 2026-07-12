@@ -1,13 +1,13 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000003
 title: "Epic 3: Retrieval Substrate"
-status: accepted
+status: breakdown
 type: epic
 priority: high
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
-labels: [search, retrieval, embeddings, hybrid]
+labels: [search, retrieval, embeddings, hybrid, decomposed]
 ---
 
 # Epic 3: Retrieval Substrate
@@ -51,3 +51,7 @@ Create 30–50 questions from personal notes, such as:
 ## Next step
 
 Design the index mapping and choose the first embedding model for section-level retrieval.
+
+---
+Decomposed into 6 stories (ENG-003A–ENG-003F). All children are ready. Epic moves to breakdown per board contract. --tasks-dir docs/kanban
+---

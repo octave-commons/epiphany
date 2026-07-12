@@ -134,21 +134,86 @@
    ;; Records which commits were encountered and which objects failed.
    ;; Reruns produce a new ingestion-run rather than rewriting prior
    ;; commit observations.
-   "observation/ingestion-run-v1"
-   (into [:map {:closed true}
-          [:observation/type [:= :ingestion/run-completed]]
-          [:observation/request-id {:optional true} :uuid]]
-         (into observation-envelope-entries
-               [[:resource-id :uuid]
-                [:ingestion/repo-path [:ref "path/observed"]]
-                [:ingestion/selected-refs [:vector [:ref "git/ref-name"]]]
-                [:ingestion/commit-count :int]
-                [:ingestion/failure-count :int]
-                [:ingestion/failures [:vector [:map {:closed true}
-                                               [:failure/oid {:optional true} [:ref "git/oid"]]
-                                               [:failure/ref {:optional true} [:ref "git/ref-name"]]
-                                               [:failure/reason :string]
-                                               [:failure/message {:optional true} :string]]]]]))})
+    "observation/ingestion-run-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :ingestion/run-completed]]
+           [:observation/request-id {:optional true} :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:ingestion/repo-path [:ref "path/observed"]]
+                 [:ingestion/selected-refs [:vector [:ref "git/ref-name"]]]
+                 [:ingestion/commit-count :int]
+                 [:ingestion/failure-count :int]
+                 [:ingestion/failures [:vector [:map {:closed true}
+                                                [:failure/oid {:optional true} [:ref "git/oid"]]
+                                                [:failure/ref {:optional true} [:ref "git/ref-name"]]
+                                                [:failure/reason :string]
+                                                [:failure/message {:optional true} :string]]]]]))
+
+     ;; A projection checkpoint: durable progress state for a named
+    ;; projection within an ingestion run. Checkpoints are
+    ;; versioned independently — a projection logic upgrade bumps
+    ;; the checkpoint version and forces reprocessing from the last
+    ;; known-good checkpoint.
+    "observation/projection-checkpoint-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :projection/checkpoint-recorded]]
+           [:observation/request-id {:optional true} :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:checkpoint/projection-name [:string {:min 1}]]
+                 [:checkpoint/projection-version [:int {:min 1}]]
+                 [:checkpoint/ingestion-run-id :uuid]
+                 [:checkpoint/status [:enum :running :completed :failed]]
+                 [:checkpoint/last-processed-oid {:optional true} [:ref "git/oid"]]
+                 [:checkpoint/processed-count :int]
+                 [:checkpoint/error-message {:optional true} :string]]))
+
+    ;; A history-replacement observation: evidence that a previously
+    ;; observed ref target is no longer reachable. This records the
+    ;; old and new OID values as observed facts — it does NOT conclude
+    ;; that history was rewritten, only that the ref now points to a
+    ;; different commit than previously recorded.
+    "observation/history-replacement-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :git/history-replacement-observed]]
+           [:observation/request-id {:optional true} :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:replacement/ref-name [:ref "git/ref-name"]]
+                 [:replacement/old-oid [:ref "git/oid"]]
+                 [:replacement/new-oid [:ref "git/oid"]]
+                 [:replacement/old-observed-at 'inst?]
+                 [:replacement/new-observed-at 'inst?]]))
+
+    ;; A section-extraction observation: one Markdown file parsed into
+    ;; heading-delimited sections, linked to the revision-at-path that
+    ;; produced the blob. Re-extracting the same blob with the same
+    ;; extractor version is idempotent (same sections, different
+    ;; observation IDs). A new extractor version creates new records.
+    "observation/section-extraction-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :section/extraction-completed]]
+           [:observation/request-id {:optional true} :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:extraction/revision-at-path-id :uuid]
+                 [:extraction/commit-oid [:ref "git/oid"]]
+                 [:extraction/path-raw [:ref "path/raw"]]
+                 [:extraction/blob-oid [:ref "git/oid"]]
+                 [:extraction/extractor-version [:string {:min 1}]]
+                 [:extraction/section-count :int]
+                 [:extraction/content-sha256 [:string {:min 1}]]
+                 [:extraction/sections [:vector [:map {:closed true}
+                                                 [:section/heading-path [:vector :string]]
+                                                 [:section/level :int]
+                                                 [:section/ordinal :int]
+                                                 [:section/heading-span-start-byte :int]
+                                                 [:section/heading-span-end-byte :int]
+                                                 [:section/body-span-start-byte :int]
+                                                 [:section/body-span-end-byte :int]
+                                                 [:section/body-span-start-line :int]
+                                                 [:section/body-span-end-line :int]]]]]))})
 
 (defn exact-path?
   "The `:path/comparison :exact` contract: a candidate string counts as

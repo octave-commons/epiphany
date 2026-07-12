@@ -91,4 +91,4 @@ Phase N+1 epics leave the icebox only when the phase-N workbench outcome is demo
 
 ## Current delivery order
 
-All phase 0/1 work is broken down and `ready`: 40 cards across nine gates (baseline → registration → Git facts → recovery → extraction → retrieval → lineage → review → workbench, plus ops). The full gate tables and critical path live in `BOARD-BREAKDOWN.md`. First moves: US-000A, then ENG-001C / ENG-001B1 / ENG-002A in parallel.
+All phase 0/1 work is broken down: 33 cards `ready`, 7 cards `done`, across nine gates (baseline → registration → Git facts → recovery → extraction → retrieval → lineage → review → workbench, plus ops). The full gate tables and critical path live in `BOARD-BREAKDOWN.md`. First moves: US-000A, then ENG-001C / ENG-001B1 / ENG-002A in parallel.

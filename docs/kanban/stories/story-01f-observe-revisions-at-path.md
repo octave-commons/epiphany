@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001106"
 title: "ENG-001F: Persist revision-at-path observations"
-status: "review"
+status: "done"
 type: "story"
 priority: "P1"
 phase: 1

@@ -110,4 +110,4 @@ Parallelizable early: after 000A lands, ENG-001C, ENG-001B1, and ENG-002A have n
 
 ## Totals
 
-Phase 0+1 ready lane: **36 cards, ~121 points**, every card ≤ 5. WIP limits: 2 in progress, 1 in review. Definition of Done lives in `PROCESS.md` and the root `AGENTS.md` quality gate.
+Phase 0+1 ready lane: **33 cards, ~120 points**, every card ≤ 5. Done: 7 cards, 23 pts. WIP limits: 2 in progress, 1 in review. Definition of Done lives in `PROCESS.md` and the root `AGENTS.md` quality gate.

@@ -1,13 +1,13 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000004
 title: "Epic 4: Temporal Idea Lineage"
-status: accepted
+status: breakdown
 type: epic
 priority: high
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
-labels: [lineage, graph, temporal, inference]
+labels: [lineage, graph, temporal, inference, decomposed]
 ---
 
 # Epic 4: Temporal Idea Lineage
@@ -51,3 +51,7 @@ Lineage is not necessarily textual similarity. A later note may reject, clarify,
 ## Next step
 
 Design the candidate-generation pipeline and the lineage edge schema.
+
+---
+Decomposed into 4 stories (ENG-004A–ENG-004D). All children are ready. Epic moves to breakdown per board contract. --tasks-dir docs/kanban
+---

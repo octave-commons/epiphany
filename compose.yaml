@@ -1,0 +1,49 @@
+# Epiphany local service manifest (US-000C).
+#
+# MongoDB: use the existing local instance (localhost:27017) or start one here.
+# MinIO: S3-compatible object storage for immutable source blob archival.
+#
+# Lifecycle:
+#   docker compose up -d              # start services
+#   docker compose down               # stop services
+#   docker compose down -v            # stop + remove data volumes
+#   docker compose ps                 # check health
+#
+# Data directories are named volumes — never committed to Git.
+# Connection settings live in the profile/config boundary, never hardcoded.
+
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "127.0.0.1:27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: epiphany
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ping:1})", "--quiet"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    environment:
+      MINIO_ROOT_USER: epiphany
+      MINIO_ROOT_PASSWORD: epiphany-local-dev
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mongodb_data:
+  minio_data:

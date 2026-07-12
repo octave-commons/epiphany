@@ -108,7 +108,24 @@
     [:diagnostic [:ref "md/diagnostic"]]]
 
    "md/document"
-   [:map {:closed true}
-    [:doc/front-matter {:optional true} [:ref "md/front-matter"]]
-    [:doc/body [:vector [:ref "md/block"]]]
-    [:doc/source-length :int]]})
+    [:map {:closed true}
+     [:doc/front-matter {:optional true} [:ref "md/front-matter"]]
+     [:doc/body [:vector [:ref "md/block"]]]
+     [:doc/source-length :int]]
+
+    ;; Section: a heading plus its immediate child blocks (not nested
+    ;; sub-headings, which become their own sections). Ordinal is
+    ;; 0-indexed among siblings at the same heading level.
+    "md/section"
+    [:map {:closed true}
+     [:section/heading-path [:vector :string]]
+     [:section/level :int]
+     [:section/ordinal :int]
+     [:section/heading-span [:ref "md/span"]]
+     [:section/body-span [:ref "md/span"]]
+     [:section/body-blocks [:vector [:ref "md/block"]]]]
+
+    ;; Heading path: vector of heading text strings from root to this section.
+    ;; e.g. ["Top" "Sub" "Sub-sub"] for a section under ### Sub-sub
+    "md/heading-path"
+    [:vector :string]})

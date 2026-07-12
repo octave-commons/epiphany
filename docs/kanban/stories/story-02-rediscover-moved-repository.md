@@ -6,9 +6,9 @@ type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 points: 5
-labels: [git, ingestion, provenance, identity, relocation]
+labels: [git, ingestion, provenance, identity, relocation, decomposed]
 category: "stories"
 ---
 
@@ -25,3 +25,8 @@ category: "stories"
 ## Notes
 
 **As a corpus owner,** I want a registered local repository to retain its platform identity after I move its directory.
+
+---
+
+Decomposed. Work is implicitly covered by the registration pipeline: ENG-001B1 (identity resolution) and ENG-001A (idempotent location observations). No dedicated ENG card needed. --tasks-dir docs/kanban
+---

@@ -6,9 +6,9 @@ type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 points: 5
-labels: [ingestion, projection, durability, checkpoint, replay]
+labels: [ingestion, projection, durability, checkpoint, replay, decomposed]
 category: "stories"
 ---
 
@@ -26,3 +26,8 @@ category: "stories"
 ## Notes
 
 **As an operator,** I want ingestion and derived projections to resume safely after interruption or be replayed deliberately.
+
+---
+
+Decomposed into 2 stories (ENG-001G, ENG-001J). Do not implement directly. --tasks-dir docs/kanban
+---

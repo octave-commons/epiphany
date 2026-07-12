@@ -1,13 +1,13 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000006
 title: "Epic 6: Temporal Research Workbench"
-status: accepted
+status: breakdown
 type: epic
 priority: high
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
-labels: [ui, visualization, workbench, timeline]
+labels: [ui, visualization, workbench, timeline, decomposed]
 ---
 
 # Epic 6: Temporal Research Workbench
@@ -48,3 +48,7 @@ Provide the first interface where archaeology is usable, reviewable, and genuine
 ## Next step
 
 Design the first minimal workbench views (search + evidence drawer + timeline) before adding graph visualization.
+
+---
+Decomposed into 3 stories (ENG-006A–ENG-006C). All children are ready. Epic moves to breakdown per board contract. --tasks-dir docs/kanban
+---

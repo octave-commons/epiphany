@@ -8,15 +8,6 @@ Local-first, Git-backed knowledge archaeology: recover, search, compare, and rev
 - Work comes from the board: `docs/kanban/` — pick from `ready`, respect `dependency:`. Full board contract: `docs/kanban/AGENTS.md`. Delivery order: `docs/kanban/BOARD-BREAKDOWN.md`.
 - ADRs in `docs/adrs/` are architecturally authoritative. Cards and this file never override them.
 
-## This is JVM Clojure, not ClojureScript
-
-Most prior work in this space (`../eta-mu`, `../Truth`) skews CLJS. Here:
-
-- No `^:async`, no `js/` interop, no shadow-cljs. Build tool is **Clojure CLI + `deps.edn`** aliases.
-- Interop is Java: JGit, Lucene, the Mongo sync driver. Wrap interop at the `infra/` edge; never let Java types leak into `domain/`.
-- Concurrency: virtual threads (JDK 21+) or `future`; no `core.async` unless a card justifies it.
-- Tests run with **kaocha**. REPL is `clojure -M:repl` (nREPL for editor attach).
-
 ## Commands (canonical once US-000A lands)
 
 ```bash

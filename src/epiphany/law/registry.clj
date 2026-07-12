@@ -5,14 +5,22 @@
   validators keyed by schema name. The registry itself is plain EDN data;
   `validator` is its executable form."
   (:require [epiphany.law.git :as git]
+            [epiphany.law.markdown :as markdown]
             [epiphany.law.observation :as observation]
+            [epiphany.law.ports :as ports]
             [epiphany.law.selection :as selection]
             [malli.core :as m]
             [malli.registry :as mr]))
 
 (def schemas
   "Registry data: schema name -> schema body, all EDN-serializable."
-  (merge git/schemas observation/schemas selection/schemas))
+  (merge git/schemas observation/schemas selection/schemas
+          {"git-port"                        ports/git-port-schema
+           "repository-metadata-port"        ports/repository-metadata-port-schema
+           "observations-port"               ports/observations-port-schema
+           "index-port"                      ports/index-port-schema
+           "embeddings-port"                 ports/embeddings-port-schema
+           "application/ports"               ports/application-ports-schema}))
 
 (def ^:private registry
   (mr/composite-registry m/default-registry schemas))

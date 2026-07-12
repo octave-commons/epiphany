@@ -6,7 +6,7 @@ type: "story"
 priority: "P1"
 phase: 1
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
-design: "docs/notes/design/phase-1-corpus-archaeology.md"
+design: "docs/designs/phase-1-corpus-archaeology.md"
 points: 8
 labels: [lineage, graph, inference, candidates, provenance, decomposed]
 category: "stories"
