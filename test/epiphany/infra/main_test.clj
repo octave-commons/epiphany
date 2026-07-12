@@ -89,3 +89,59 @@
       (is (or (string/includes? out "No ingestion runs")
               (string/includes? out "Error:")
               (string/includes? out "Cannot connect"))))))
+
+;; ---------------------------------------------------------------------------
+;; Search subcommand
+
+(deftest search-requires-query
+  (let [{:keys [exit out]} (main/run ["search"])]
+    (is (= 1 exit))
+    (is (string/includes? out "search query required"))))
+
+(deftest search-shows-help
+  (let [{:keys [exit out]} (main/run ["search" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep search"))
+    (is (string/includes? out "--mode"))
+    (is (string/includes? out "--format"))))
+
+(deftest search-returns-zero-results-on-empty-index
+  (testing "search with in-memory adapters returns empty results"
+    (let [{:keys [exit out]} (main/run ["search" "architecture"])]
+      (is (zero? exit))
+      (is (string/includes? out "0 results")))))
+
+(deftest search-text-format-default
+  (let [{:keys [exit out]} (main/run ["search" "test"])]
+    (is (zero? exit))
+    (is (string/includes? out "results"))))
+
+(deftest search-edn-format
+  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "edn"])]
+    (is (zero? exit))
+    (is (or (= "()" out) (string/includes? out "[")))))
+
+(deftest search-json-format
+  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "json"])]
+    (is (zero? exit))
+    (is (= "[]" out))))
+
+(deftest search-rejects-invalid-mode
+  (let [{:keys [exit out]} (main/run ["search" "-m" "bogus" "test"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be lexical, semantic, or hybrid"))))
+
+(deftest search-rejects-invalid-format
+  (let [{:keys [exit out]} (main/run ["search" "-f" "xml" "test"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be text, edn, or json"))))
+
+(deftest search-rejects-invalid-profile
+  (let [{:keys [exit out]} (main/run ["search" "-p" "nope" "test"])]
+    (is (= 1 exit))
+    (is (string/includes? out "invalid profile"))))
+
+(deftest search-verbose-mode
+  (let [{:keys [exit out]} (main/run ["search" "-v" "test"])]
+    (is (zero? exit))
+    (is (string/includes? out "Profile:"))))

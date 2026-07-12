@@ -4,11 +4,10 @@ Local-first, Git-backed knowledge archaeology: recover, search, compare, and rev
 
 ## Ground truth
 
-- There is no application code yet. The first card is **US-000A** (scaffold + green tests). Until it lands, nothing below about commands is real — build it to make them real.
 - Work comes from the board: `docs/kanban/` — pick from `ready`, respect `dependency:`. Full board contract: `docs/kanban/AGENTS.md`. Delivery order: `docs/kanban/BOARD-BREAKDOWN.md`.
 - ADRs in `docs/adrs/` are architecturally authoritative. Cards and this file never override them.
 
-## Commands (canonical once US-000A lands)
+## Commands
 
 ```bash
 clojure -M:test              # full suite — the green baseline
@@ -16,6 +15,20 @@ clojure -M:unit-test         # no Docker, no network
 clojure -M:integration-test  # needs local services started, else exits UNAVAILABLE
 clojure -M:repl              # dev REPL
 clojure -M:run -- --help     # the epiphany executable (alias: ep)
+```
+
+### CLI subcommands
+
+```bash
+ep register <path>           # register a local Git repository
+ep search <query>            # search sections (lexical, semantic, or hybrid)
+  --mode lexical|semantic|hybrid   # retrieval mode (default: hybrid)
+  --format text|edn|json           # output format (default: text)
+  --limit N                        # max results (default: 20)
+  --path-prefix <prefix>           # filter by path
+  --verbose                        # show profile and diagnostics
+  --profile local|services         # adapter profile (default: local)
+ep status --resource-id <uuid>    # show ingestion run status
 ```
 
 ## Namespace law (four quadrants, no junk drawers)

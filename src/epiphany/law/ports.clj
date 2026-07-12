@@ -60,11 +60,14 @@
   [:map {:closed true}
    [:find-by-request-id          :any]
    [:record-repository-location! :any]
+   [:record-revision-at-path!    :any]
    [:record-ingestion-run!       :any]
    [:record-checkpoint!          :any]
    [:record-section-extraction!  :any]
    [:list-ingestion-runs         :any]
-   [:list-checkpoints            :any]])
+   [:list-checkpoints            :any]
+   [:list-revision-at-path-by-resource    :any]
+   [:list-section-extractions-by-revision :any]])
 
 ;; ---------------------------------------------------------------------------
 ;; Index port

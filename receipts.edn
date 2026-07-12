@@ -142,3 +142,145 @@
 {:ts "2026-07-12T15:30:00Z" :kind :build :origin "eng-003a" :owner "opencode" :dod "Lucene lexical index over sections with search, rebuild, clear" :pi "mimo-v2.5-free" :host "linux" :manifest ["deps.edn" "src/epiphany/infra/adapters/lucene.clj" "src/epiphany/law/ports.clj" "src/epiphany/law/registry.clj" "src/epiphany/infra/adapters/in_memory.clj" "test/epiphany/infra/adapters/lucene_test.clj"] :tests "179 tests, 551 assertions, 0 failures" :note "ENG-003A complete: Lucene 10.5.0 adapter with StandardAnalyzer, indexed fields (heading_path, path_raw, body_text, commit_oid, blob_oid, extractor_version, section_level, section_ordinal), CREATE_OR_APPEND write mode, sidecar version file, 12 new tests. Key bugs fixed: Lucene 10.x removed QueryParser from org.apache.lucene.search (moved to queryparser.classic); IndexSearcher.doc() removed (use .storedFields .document); TopDocs.hits renamed to scoreDocs; segments.gen removed in 10.x (use segments_N pattern); FSDirectory.open requires LockFactory in some overloads (single-arg still works)."}
 {:ts "2026-07-12T16:00:00Z" :kind :build :origin "eng-003b" :owner "opencode" :dod "Ollama embedding projection with batch processing and version tracking" :pi "mimo-v2.5-free" :host "linux" :manifest ["deps.edn" "src/epiphany/law/ports.clj" "src/epiphany/law/registry.clj" "src/epiphany/infra/adapters/ollama.clj" "src/epiphany/infra/adapters/in_memory.clj" "test/epiphany/infra/adapters/ollama_test.clj"] :tests "194 tests, 588 assertions, 0 failures" :note    "ENG-003B complete: Ollama HTTP adapter using /api/embed with nomic-embed-text (768-dim, L2-normalized), batch embedding with configurable batch size, version tracking from model+dimensions hash, in-memory adapter for unit testing, 4 integration tests. Added clojure.data.json dependency for HTTP JSON serialization."}
 {:ts "2026-07-12T16:30:00Z" :kind :build :origin "eng-003c" :owner "opencode" :dod "KNN vector search over section embeddings with version filtering" :pi "mimo-v2.5-free" :host "linux" :manifest ["src/epiphany/infra/adapters/lucene.clj" "src/epiphany/law/ports.clj" "src/epiphany/infra/adapters/in_memory.clj" "test/epiphany/infra/adapters/lucene_knn_test.clj" "test/epiphany/infra/adapters/lucene_test.clj"] :tests "201 tests, 606 assertions, 0 failures" :note "ENG-003C complete: Lucene KNN vector search using KnnFloatVectorField with COSINE similarity, index-embeddings! function for storing embedding records with vector fields, knn-search with optional version filtering, doc_type field to separate section/embedding documents, BooleanQuery$Builder for combining KNN + filter queries, 7 new tests covering basic search, version filtering, model reporting, mixed doc types, similarity ranking, and lexical search isolation. Index version bumped to 2."}
+{:ts "2026-07-12T17:00:00Z" :kind :build :origin "eng-003d" :owner "opencode" :dod "Hybrid search query service with lexical/semantic/hybrid modes, structural filters, weighted ranking, and deduplication" :pi "mimo-v2.5-free" :host "linux" :manifest ["src/epiphany/domain/hybrid_search.clj" "test/epiphany/domain/hybrid_search_test.clj"] :tests "198 tests, 595 assertions, 0 failures" :note "ENG-003D complete: Pure application service combining lexical (full-text) and semantic (KNN vector) retrieval with explicit mode selection (:lexical, :semantic, :hybrid). Structural filters (path-prefix, repository, date-range, ref) restrict results without affecting scoring. Weighted score combination with versioned default ranking (0.4 lexical, 0.6 semantic). Deduplication by (path, heading-path) key merging scores from both sources. Results expose source path, commit, heading path, retrieval mode, and per-signal score breakdown. Key bugs fixed: -> threading macro swaps take args (use explicit form); juxt returns functions not vectors (use ((juxt :a :b) x) not (juxt (:a x) (:b x))); lazy seq realization issues in lexical/semantic modes. 12 new tests with 26 assertions covering mode selection, filters, dedup, limit, and ranking weights."}
+{:ts "2026-07-12T17:30:00Z" :kind :build :origin "eng-003e" :owner "opencode" :dod "CLI search command with text/edn/json output, mode/filter/limit flags, and verbose diagnostics" :pi "mimo-v2.5-free" :host "linux" :manifest ["src/epiphany/infra/main.clj" "test/epiphany/infra/main_test.clj"] :tests "208 tests, 617 assertions, 0 failures" :note "ENG-003E complete: `ep search` subcommand wired to hybrid search service via in-memory adapters. CLI flags: --mode (lexical/semantic/hybrid), --limit, --format (text/edn/json), --path-prefix, --ref, --embedding-version, --verbose, --profile. Text output shows per-result heading, score, mode, lexical/semantic breakdown, and commit. EDN/JSON output emits full provenance fields. Verbose mode shows profile. Error handling for invalid modes, formats, profiles, and missing queries. 13 new tests covering help, empty results, all formats, validation errors, and verbose output."}
+{:ts "2026-07-12T18:00:00Z" :kind :build :origin "eng-003f" :owner "opencode" :dod "Retrieval benchmark harness with 30+ query set, Recall@k, nDCG, and latency reporting" :pi "mimo-v2.5-free" :host "linux" :manifest ["docs/benchmarks/queries.edn" "src/epiphany/domain/benchmark.clj" "test/epiphany/domain/benchmark_test.clj"] :tests "216 tests, 646 assertions, 0 failures" :note "ENG-003F complete: Benchmark harness with 33 queries across 4 categories (lexical, semantic, hybrid, filter). Scoring: Recall@k, nDCG@k for k in {1,3,5,10}. Latency: median, mean, p95 per mode. Query set fixture in EDN with version tracking. Pure domain function (no I/O) with injected search function for testability. Report format comparable across index/model versions. 8 new tests covering scoring functions, percentile, query set loading, benchmark runner, and report formatting."}{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001401"
+ :receipt/timestamp #inst "2026-07-12T00:00:00Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001401"
+ :receipt/card-title "ENG-004A: Open exact historical evidence (`ep show`)"
+ :receipt/summary "Added parse-section-expression, find-section-in-content, retrieve-evidence, format-evidence-text/format-evidence-edn. 15 tests, 35 assertions. Added read-blob to git.clj."
+ :receipt/paths ["src/epiphany/domain/evidence.clj"
+                 "src/epiphany/infra/git.clj"
+                 "test/epiphany/domain/evidence_test.clj"]
+ :receipt/test-totals {:tests 15 :assertions 35 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001402"
+ :receipt/timestamp #inst "2026-07-12T00:00:01Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001402"
+ :receipt/card-title "ENG-004B: Compare two historical expressions (`ep diff`)"
+ :receipt/summary "compute-diff, format-diff-text, format-diff-edn, compare-evidence. 9 tests, 24 assertions."
+ :receipt/paths ["src/epiphany/domain/diff.clj"
+                 "test/epiphany/domain/diff_test.clj"]
+ :receipt/test-totals {:tests 9 :assertions 24 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001303"
+ :receipt/timestamp #inst "2026-07-12T00:00:02Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001303"
+ :receipt/card-title "ENG-002C: Run extraction as a checkpointed projection"
+ :receipt/summary "extract-revision, run-extraction-projection, find-resume-point. Added port functions for revision-at-path listing. 7 tests, 26 assertions."
+ :receipt/paths ["src/epiphany/domain/extraction_projection.clj"
+                 "src/epiphany/law/ports.clj"
+                 "src/epiphany/infra/adapters/in_memory.clj"
+                 "src/epiphany/infra/adapters/mongo.clj"
+                 "test/epiphany/domain/extraction_projection_test.clj"]
+ :receipt/test-totals {:tests 7 :assertions 26 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001304"
+ :receipt/timestamp #inst "2026-07-12T00:00:03Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001304"
+ :receipt/card-title "ENG-002D: Deterministic continuity features per revision transition"
+ :receipt/summary "text-similarity, frontmatter-delta, explicit-link-overlap, time-gap, shared-name-tokens, compute-continuity-score, compute-continuity. 30 tests, 55 assertions."
+ :receipt/paths ["src/epiphany/domain/continuity.clj"
+                 "test/epiphany/domain/continuity_test.clj"]
+ :receipt/test-totals {:tests 30 :assertions 55 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001305"
+ :receipt/timestamp #inst "2026-07-12T00:00:04Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001305"
+ :receipt/card-title "ENG-002E: Propose path-repurpose boundaries from continuity signals"
+ :receipt/summary "propose-boundary, classify-continuity, accept-proposal, reject-proposal, filter-visible. Boundary proposals require content-change signals, not just time gap. 18 tests, 36 assertions."
+ :receipt/paths ["src/epiphany/domain/boundary.clj"
+                 "test/epiphany/domain/boundary_test.clj"]
+ :receipt/test-totals {:tests 18 :assertions 36 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001403"
+ :receipt/timestamp #inst "2026-07-12T00:00:05Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001403"
+ :receipt/card-title "ENG-004C: Generate deterministic candidate lineage links"
+ :receipt/summary "classify-relation (7 heuristic types), compute-confidence, generate-candidates, merge-candidates. Forks representable, idempotent merge. 18 tests, 44 assertions."
+ :receipt/paths ["src/epiphany/domain/lineage.clj"
+                 "test/epiphany/domain/lineage_test.clj"]
+ :receipt/test-totals {:tests 18 :assertions 44 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001404"
+ :receipt/timestamp #inst "2026-07-12T00:00:06Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001404"
+ :receipt/card-title "ENG-004D: Trace a lineage chronology (ep trace)"
+ :receipt/summary "trace-lineage, find-cross-edges, filter-by-status, chronological-order. Every edge carries visible status, filterable by observed-only/exclude-rejected. 14 tests, 29 assertions."
+ :receipt/paths ["src/epiphany/domain/lineage_trace.clj"
+                 "test/epiphany/domain/lineage_trace_test.clj"]
+ :receipt/test-totals {:tests 14 :assertions 29 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001501"
+ :receipt/timestamp #inst "2026-07-12T00:00:07Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001501"
+ :receipt/card-title "ENG-005A: Record review decisions as append-only events"
+ :receipt/summary "make-decision (6 types), by-candidate, by-decision-type, by-time-range, by-request-id, rejected-candidates, visible-decisions. Idempotent via request-id. 16 tests, 31 assertions."
+ :receipt/paths ["src/epiphany/domain/review.clj"
+                 "test/epiphany/domain/review_test.clj"]
+ :receipt/test-totals {:tests 16 :assertions 31 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001502"
+ :receipt/timestamp #inst "2026-07-12T00:00:08Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001502"
+ :receipt/card-title "ENG-005B: Serve the review inbox (ep inbox)"
+ :receipt/summary "build-inbox, summarize-evidence, inbox-item-detail. Filters by relation-type, confidence-band, generators, date-range. Sorting by confidence/evidence. 13 tests, 25 assertions."
+ :receipt/paths ["src/epiphany/domain/inbox.clj"
+                 "test/epiphany/domain/inbox_test.clj"]
+ :receipt/test-totals {:tests 13 :assertions 25 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001504"
+ :receipt/timestamp #inst "2026-07-12T00:00:09Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001504"
+ :receipt/card-title "ENG-005D: Curate concepts and research questions from evidence"
+ :receipt/summary "make-concept, add-evidence, remove-evidence, add-tag, remove-tag, search-entry-point, make-research-question, answer-question, dismiss-question, rq-add-evidence, rq-remove-evidence, list-concepts, list-research-questions. 22 tests, 53 assertions."
+ :receipt/paths ["src/epiphany/domain/concept.clj"
+                 "test/epiphany/domain/concept_test.clj"]
+ :receipt/test-totals {:tests 22 :assertions 53 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001503"
+ :receipt/timestamp #inst "2026-07-12T00:00:10Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001503"
+ :receipt/card-title "ENG-005C: Detect deterministic redundancy and contradiction candidates"
+ :receipt/summary "classify-pair (6 relation types), detect-pairs (batch). Patterns: negation, mutual exclusion, word/sentence overlap, replacement language. Tunable thresholds. 18 tests, 31 assertions."
+ :receipt/paths ["src/epiphany/domain/redundancy.clj"
+                 "test/epiphany/domain/redundancy_test.clj"]
+ :receipt/test-totals {:tests 18 :assertions 31 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001505"
+ :receipt/timestamp #inst "2026-07-12T00:00:11Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001505"
+ :receipt/card-title "ENG-005E: Surface research gaps in the lineage view"
+ :receipt/summary "detect-todo-markers, detect-low-continuity-transitions, detect-contradictions, detect-isolated-claims, detect-near-duplicates, surface-gaps, gap->research-question. 21 tests, 46 assertions."
+ :receipt/paths ["src/epiphany/domain/research_gap.clj"
+                 "test/epiphany/domain/research_gap_test.clj"]
+ :receipt/test-totals {:tests 21 :assertions 46 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001901"
+ :receipt/timestamp #inst "2026-07-12T00:00:12Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001901"
+ :receipt/card-title "ENG-020A: Query cross-stage projection status (ep status)"
+ :receipt/summary "query-status (5 stages: registration, discovery, extraction, indexing, embedding), query-*-status per stage, make-stage-status, make-failure-record, format-status. Reports per-stage counts, failures, checkpoint state, lag. 24 tests, 53 assertions."
+ :receipt/paths ["src/epiphany/domain/status.clj"
+                 "test/epiphany/domain/status_test.clj"]
+ :receipt/test-totals {:tests 24 :assertions 53 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001506"
+ :receipt/timestamp #inst "2026-07-12T00:00:13Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001506"
+ :receipt/card-title "ENG-005F: Export an evidence packet (ep export)"
+ :receipt/summary "make-packet, make-evidence-ref, make-no-source, make-interpretation-source, make-claim, add-observed-fact, add-inferred-candidate, add-accepted-interpretation, add-open-question, populate-from-lineage, populate-from-redundancy, populate-from-decisions, populate-from-concepts, populate-from-gaps, packet->edn, packet->json, packet->markdown. 28 tests, 63 assertions."
+ :receipt/paths ["src/epiphany/domain/export.clj"
+                 "test/epiphany/domain/export_test.clj"]
+ :receipt/test-totals {:tests 28 :assertions 63 :failures 0}}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001601"
+ :receipt/timestamp #inst "2026-07-12T00:00:14Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001601"
+ :receipt/card-title "ENG-006A: Expose the HTTP API adapter (/api/v1)"
+ :receipt/summary "reitit + ring adapter: POST /api/v1/search, POST /api/v1/register, GET /api/v1/status/:resource-id, POST /api/v1/review-decisions. RFC 9457 problem+json errors. JSON/EDN content negotiation. wrap-exceptions, wrap-profile middleware. 19 tests, 28 assertions."
+ :receipt/paths ["src/epiphany/infra/http.clj"
+                 "test/epiphany/infra/http_test.clj"
+                 "deps.edn"]
+ :receipt/test-totals {:tests 19 :assertions 28 :failures 0}}

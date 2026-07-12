@@ -1,7 +1,7 @@
 ---
 id: 01900d7c-7f3a-7e8b-9c4d-000000000003
 title: "Epic 3: Retrieval Substrate"
-status: breakdown
+status: done
 type: epic
 priority: high
 phase: 1
@@ -9,7 +9,6 @@ design: docs/designs/phase-1-corpus-archaeology.md
 size: 8
 labels: [search, retrieval, embeddings, hybrid, decomposed]
 ---
-
 # Epic 3: Retrieval Substrate
 
 Build multi-signal retrieval over Markdown evidence units, with every result explainable.

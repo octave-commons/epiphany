@@ -1,45 +1,46 @@
-# Π Handoff — 2026-07-12T06:05:32Z
+# Π Handoff — 2026-07-12T08:40:42Z
 
 - **Branch:** `main`
-- **Commit:** `19d3e3b`
-- **Tag:** `pi/2026-07-12T06-05-32Z-19d3e3b`
-- **Files:** 55 changed (643 insertions, 425 deletions)
-- **Tests:** 186 tests, 569 assertions, 0 failures
+- **Base commit:** `0a99597`
+- **Tests:** 488 tests, 1225 assertions, 0 failures
 
 ## New source (this Π)
-- `src/epiphany/domain/history_replacement.clj` — detect history replacement evidence
-- `src/epiphany/domain/ingestion.clj` — ingestion run orchestration
-- `src/epiphany/domain/section_extraction.clj` — section extraction from markdown
-- `src/epiphany/infra/adapters/` — in-memory adapters for ports
-- `src/epiphany/infra/profile.clj` — profile/config boundary
-- `src/epiphany/infra/services.clj` — service wiring
-- `src/epiphany/law/ports.clj` — port definitions
+- `src/epiphany/domain/benchmark.clj` — retrieval benchmark harness
+- `src/epiphany/domain/boundary.clj` — path-repurpose boundary proposals
+- `src/epiphany/domain/concept.clj` — concept curation and research questions
+- `src/epiphany/domain/continuity.clj` — deterministic continuity features
+- `src/epiphany/domain/diff.clj` — historical expression comparison
+- `src/epiphany/domain/evidence.clj` — exact historical evidence reader
+- `src/epiphany/domain/export.clj` — evidence packet export
+- `src/epiphany/domain/extraction_projection.clj` — extraction as checkpointed projection
+- `src/epiphany/domain/hybrid_search.clj` — lexical/semantic/hybrid search
+- `src/epiphany/domain/inbox.clj` — review inbox service
+- `src/epiphany/domain/lineage.clj` — candidate lineage links
+- `src/epiphany/domain/lineage_trace.clj` — lineage chronology tracing
+- `src/epiphany/domain/redundancy.clj` — redundancy and contradiction detection
+- `src/epiphany/domain/research_gap.clj` — research gap surfacing
+- `src/epiphany/domain/review.clj` — review decision events
+- `src/epiphany/domain/status.clj` — cross-stage status query
+- `src/epiphany/infra/http.clj` — reitit/ring HTTP API adapter
 
 ## Modified source
-- `src/epiphany/infra/main.clj` — expanded CLI with register, status, history commands
-- `src/epiphany/law/markdown.clj` — schema refinements
-- `src/epiphany/law/observation.clj` — expanded observation schemas
-- `src/epiphany/law/registry.clj` — registry schema updates
+- `src/epiphany/infra/adapters/in_memory.clj` — expanded in-memory adapters
+- `src/epiphany/infra/adapters/mongo.clj` — mongo adapter refinements
+- `src/epiphany/infra/git.clj` — read-blob support
+- `src/epiphany/infra/main.clj` — CLI expansion (search, status, show, diff, trace, inbox, export)
+- `src/epiphany/law/ports.clj` — port definitions
 
 ## Tests (new)
-- `test/epiphany/domain/history_replacement_test.clj`
-- `test/epiphany/domain/ingestion_test.clj`
-- `test/epiphany/domain/section_extraction_test.clj`
-- `test/epiphany/infra/adapters/` — adapter tests
-- `test/epiphany/infra/profile_test.clj`
-- `test/epiphany/infra/services_test.clj`
+- 17 new test files under `test/epiphany/domain/` and `test/epiphany/infra/`
+- `docs/benchmarks/queries.edn` — 33-query benchmark set
 
 ## Tests (modified)
 - `test/epiphany/infra/main_test.clj` — expanded CLI tests
-- `test/epiphany/integration_suite_test.clj` — integration updates
 
 ## Modified docs
-- Kanban stories: US-00a through US-021 — status and dependency updates
-- Epic-01 through Epic-06 — phase progression
-- `BOARD-BREAKDOWN.md`, `AGENTS.md` — process updates
-
-## Deleted
-- `docs/research/phase-1-corpus-archaeology.md` — moved to `docs/designs/`
+- Kanban stories: story-02c through story-20a — status and content updates
+- Epic-03 — retrieval substrate updates
+- `AGENTS.md`, `deps.edn`, `receipts.edn`
 
 ## Intentionally unstaged
 - `.lsp/.cache/db.transit.json` — LSP runtime cache, not repo-relevant

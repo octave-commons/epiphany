@@ -200,3 +200,41 @@
                       :failure/message (.getMessage e)}})
       (finally
         (.close walk)))))
+
+(defn read-blob
+  "Read the contents of a Git blob identified by OID string.
+
+   Returns a map:
+     :blob/oid      — the blob OID
+     :blob/content  — string content (UTF-8 decoded)
+     :blob/size     — byte count
+     :blob/failure  — non-nil if the blob could not be read
+
+   The blob is read directly from the Git object store; no checkout
+   or working-tree access is involved."
+  [^String repository-path blob-oid-str]
+  (let [repo (open-repository repository-path)]
+    (try
+      (let [oid    (ObjectId/fromString blob-oid-str)
+            object (.getObject repo oid)]
+        (if object
+          (let [loader (.openObject repo oid)
+                bytes  (.getBytes loader)
+                content (String. bytes "UTF-8")]
+            {:blob/oid blob-oid-str
+             :blob/content content
+             :blob/size (alength bytes)
+             :blob/failure nil})
+          {:blob/oid blob-oid-str
+           :blob/content nil
+           :blob/size 0
+           :blob/failure {:failure/oid blob-oid-str
+                          :failure/reason "blob-not-found"
+                          :failure/message (str "Blob not found: " blob-oid-str)}}))
+      (catch Exception e
+        {:blob/oid blob-oid-str
+         :blob/content nil
+         :blob/size 0
+         :blob/failure {:failure/oid blob-oid-str
+                        :failure/reason "blob-unreadable"
+                        :failure/message (.getMessage e)}}))))

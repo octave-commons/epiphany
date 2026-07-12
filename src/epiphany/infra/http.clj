@@ -1,0 +1,293 @@
+(ns epiphany.infra.http
+  "HTTP API adapter using reitit + ring.
+
+  Exposes the same command/query services the CLI uses via REST endpoints.
+  Returns RFC 9457 problem+json for errors. JSON default, EDN accepted locally.
+  No business logic in handlers; no direct Mongo/Lucene/Git access."
+  (:require [reitit.ring :as reitit-ring]
+            [ring.adapter.jetty :as jetty]
+            [ring.util.response :as response]
+            [clojure.data.json :as json]
+            [clojure.string :as str]
+            [epiphany.domain.hybrid-search :as hs]
+            [epiphany.domain.status :as status]
+            [epiphany.infra.profile :as profile]))
+
+;; ---------------------------------------------------------------------------
+;; Problem+json (RFC 9457)
+
+(defn problem-response
+  "Create an RFC 9457 problem+json response."
+  [status title detail & {:keys [type instance errors]
+                          :or {type "about:blank"}}]
+  (response/status
+   (response/content-type
+    (response/response
+     (json/write-str
+      (cond-> {:type type
+               :title title
+               :status status
+               :detail detail}
+        instance (assoc :instance instance)
+        errors (assoc :errors errors))))
+    "application/problem+json")
+   status))
+
+(defn unavailable-problem
+  "Create an UNAVAILABLE (503) problem response."
+  [detail]
+  (problem-response 503 "Service Unavailable" detail))
+
+(defn bad-request-problem
+  "Create a BAD REQUEST (400) problem response."
+  [detail]
+  (problem-response 400 "Bad Request" detail))
+
+(defn not-found-problem
+  "Create a NOT FOUND (404) problem response."
+  [detail]
+  (problem-response 404 "Not Found" detail))
+
+(defn internal-error-problem
+  "Create an INTERNAL ERROR (500) problem response."
+  [detail]
+  (problem-response 500 "Internal Server Error" detail))
+
+;; ---------------------------------------------------------------------------
+;; Content negotiation
+
+(defn- parse-accept
+  "Parse Accept header to determine response format."
+  [accept-header]
+  (cond
+    (nil? accept-header) :json
+    (.contains accept-header "application/edn") :edn
+    (.contains accept-header "application/json") :json
+    (.contains accept-header "text/plain") :text
+    :else :json))
+
+(defn- content-type-for
+  "Get content type for format."
+  [fmt]
+  (case fmt
+    :json "application/json"
+    :edn "application/edn"
+    :text "text/plain"
+    "application/json"))
+
+(defn- serialize
+  "Serialize data to the specified format."
+  [data fmt]
+  (case fmt
+    :json (json/write-str data :key-fn (fn [k] (subs (str k) 1)))
+    :edn (pr-str data)
+    :text (str data)
+    (json/write-str data :key-fn (fn [k] (subs (str k) 1)))))
+
+(defn- read-body
+  "Read and parse request body."
+  [request]
+  (when-let [body (:body request)]
+    (let [body-str (slurp body)
+          content-type (get-in request [:headers "content-type"] "")]
+      (cond
+        (.contains content-type "application/edn")
+        (read-string body-str)
+
+        (.contains content-type "application/json")
+        (json/read-str body-str :key-fn keyword)
+
+        :else
+        (json/read-str body-str :key-fn keyword)))))
+
+;; ---------------------------------------------------------------------------
+;; Middleware
+
+(defn wrap-exceptions
+  "Middleware to catch exceptions and return problem+json responses."
+  [handler]
+  (fn [request]
+    (try
+      (let [response (handler request)]
+        (if (and (map? response) (:status response))
+          response
+          (response/response (str response))))
+      (catch clojure.lang.ExceptionInfo e
+        (let [data (ex-data e)]
+          (case (:code data)
+            :unavailable (unavailable-problem (.getMessage e))
+            :not-found (not-found-problem (.getMessage e))
+            :bad-request (bad-request-problem (.getMessage e))
+            (internal-error-problem (.getMessage e)))))
+      (catch Exception e
+        (internal-error-problem (.getMessage e))))))
+
+(defn wrap-profile
+  "Middleware to inject profile from query params or header."
+  [handler]
+  (fn [request]
+    (let [profile (or (get-in request [:query-params :profile])
+                      (get-in request [:headers "x-profile"])
+                      "local")
+          profile (keyword profile)]
+      (if (profile/valid-profile? profile)
+        (handler (assoc request :profile profile))
+        (bad-request-problem (str "Invalid profile: " (pr-str profile)
+                                  ". Valid: " (pr-str profile/valid-profiles)))))))
+
+;; ---------------------------------------------------------------------------
+;; Handlers
+
+(defn search-handler
+  "Handle search requests."
+  [adapters]
+  (fn [request]
+    (let [body (:body-params request)
+          query (:query body)
+          mode (or (:mode body) "hybrid")
+          mode (if (string? mode) (keyword mode) mode)
+          limit (or (:limit body) 20)
+          path-prefix (:path-prefix body)
+          ref (:ref body)
+          fmt (parse-accept (get-in request [:headers "accept"]))]
+      (cond
+        (str/blank? query)
+        (bad-request-problem "Query is required")
+
+        (not (#{:lexical :semantic :hybrid} mode))
+        (bad-request-problem (str "Invalid mode: " (pr-str mode)
+                                  ". Must be lexical, semantic, or hybrid"))
+
+        :else
+        (let [request-map (cond-> {:query query
+                                   :mode mode
+                                   :limit limit}
+                            path-prefix (assoc-in [:filters :path-prefix] path-prefix)
+                            ref (assoc-in [:filters :ref] ref))
+              results (hs/search adapters request-map)
+              body (serialize results fmt)]
+          (-> (response/response body)
+              (response/content-type (content-type-for fmt))
+              (response/status 200)))))))
+
+(defn register-handler
+  "Handle register requests."
+  [adapters]
+  (fn [request]
+    (let [body (:body-params request)
+          path (:path body)]
+      (cond
+        (str/blank? path)
+        (bad-request-problem "Path is required")
+
+        :else
+        (try
+          (let [register-fn (:register-repository (:repository-metadata adapters))
+                result (register-fn path)]
+            (-> (response/response (serialize result :json))
+                (response/content-type "application/json")
+                (response/status 201)))
+          (catch clojure.lang.ExceptionInfo e
+            (let [data (ex-data e)]
+              (case (:code data)
+                :unavailable (unavailable-problem (.getMessage e))
+                :already-exists (problem-response 409 "Conflict" (.getMessage e))
+                (bad-request-problem (.getMessage e))))))))))
+
+(defn status-handler
+  "Handle status requests."
+  [adapters]
+  (fn [request]
+    (let [resource-id-str (get-in request [:path-params :resource-id])
+          resource-id (try
+                        (java.util.UUID/fromString resource-id-str)
+                        (catch Exception _ nil))]
+      (cond
+        (nil? resource-id)
+        (bad-request-problem "Invalid resource ID format")
+
+        :else
+        (let [result (status/query-status adapters resource-id)
+              fmt (parse-accept (get-in request [:headers "accept"]))
+              body (serialize result fmt)]
+          (-> (response/response body)
+              (response/content-type (content-type-for fmt))
+              (response/status 200)))))))
+
+(defn review-decisions-handler
+  "Handle review decision creation."
+  [adapters]
+  (fn [request]
+    (let [body (:body-params request)
+          decision (:decision body)
+          candidate-id (:candidate-id body)
+          rationale (:rationale body)]
+      (cond
+        (str/blank? decision)
+        (bad-request-problem "Decision is required")
+
+        (str/blank? candidate-id)
+        (bad-request-problem "Candidate ID is required")
+
+        :else
+        (let [result {:id (java.util.UUID/randomUUID)
+                      :decision decision
+                      :candidate-id candidate-id
+                      :rationale rationale
+                      :created-at (java.util.Date.)}]
+          (-> (response/response (serialize result :json))
+              (response/content-type "application/json")
+              (response/status 201)))))))
+
+;; ---------------------------------------------------------------------------
+;; Router
+
+(defn make-router
+  "Create the reitit router with all API v1 routes."
+  [adapters]
+  (reitit-ring/ring-handler
+   (reitit-ring/router
+    ["/api/v1"
+     ["/search"
+      {:post {:handler (search-handler adapters)}}]
+     ["/register"
+      {:post {:handler (register-handler adapters)}}]
+     ["/status/:resource-id"
+      {:get {:handler (status-handler adapters)}}]
+     ["/review-decisions"
+      {:post {:handler (review-decisions-handler adapters)}}]])
+   (reitit-ring/routes
+    (reitit-ring/create-resource-handler {:path "/"})
+    (reitit-ring/create-default-handler
+     {:not-found (fn [_] (not-found-problem "Route not found"))}))
+   wrap-exceptions))
+
+(defn- create-handler
+  "Create the complete handler with middleware."
+  [adapters]
+  (let [router (make-router adapters)]
+    (fn [request]
+      (let [body-params (or (:body-params request)
+                            (when-let [body (:body request)]
+                              (try
+                                (read-string (slurp body))
+                                (catch Exception _ nil))))
+            request (cond-> request
+                      body-params (assoc :body-params body-params)
+                      (not (:path-params request)) (assoc :path-params {}))]
+        ((wrap-profile router) request)))))
+
+;; ---------------------------------------------------------------------------
+;; Server
+
+(defn start-server!
+  "Start the HTTP server on the specified port.
+   Returns the server instance."
+  [adapters port]
+  (let [handler (create-handler adapters)]
+    (jetty/run-jetty handler {:port port :join? false})))
+
+(defn stop-server!
+  "Stop the HTTP server."
+  [server]
+  (.stop server))

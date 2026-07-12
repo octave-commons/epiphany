@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001505"
 title: "ENG-005E: Surface research gaps in the lineage view"
-status: ready
+status: done
 type: "story"
 priority: "P1"
 phase: 1

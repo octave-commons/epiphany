@@ -133,6 +133,7 @@
          run-coll (.getCollection db (str prefix "ingestion-run-v1"))
          ckpt-coll (.getCollection db (str prefix "projection-checkpoint-v1"))
          sect-coll (.getCollection db (str prefix "section-extraction-v1"))
+         rev-coll (.getCollection db (str prefix "revision-at-path-v1"))
          idx-coll (.getCollection db (str prefix "_index-versions"))]
       (ensure-indexes! {:repository-location-collection loc-coll
                         :index-versions-collection idx-coll})
@@ -143,6 +144,7 @@
        :ingestion-run-collection run-coll
        :projection-checkpoint-collection ckpt-coll
        :section-extraction-collection sect-coll
+       :revision-at-path-collection rev-coll
        :index-versions-collection idx-coll})))
 
 (defn disconnect!
@@ -157,11 +159,13 @@
            ^MongoCollection ingestion-run-collection
            ^MongoCollection projection-checkpoint-collection
            ^MongoCollection section-extraction-collection
+           ^MongoCollection revision-at-path-collection
            ^MongoCollection index-versions-collection]}]
   (.drop repository-location-collection)
   (.drop ingestion-run-collection)
   (.drop projection-checkpoint-collection)
   (.drop section-extraction-collection)
+  (.drop revision-at-path-collection)
   (.drop index-versions-collection))
 
 ;; ---------------------------------------------------------------------------
@@ -337,6 +341,56 @@
                                      (.getList doc "sections"))})
 
 ;; ---------------------------------------------------------------------------
+;; Revision-at-path document conversion
+
+(defn- revision-at-path->doc
+  "Convert a revision-at-path observation to a MongoDB Document."
+  [observation]
+  (doto (Document.)
+    (.put "_id" (str (:observation/id observation)))
+    (.put "observation_type" (subs (str (:observation/type observation)) 1))
+    (.put "request_id" (str (:observation/request-id observation)))
+    (.put "observation_id" (str (:observation/id observation)))
+    (.put "observed_at" (:observation/observed-at observation))
+    (.put "adapter_version" (:observation/adapter-version observation))
+    (.put "schema_version" (:observation/schema-version observation))
+    (.put "resource_id" (str (:resource-id observation)))
+    (.put "revision_at_path_id" (str (:revision-at-path/id observation)))
+    (.put "commit_oid" (:revision/commit-oid observation))
+    (.put "tree_oid" (:revision/tree-oid observation))
+    (.put "path_raw" (:revision/path-raw observation))
+    (.put "blob_oid" (:revision/blob-oid observation))
+    (.put "mode" (long (:revision/mode observation)))
+    (.put "evidence" (name (:revision/evidence observation)))
+    (cond-> (:revision/parent-commit-oid observation)
+      (.put "parent_commit_oid" (:revision/parent-commit-oid observation)))
+    (cond-> (:revision/parent-blob-oid observation)
+      (.put "parent_blob_oid" (:revision/parent-blob-oid observation)))))
+
+(defn doc->revision-at-path
+  "Convert a MongoDB Document back to a revision-at-path observation."
+  [^Document doc]
+  (cond-> {:observation/type            (keyword (.getString doc "observation_type"))
+           :observation/request-id      (when-let [s (.getString doc "request_id")]
+                                          (java.util.UUID/fromString s))
+           :observation/id              (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at     (.getDate doc "observed_at")
+           :observation/adapter-version (.getString doc "adapter_version")
+           :observation/schema-version  (.getLong doc "schema_version")
+           :resource-id                 (java.util.UUID/fromString (.getString doc "resource_id"))
+           :revision-at-path/id        (java.util.UUID/fromString (.getString doc "revision_at_path_id"))
+           :revision/commit-oid        (.getString doc "commit_oid")
+           :revision/tree-oid          (.getString doc "tree_oid")
+           :revision/path-raw          (.getString doc "path_raw")
+           :revision/blob-oid          (.getString doc "blob_oid")
+           :revision/mode              (.getLong doc "mode")
+           :revision/evidence          (keyword (.getString doc "evidence"))}
+    (.containsKey doc "parent_commit_oid")
+    (assoc :revision/parent-commit-oid (.getString doc "parent_commit_oid"))
+    (.containsKey doc "parent_blob_oid")
+    (assoc :revision/parent-blob-oid (.getString doc "parent_blob_oid"))))
+
+;; ---------------------------------------------------------------------------
 ;; Adapter implementation
 
 (defn- doc->observation-equal?
@@ -405,6 +459,12 @@
           (.insertOne coll (section-extraction->doc observation))
           nil))
 
+      :record-revision-at-path!
+      (fn [observation]
+        (let [^MongoCollection coll (:revision-at-path-collection conn)]
+          (.insertOne coll (revision-at-path->doc observation))
+          nil))
+
       :list-ingestion-runs
      (fn [resource-id]
        (let [^MongoCollection coll (:ingestion-run-collection conn)
@@ -413,10 +473,26 @@
                       (.into (java.util.ArrayList.)))]
          (mapv doc->ingestion-run docs)))
 
-     :list-checkpoints
+      :list-checkpoints
      (fn [ingestion-run-id]
        (let [^MongoCollection coll (:projection-checkpoint-collection conn)
              docs (-> (.find coll)
                       (.filter (Document. "ingestion_run_id" (str ingestion-run-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->checkpoint docs)))}))
+         (mapv doc->checkpoint docs)))
+
+      :list-revision-at-path-by-resource
+     (fn [resource-id]
+       (let [^MongoCollection coll (:revision-at-path-collection conn)
+             docs (-> (.find coll)
+                      (.filter (Document. "resource_id" (str resource-id)))
+                      (.into (java.util.ArrayList.)))]
+         (mapv doc->revision-at-path docs)))
+
+      :list-section-extractions-by-revision
+     (fn [revision-at-path-id]
+       (let [^MongoCollection coll (:section-extraction-collection conn)
+             docs (-> (.find coll)
+                      (.filter (Document. "revision_at_path_id" (str revision-at-path-id)))
+                      (.into (java.util.ArrayList.)))]
+         (mapv doc->section-extraction docs)))}))

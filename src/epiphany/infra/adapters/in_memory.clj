@@ -46,13 +46,17 @@
   (let [by-request-id (atom {})
         ingestion-runs (atom [])
         checkpoints (atom [])
-        section-extractions (atom [])]
+        section-extractions (atom [])
+        revision-at-paths (atom [])]
     {:find-by-request-id (fn [request-id]
                            (get @by-request-id request-id))
      :record-repository-location! (fn [observation]
                                     (when-let [rid (:request-id observation)]
                                       (swap! by-request-id assoc rid observation))
                                     nil)
+     :record-revision-at-path! (fn [observation]
+                                 (swap! revision-at-paths conj observation)
+                                 nil)
      :record-ingestion-run! (fn [observation]
                               (swap! ingestion-runs conj observation)
                               nil)
@@ -68,7 +72,16 @@
      :list-checkpoints (fn [ingestion-run-id]
                          (filterv #(= ingestion-run-id
                                       (:checkpoint/ingestion-run-id %))
-                                  @checkpoints))}))
+                                  @checkpoints))
+     :list-revision-at-path-by-resource (fn [resource-id]
+                                          (filterv #(and (= resource-id (:resource-id %))
+                                                         (= :revision/at-path-observed (:observation/type %)))
+                                                   @revision-at-paths))
+     :list-section-extractions-by-revision (fn [revision-at-path-id]
+                                             (filterv #(and (= revision-at-path-id
+                                                              (:extraction/revision-at-path-id %))
+                                                           (= :section/extraction-completed (:observation/type %)))
+                                                      @section-extractions))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Index adapter

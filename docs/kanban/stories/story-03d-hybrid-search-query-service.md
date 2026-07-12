@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001304"
 title: "ENG-003D: Compose the hybrid search query service"
-status: ready
+status: done
 type: "story"
 priority: "P1"
 phase: 1

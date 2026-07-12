@@ -1,0 +1,272 @@
+{:benchmark/version 1
+ :benchmark/description "Epiphany Phase 1 retrieval benchmark — personal-corpus queries"
+ :benchmark/created-at #inst "2026-07-12"
+
+ ;; Query set: each entry has:
+ ;;   :id          — unique identifier
+ ;;   :query       — the search string
+ ;;   :mode        — expected best mode (:lexical, :semantic, :hybrid)
+ ;;   :expected    — vector of {:path string, :heading vector} that should appear in top-k
+ ;;   :description — human-readable explanation of what this query targets
+
+ :benchmark/queries
+
+ [;; === Lexical queries (exact phrase matching) ===
+  {:id :lex-001
+   :query "event log as source of truth"
+   :mode :lexical
+   :expected [{:path "docs/notes/design/phase-1-corpus-archaeology.md"
+               :heading ["Data Authority"]}]
+   :description "Exact phrase from ADR-000 discussion"}
+
+  {:id :lex-002
+   :query "namespace law four quadrants"
+   :mode :lexical
+   :expected [{:path "AGENTS.md"
+               :heading ["Namespace law" "four quadrants" "no junk drawers"]}]
+   :description "Exact heading reference in AGENTS.md"}
+
+  {:id :lex-003
+   :query "Git-backed resource identity"
+   :mode :lexical
+   :expected [{:path "docs/adrs/adr-001-git-backed-resource-identity.md"
+               :heading []}]
+   :description "ADR title lookup"}
+
+  {:id :lex-004
+   :query "Malli schemas validators guards"
+   :mode :lexical
+   :expected [{:path "AGENTS.md"
+               :heading ["Namespace law" "four quadrants" "no junk drawers"]}]
+   :description "Exact dependency description"}
+
+  {:id :lex-005
+   :query "CREATE_OR_APPEND write mode"
+   :mode :lexical
+   :expected [{:path "src/epiphany/infra/adapters/lucene.clj"
+               :heading []}]
+   :description "Exact code reference in Lucene adapter"}
+
+  {:id :lex-006
+   :query "zero warnings clj-kondo"
+   :mode :lexical
+   :expected [{:path "AGENTS.md"
+               :heading ["Quality gate"]}]
+   :description "Quality gate exact phrase"}
+
+  {:id :lex-007
+   :query "never silently turn similarity into identity"
+   :mode :lexical
+   :expected [{:path "AGENTS.md"
+               :heading ["The one domain rule"]}]
+   :description "Core domain rule quote"}
+
+  {:id :lex-008
+   :query "JGit object access read objects"
+   :mode :lexical
+   :expected [{:path "AGENTS.md"
+               :heading ["Dependency policy"]}]
+   :description "Dependency constraint phrase"}
+
+  {:id :lex-009
+   :query "injection is control flow"
+   :mode :semantic
+   :expected [{:path "docs/notes/design/phase-1-corpus-archaeology.md"
+               :heading ["Architecture"]}]
+   :description "Concept from design notes — paraphrase"}
+
+  {:id :lex-010
+   :query "profile contract exists before adapter"
+   :mode :lexical
+   :expected [{:path "src/epiphany/infra/profile.clj"
+               :heading []}]
+   :description "Profile contract principle from code comment"}]
+
+ ;; === Semantic queries (conceptual, paraphrase) ===
+ :benchmark/semantic-queries
+
+ [{:id :sem-001
+   :query "how does the system know what's true"
+   :mode :semantic
+   :expected [{:path "AGENTS.md"
+               :heading ["The one domain rule"]}
+              {:path "docs/adrs/ADR-000-authoritative-data-boundary.md"
+               :heading []}]
+   :description "Conceptual: data authority and truth"}
+
+  {:id :sem-002
+   :query "what happens when notes get moved"
+   :mode :semantic
+   :expected [{:path "docs/kanban/stories/story-02-rediscover-moved-repository.md"
+               :heading []}]
+   :description "Conceptual: repository path changes"}
+
+  {:id :sem-003
+   :query "how do I search across different meanings"
+   :mode :semantic
+   :expected [{:path "src/epiphany/domain/hybrid_search.clj"
+               :heading []}
+              {:path "docs/kanban/epics/epic-03-retrieval-substrate.md"
+               :heading []}]
+   :description "Conceptual: hybrid retrieval purpose"}
+
+  {:id :sem-004
+   :query "preventing duplicate work"
+   :mode :semantic
+   :expected [{:path "AGENTS.md"
+               :heading ["Identity & idempotency"]}]
+   :description "Conceptual: idempotency and deduplication"}
+
+  {:id :sem-005
+   :query "how are ideas connected over time"
+   :mode :semantic
+   :expected [{:path "docs/kanban/epics/epic-04-temporal-idea-lineage.md"
+               :heading []}]
+   :description "Conceptual: temporal lineage tracking"}
+
+  {:id :sem-006
+   :query "what's the difference between observed and derived"
+   :mode :semantic
+   :expected [{:path "AGENTS.md"
+               :heading ["The one domain rule"]}]
+   :description "Conceptual: epistemic tier system"}
+
+  {:id :sem-007
+   :query "how do I know if something was tampered with"
+   :mode :semantic
+   :expected [{:path "docs/kanban/stories/story-06-detect-potential-history-replacement.md"
+               :heading []}]
+   :description "Conceptual: history replacement detection"}
+
+  {:id :sem-008
+   :query "organizing knowledge into categories"
+   :mode :semantic
+   :expected [{:path "docs/kanban/epics/epic-05-redundancy-tension-review.md"
+               :heading []}]
+   :description "Conceptual: categorization and organization"}
+
+  {:id :sem-009
+   :query "what did I write about this topic before"
+   :mode :semantic
+   :expected [{:path "src/epiphany/domain/hybrid_search.clj"
+               :heading []}]
+   :description "Conceptual: search as recall"}
+
+  {:id :sem-010
+   :query "how does embedding similarity work"
+   :mode :semantic
+   :expected [{:path "src/epiphany/infra/adapters/ollama.clj"
+               :heading []}
+              {:path "src/epiphany/infra/adapters/lucene.clj"
+               :heading []}]
+   :description "Conceptual: vector search mechanism"}]
+
+ ;; === Hybrid queries (benefit from both lexical and semantic) ===
+ :benchmark/hybrid-queries
+
+ [{:id :hyb-001
+   :query "Git-backed knowledge archaeology"
+   :mode :hybrid
+   :expected [{:path "AGENTS.md"
+               :heading ["Epiphany" "Engineering Guide"]}
+              {:path "docs/designs/phase-1-corpus-archaeology.md"
+               :heading []}]
+   :description "Project tagline — exact + conceptual match"}
+
+  {:id :hyb-002
+   :query "Lucene index KNN vector search"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/infra/adapters/lucene.clj"
+               :heading []}
+              {:path "deps.edn"
+               :heading []}]
+   :description "Technology stack — code + dependency match"}
+
+  {:id :hyb-003
+   :query "register repository identity resource"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/application/registration.clj"
+               :heading []}
+              {:path "docs/adrs/adr-001-git-backed-resource-identity.md"
+               :heading []}]
+   :description "Registration flow — application + ADR"}
+
+  {:id :hyb-004
+   :query "extraction parser spans hashing"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/domain/section_extraction.clj"
+               :heading []}]
+   :description "Section extraction components"}
+
+  {:id :hyb-005
+   :query "MongoDB observations events durable"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/infra/adapters/mongo.clj"
+               :heading []}
+              {:path "AGENTS.md"
+               :heading ["Data authority" "ADR-000"]}]
+   :description "Storage layer — adapter + data authority"}
+
+  {:id :hyb-006
+   :query "CLI register status executable"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/infra/main.clj"
+               :heading []}]
+   :description "CLI commands — executable entry point"}
+
+  {:id :hyb-007
+   :query " Malli schema contract port adapter"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/law/ports.clj"
+               :heading []}
+              {:path "AGENTS.md"
+               :heading ["Namespace law" "four quadrants" "no junk drawers"]}]
+   :description "Schema architecture — law + infrastructure"}
+
+  {:id :hyb-008
+   :query "ingestion checkpoints projections"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/domain/ingestion.clj"
+               :heading []}]
+   :description "Ingestion pipeline components"}
+
+  {:id :hyb-009
+   :query "profile local services adapter resolution"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/infra/profile.clj"
+               :heading []}]
+   :description "Profile system — adapter resolution"}
+
+  {:id :hyb-010
+   :query "section extraction heading path body"
+   :mode :hybrid
+   :expected [{:path "src/epiphany/domain/section_extraction.clj"
+               :heading []}]
+   :description "Section structure components"}]
+
+ ;; === Filter queries (test structural filtering) ===
+ :benchmark/filter-queries
+
+ [{:id :flt-001
+   :query "Malli schemas"
+   :mode :lexical
+   :filters {:path-prefix "src/"}
+   :expected [{:path "src/epiphany/law/ports.clj"
+               :heading []}]
+   :description "Search within source code only"}
+
+  {:id :flt-002
+   :query "retrieval search"
+   :mode :hybrid
+   :filters {:path-prefix "docs/kanban/"}
+   :expected [{:path "docs/kanban/epics/epic-03-retrieval-substrate.md"
+               :heading []}]
+   :description "Search within kanban cards only"}
+
+  {:id :flt-003
+   :query "architecture design"
+   :mode :semantic
+   :filters {:path-prefix "docs/designs/"}
+   :expected [{:path "docs/designs/phase-1-corpus-archaeology.md"
+               :heading []}]
+   :description "Search within design docs only"}]}

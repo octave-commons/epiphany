@@ -4,11 +4,13 @@
   (:require [clojure.java.shell :as shell]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
+            [clojure.data.json :as json]
             [epiphany.infra.services :as services]
             [epiphany.infra.profile :as profile]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
-            [epiphany.application.registration :as registration])
+            [epiphany.application.registration :as registration]
+            [epiphany.domain.hybrid-search :as hs])
   (:gen-class))
 
 (def version "0.1.0")
@@ -235,6 +237,152 @@
               {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
 ;; ---------------------------------------------------------------------------
+;; Search subcommand
+
+(def search-options
+  [["-m" "--mode MODE" "Search mode: lexical, semantic, hybrid"
+    :id :mode
+    :default :hybrid
+    :parse-fn keyword
+    :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
+   ["-l" "--limit N" "Max results"
+    :id :limit
+    :default 20
+    :parse-fn #(Integer/parseInt %)
+    :validate [pos? "Must be positive"]]
+   ["-f" "--format FORMAT" "Output format: text, edn, json"
+    :id :format
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn :json} "Must be text, edn, or json"]]
+   [nil "--path-prefix PREFIX" "Filter results by path prefix"
+    :id :path-prefix]
+   [nil "--ref REF" "Filter results by Git ref"
+    :id :ref]
+   [nil "--embedding-version VER" "Embedding model version for semantic search"
+    :id :embedding-version
+    :parse-fn #(Integer/parseInt %)]
+   ["-v" "--verbose" "Show diagnostics (profile, versions)"
+    :id :verbose]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :id :profile
+    :default :local
+    :parse-fn keyword]
+   ["-h" "--help" "Show search help and exit."
+    :id :help]])
+
+(defn- format-result-text
+  "Format a single search result for text output."
+  [result]
+  (let [path (:result/path-raw result)
+        score (:result/score result)
+        mode (:result/mode result)
+        heading (string/join " > " (:result/heading-path result))
+        scores (:result/scores result)]
+    (str path
+         (when (seq heading) (str "\n  Heading:  " heading))
+         (str "\n  Score:    " (format "%.4f" score)
+              " (" (name mode) ")")
+         (when (:lexical scores)
+           (str "\n  Lexical:  " (format "%.4f" (:lexical scores))))
+         (when (:semantic scores)
+           (str "\n  Semantic: " (format "%.4f" (:semantic scores))))
+         (str "\n  Commit:   " (:result/commit-oid result)))))
+
+(defn- format-results-text
+  "Format search results for text output."
+  [results verbose? profile]
+  (let [count (count results)
+        header (str count " result" (when (not= 1 count) "s"))
+        body (string/join "\n\n" (map format-result-text results))]
+    (str header
+         (when verbose?
+           (str "\n\nProfile: " (name profile)))
+     "\n\n" body)))
+
+(defn- format-results-edn
+  "Format search results as EDN."
+  [results]
+  (pr-str results))
+
+(defn- format-results-json
+  "Format search results as JSON."
+  [results]
+  (json/write-str results :key-fn (fn [k] (subs (str k) 1))))
+
+(defn- build-search-request
+  "Build a hybrid search request map from CLI options."
+  [query opts]
+  (cond-> {:query query
+           :mode (:mode opts)
+           :limit (:limit opts)}
+    (:path-prefix opts)
+    (assoc-in [:filters :path-prefix] (:path-prefix opts))
+
+    (:ref opts)
+    (assoc-in [:filters :ref] (:ref opts))
+
+    (:embedding-version opts)
+    (assoc :embedding-version (:embedding-version opts))))
+
+(defn- make-search-adapters
+  "Create in-memory adapters for search (no persistence needed)."
+  [profile]
+  (case profile
+    :local
+    (in-memory/make {:common-git-dir-fn (constantly "/tmp")})
+
+    :services
+    (throw (ex-info "Search --profile :services requires running services."
+                    {:code :unavailable
+                     :hint "Start MongoDB and Ollama with: docker compose up -d"}))))
+
+(defn- run-search
+  "Execute the search subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]}
+        (cli/parse-opts args search-options)
+        profile (:profile options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep search [options] <query>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep search [options] <query>\n\n" summary)}
+
+      (not (profile/valid-profile? profile))
+      {:exit 1 :out (str "Error: invalid profile " (pr-str profile)
+                         ". Valid: " (pr-str profile/valid-profiles))}
+
+      (empty? arguments)
+      {:exit 1 :out "Error: search query required.\nUsage: ep search [options] <query>"}
+
+      :else
+      (let [query (string/join " " arguments)
+            request (build-search-request query options)]
+        (try
+          (let [adapters (make-search-adapters profile)
+                results (hs/search adapters request)
+                fmt (:format options)
+                output (case fmt
+                         :edn  (format-results-edn results)
+                         :json (format-results-json results)
+                         :text (format-results-text results (:verbose options) profile))]
+            {:exit 0 :out output})
+
+          (catch clojure.lang.ExceptionInfo e
+            (let [data (ex-data e)]
+              {:exit 1
+               :out (str "Error: " (.getMessage e)
+                         (when (:code data)
+                           (str "\n  Code: " (name (:code data))))
+                         (when (:hint data)
+                           (str "\n  Hint: " (:hint data))))}))
+          (catch Exception e
+            {:exit 1 :out (str "Error: " (.getMessage e))}))))))
+
+;; ---------------------------------------------------------------------------
 ;; Top-level dispatch
 
 (defn- usage [options-summary]
@@ -247,6 +395,7 @@
     ""
     "Commands:"
     "  register    Register a local Git repository"
+    "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
     ""
     "Global Options:"
@@ -285,6 +434,7 @@
             cmd-args (rest arguments)]
         (case command
           "register" (run-register cmd-args)
+          "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))

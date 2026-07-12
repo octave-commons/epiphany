@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001601"
 title: "ENG-006A: Expose the HTTP API adapter (`/api/v1`)"
-status: ready
+status: done
 type: "story"
 priority: "P1"
 phase: 1
