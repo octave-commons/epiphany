@@ -11,7 +11,8 @@
             [clojure.string :as str]
             [epiphany.domain.hybrid-search :as hs]
             [epiphany.domain.status :as status]
-            [epiphany.infra.profile :as profile]))
+            [epiphany.infra.profile :as profile]
+            [epiphany.infra.workbench :as workbench]))
 
 ;; ---------------------------------------------------------------------------
 ;; Problem+json (RFC 9457)
@@ -100,8 +101,35 @@
         :else
         (json/read-str body-str :key-fn keyword)))))
 
-;; ---------------------------------------------------------------------------
-;; Middleware
+(defn- parse-query-params
+  "Parse a query string into a keyword-keyed map. Returns nil when blank."
+  [qs]
+  (when-not (str/blank? qs)
+    (into {}
+          (for [pair (str/split qs #"&")
+                :let [[k v] (str/split pair #"=" 2)]
+                :when (seq k)]
+            [(keyword (java.net.URLDecoder/decode k "UTF-8"))
+             (java.net.URLDecoder/decode (or v "") "UTF-8")]))))
+
+(defn- wrap-query-params
+  "Middleware that parses the query string into keyword-keyed :query-params.
+
+  Accepts the query string either embedded in :uri (as the test harness and
+  some clients send it) or in the standard ring :query-string. When embedded
+  in :uri, strips it so reitit routes on the path alone."
+  [handler]
+  (fn [request]
+    (let [uri (:uri request)
+          idx (.indexOf uri "?")
+          [path embedded-qs] (if (neg? idx)
+                               [uri nil]
+                               [(subs uri 0 idx) (subs uri (inc idx))])
+          qs (or embedded-qs (:query-string request))
+          request (cond-> (assoc request :uri path)
+                    (parse-query-params qs)
+                    (update :query-params merge (parse-query-params qs)))]
+      (handler request))))
 
 (defn wrap-exceptions
   "Middleware to catch exceptions and return problem+json responses."
@@ -243,24 +271,51 @@
 ;; Router
 
 (defn make-router
-  "Create the reitit router with all API v1 routes."
+  "Create the reitit ring handler with all workbench + API v1 routes.
+
+  Query-string parsing and exception translation are applied as outer
+  middleware; query-param stripping must run before reitit routing so that
+  paths with embedded query strings (e.g. /htmx/evidence?path=..) still match."
   [adapters]
-  (reitit-ring/ring-handler
-   (reitit-ring/router
-    ["/api/v1"
-     ["/search"
-      {:post {:handler (search-handler adapters)}}]
-     ["/register"
-      {:post {:handler (register-handler adapters)}}]
-     ["/status/:resource-id"
-      {:get {:handler (status-handler adapters)}}]
-     ["/review-decisions"
-      {:post {:handler (review-decisions-handler adapters)}}]])
-   (reitit-ring/routes
-    (reitit-ring/create-resource-handler {:path "/"})
-    (reitit-ring/create-default-handler
-     {:not-found (fn [_] (not-found-problem "Route not found"))}))
-   wrap-exceptions))
+  (let [handler (reitit-ring/ring-handler
+                 (reitit-ring/router
+                  ["/"
+                   ["" {:get {:handler (workbench/search-page-handler adapters)}}]
+                   ["htmx/search"
+                    {:post {:handler (workbench/search-htmx-handler adapters)}}]
+                   ["htmx/evidence"
+                    {:get {:handler (workbench/evidence-htmx-handler adapters)}}]
+     ["htmx/evidence/empty"
+      {:get {:handler (workbench/evidence-empty-handler adapters)}}]
+     ["timeline"
+      {:get {:handler (workbench/timeline-page-handler adapters)}}]
+     ["htmx/timeline"
+      {:post {:handler (workbench/timeline-htmx-handler adapters)}}]
+     ["inbox"
+      {:get {:handler (workbench/inbox-page-handler adapters)}}]
+     ["htmx/inbox"
+      {:post {:handler (workbench/inbox-htmx-handler adapters)}}]
+     ["htmx/inbox/decide"
+      {:post {:handler (workbench/inbox-decide-htmx-handler adapters)}}]
+     ["health"
+      {:get {:handler (workbench/health-page-handler adapters)}}]
+     ["htmx/health"
+      {:post {:handler (workbench/health-htmx-handler adapters)}}]
+     ["api/v1/search"
+                    {:post {:handler (search-handler adapters)}}]
+                   ["api/v1/register"
+                    {:post {:handler (register-handler adapters)}}]
+                   ["api/v1/status/:resource-id"
+                    {:get {:handler (status-handler adapters)}}]
+                   ["api/v1/review-decisions"
+                    {:post {:handler (review-decisions-handler adapters)}}]])
+                 (reitit-ring/routes
+                  (reitit-ring/create-resource-handler {:path "/static"})
+                  (reitit-ring/create-default-handler
+                   {:not-found (fn [_] (not-found-problem "Route not found"))})))]
+    (-> handler
+        wrap-exceptions
+        wrap-query-params)))
 
 (defn- create-handler
   "Create the complete handler with middleware."

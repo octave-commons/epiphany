@@ -7,6 +7,7 @@
             [clojure.data.json :as json]
             [epiphany.infra.services :as services]
             [epiphany.infra.profile :as profile]
+            [epiphany.infra.http :as http]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
             [epiphany.application.registration :as registration]
@@ -381,6 +382,103 @@
                            (str "\n  Hint: " (:hint data))))}))
           (catch Exception e
             {:exit 1 :out (str "Error: " (.getMessage e))}))))))
+
+;; ---------------------------------------------------------------------------
+;; Serve subcommand
+
+(def serve-options
+  [["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :services
+    :parse-fn keyword]
+   [nil "--port PORT" "Port to listen on"
+    :default 5197
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--help" "Show serve help and exit."]])
+
+(defn- run-serve
+  "Execute the serve subcommand. Starts the HTTP server and joins."
+  [args]
+  (let [{:keys [options errors summary]} (cli/parse-opts args serve-options)
+        profile (:profile options)
+        port    (:port options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep serve [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep serve [options]\n\n" summary)}
+
+      (not (profile/valid-profile? profile))
+      {:exit 1 :out (str "Error: invalid profile " (pr-str profile)
+                         ". Valid: " (pr-str profile/valid-profiles))}
+
+      :else
+      (try
+        (let [adapters (case profile
+                         :local
+                         (in-memory/make {:common-git-dir-fn
+                                          (fn [path]
+                                            (let [{:keys [exit out err]}
+                                                  (clojure.java.shell/sh
+                                                   "git" "-C" path "rev-parse"
+                                                   "--path-format=absolute"
+                                                   "--git-common-dir")]
+                                              (if (zero? exit)
+                                                (string/trim out)
+                                                (throw (ex-info
+                                                        (str "Not a Git repository: " path)
+                                                        {:repository-path path
+                                                         :git-error (string/trim err)})))))})
+
+                         :services
+                         (let [conn (try
+                                      (mongo/connect!)
+                                      (catch Exception e
+                                        (throw (ex-info
+                                                (str "Cannot connect to MongoDB: " (.getMessage e))
+                                                {:code :unavailable
+                                                 :hint "Start MongoDB with: docker compose up -d mongodb"}))))
+                               git-resolve (fn [path]
+                                             (let [{:keys [exit out err]}
+                                                   (clojure.java.shell/sh
+                                                    "git" "-C" path "rev-parse"
+                                                    "--path-format=absolute"
+                                                    "--git-common-dir")]
+                                               (if (zero? exit)
+                                                 (string/trim out)
+                                                 (throw (ex-info
+                                                         (str "Not a Git repository: " path)
+                                                         {:repository-path path
+                                                          :git-error (string/trim err)})))))
+                               obs-adapter (mongo/make-observations-adapter conn)]
+                           {:git {:common-git-directory git-resolve}
+                            :repository-metadata {:read (fn [_] nil)
+                                                  :write (fn [_ _id] nil)}
+                            :observations obs-adapter}))]
+          (println (str "Epiphany workbench starting on http://localhost:" port))
+          (println (str "Profile: " (name profile)))
+          (http/start-server! adapters port)
+          ;; Block until interrupted
+          (.addShutdownHook (Runtime/getRuntime)
+                            (Thread. (fn []
+                                       (println "\nShutting down...")
+                                       (when (= :services profile)
+                                         ;; TODO: disconnect mongo
+                                         ))))
+          (.join (Thread/currentThread))
+          {:exit 0 :out ""})
+
+        (catch clojure.lang.ExceptionInfo e
+          (let [data (ex-data e)]
+            {:exit 1
+             :out (str "Error: " (.getMessage e)
+                       (when (:code data)
+                         (str "\n  Code: " (name (:code data))))
+                       (when (:hint data)
+                         (str "\n  Hint: " (:hint data))))}))
+        (catch Exception e
+          {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Top-level dispatch

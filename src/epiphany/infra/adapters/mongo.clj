@@ -495,4 +495,45 @@
              docs (-> (.find coll)
                       (.filter (Document. "revision_at_path_id" (str revision-at-path-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->section-extraction docs)))}))
+         (mapv doc->section-extraction docs)))
+
+      :export-all
+     (fn []
+       {"repository-location" (mapv doc->observation
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:repository-location-collection conn))))
+        "ingestion-run"       (mapv doc->ingestion-run
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:ingestion-run-collection conn))))
+        "projection-checkpoint" (mapv doc->checkpoint
+                                      (.into (java.util.ArrayList.)
+                                             (.find ^MongoCollection (:projection-checkpoint-collection conn))))
+        "section-extraction"  (mapv doc->section-extraction
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:section-extraction-collection conn))))
+        "revision-at-path"    (mapv doc->revision-at-path
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:revision-at-path-collection conn))))})
+
+      :import-all
+     (fn [data]
+       (doseq [[coll-name docs] data]
+         (let [^MongoCollection coll (case coll-name
+                                       "repository-location" (:repository-location-collection conn)
+                                       "ingestion-run"       (:ingestion-run-collection conn)
+                                       "projection-checkpoint" (:projection-checkpoint-collection conn)
+                                       "section-extraction"  (:section-extraction-collection conn)
+                                       "revision-at-path"    (:revision-at-path-collection conn)
+                                       (throw (ex-info (str "Unknown collection: " coll-name)
+                                                       {:collection coll-name})))]
+           (doseq [doc docs]
+             (let [^Document bson-doc (case coll-name
+                                        "repository-location" (observation->doc doc)
+                                        "ingestion-run"       (ingestion-run->doc doc)
+                                        "projection-checkpoint" (checkpoint->doc doc)
+                                        "section-extraction"  (section-extraction->doc doc)
+                                        "revision-at-path"    (revision-at-path->doc doc))]
+               (try
+                 (.insertOne coll bson-doc)
+                 (catch MongoWriteException _e
+                   nil)))))))}))

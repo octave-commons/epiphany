@@ -29,7 +29,7 @@
   (let [adapters (in-memory/make {:common-git-dir-fn fake-common-git-dir})
         obs      (:observations adapters)
         rid      #uuid "11111111-2222-3333-4444-555555555555"
-        record   {:request-id rid
+        record   {:observation/request-id rid
                   :resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
                   :repository-path "/repo"
                   :common-git-dir "/repo/.git"}]

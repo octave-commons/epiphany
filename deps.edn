@@ -20,7 +20,8 @@
          ring/ring-jetty-adapter {:mvn/version "1.13.0"}
          metosin/reitit-core {:mvn/version "0.7.0"}
          metosin/reitit-ring {:mvn/version "0.7.0"}
-         metosin/jsonista {:mvn/version "0.3.13"}}
+         metosin/jsonista {:mvn/version "0.3.13"}
+         hiccup/hiccup {:mvn/version "2.0.0-RC3"}}
 
  :aliases
  {;; The epiphany executable (`ep` is the same entry point via bin/ep).

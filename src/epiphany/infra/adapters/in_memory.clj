@@ -51,9 +51,9 @@
     {:find-by-request-id (fn [request-id]
                            (get @by-request-id request-id))
      :record-repository-location! (fn [observation]
-                                    (when-let [rid (:request-id observation)]
-                                      (swap! by-request-id assoc rid observation))
-                                    nil)
+                                     (when-let [rid (:observation/request-id observation)]
+                                       (swap! by-request-id assoc rid observation))
+                                     nil)
      :record-revision-at-path! (fn [observation]
                                  (swap! revision-at-paths conj observation)
                                  nil)
@@ -78,10 +78,32 @@
                                                          (= :revision/at-path-observed (:observation/type %)))
                                                    @revision-at-paths))
      :list-section-extractions-by-revision (fn [revision-at-path-id]
-                                             (filterv #(and (= revision-at-path-id
-                                                              (:extraction/revision-at-path-id %))
-                                                           (= :section/extraction-completed (:observation/type %)))
-                                                      @section-extractions))}))
+                                              (filterv #(and (= revision-at-path-id
+                                                               (:extraction/revision-at-path-id %))
+                                                            (= :section/extraction-completed (:observation/type %)))
+                                                       @section-extractions))
+      :export-all (fn []
+                    {"repository-location" (vals @by-request-id)
+                     "ingestion-run"       @ingestion-runs
+                     "projection-checkpoint" @checkpoints
+                     "section-extraction"  @section-extractions
+                     "revision-at-path"    @revision-at-paths})
+      :import-all (fn [data]
+                    (doseq [[coll-name docs] data]
+                      (case coll-name
+                        "repository-location"
+                        (doseq [doc docs]
+                          (when-let [rid (:observation/request-id doc)]
+                            (swap! by-request-id assoc rid doc)))
+                        "ingestion-run"
+                        (swap! ingestion-runs into docs)
+                        "projection-checkpoint"
+                        (swap! checkpoints into docs)
+                        "section-extraction"
+                        (swap! section-extractions into docs)
+                        "revision-at-path"
+                        (swap! revision-at-paths into docs)
+                        nil)))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Index adapter

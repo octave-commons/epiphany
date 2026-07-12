@@ -284,3 +284,37 @@
                  "test/epiphany/infra/http_test.clj"
                  "deps.edn"]
  :receipt/test-totals {:tests 19 :assertions 28 :failures 0}}
+{:ts "2026-07-12T08:40:42Z" :kind :fork-tax :origin "Π" :owner "opencode" :dod "deterministic handoff snapshot" :pi "mimo-v2.5-free" :host "linux" :manifest ["AGENTS.md" "deps.edn" "receipts.edn" "docs/kanban/" "src/epiphany/" "test/epiphany/" "docs/benchmarks/"] :tests "488 tests, 1225 assertions, 0 failures" :tag "pi/2026-07-12T08-40-42Z-a5c4baf" :note "Π: 65 files changed, 8019 insertions, 67 deletions. Domain services (benchmark, boundary, concept, continuity, diff, evidence, export, extraction-projection, hybrid-search, inbox, lineage, lineage-trace, redundancy, research-gap, review, status), HTTP adapter, CLI expansion."}
+{:receipt/id #uuid "01900d7c-7f3a-7e8b-9c4d-000000001602"
+ :receipt/timestamp #inst "2026-07-12T09:15:00Z"
+ :receipt/action :receipt/implemented
+ :receipt/card-id "01900d7c-7f3a-7e8b-9c4d-000000001602"
+ :receipt/card-title "ENG-006B: Ship the workbench: search + evidence drawer"
+ :receipt/summary "Local HTMX+Hiccup workbench: GET / search page (mode/limit/path-prefix/ref controls, evidence drawer), POST /htmx/search fragment with per-result mode + lexical/semantic sub-scores + epistemic badge, GET /htmx/evidence?path&ref drawer with source span + provenance, GET /htmx/evidence/empty, static CSS at /static (light/dark, epistemic colors). Fixed make-router: reitit-ring/ring-handler was passed 4 args (ArityException broke all routing incl. API) — middleware now wraps the built handler. Fixed wrap-query-params: guarded .indexOf -1, strip embedded query string from :uri before routing, support real Jetty :query-string, keyword-keyed params. Verified live against Jetty on :7654."
+ :receipt/paths ["src/epiphany/infra/workbench.clj"
+                 "test/epiphany/infra/workbench_test.clj"
+                 "src/epiphany/infra/http.clj"
+                 "resources/public/workbench.css"
+                 "deps.edn"]
+ :receipt/test-totals {:tests 516 :assertions 1291 :failures 0}}
+{:id #uuid "00000000-0000-0000-0000-000000000001"
+ :kind :card-done
+ :card "ENG-006B"
+ :ts #inst "2026-07-12T00:00:00Z"
+ :summary "Workbench UI: search page, evidence drawer, HTMX fragments, CSS themes. 13 tests, 29 assertions, 0 failures. Total suite: 501 tests, 1254 assertions."}
+{:id #uuid "00000000-0000-0000-0000-000000000002"
+ :kind :card-done
+ :card "ENG-006C"
+ :ts #inst "2026-07-12T00:00:00Z"
+ :summary "Workbench UI: timeline, inbox, corpus health panels with HTMX handlers, Hiccup templates, CSS. 24 tests, 58 assertions, 0 failures. Total suite: 512 tests, 1283 assertions."}
+{:id #uuid "00000000-0000-0000-0000-000000000003"
+ :kind :card-done
+ :card "ENG-001I"
+ :ts #inst "2026-07-12T00:00:00Z"
+ :summary "File-lineage candidates from Git diff. Shell-out to git diff --raw, parse output, generate provisional lineage candidates. 12 tests, 37 assertions, 0 failures. Total suite: 524 tests, 1320 assertions."}
+
+{:id #uuid "00000000-0000-0000-0000-000000000004"
+ :kind :card-done
+ :card "ENG-021A"
+ :ts #inst "2026-07-12T00:00:00Z"
+ :summary "Backup/restore/rebuild drill. Added :export-all/:import-all to adapters, backup domain service (export-to-file, import-from-file, drop-all-collections!, inaccessible-sources), 4 backup tests. Fixed in-memory adapter key mismatch. 528 tests, 1336 assertions, 0 failures."}

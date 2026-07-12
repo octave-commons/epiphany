@@ -235,6 +235,65 @@
         {:blob/oid blob-oid-str
          :blob/content nil
          :blob/size 0
-         :blob/failure {:failure/oid blob-oid-str
-                        :failure/reason "blob-unreadable"
-                        :failure/message (.getMessage e)}}))))
+           :blob/failure {:failure/oid blob-oid-str
+                          :failure/reason "blob-unreadable"
+                          :failure/message (.getMessage e)}}))))
+
+(defn- parse-diff-line
+  "Parse a single line of `git diff --raw` output.
+   Format: :old_mode new_mode old_oid new_oid STATUS[_score]\tpath[ -> new_path]"
+  [line]
+  (let [tab-idx (.indexOf line "\t")]
+    (when (pos? tab-idx)
+      (let [header (subs line 0 tab-idx)
+            path-part (subs line (inc tab-idx))
+            header-parts (string/split header #" " -1)]
+        (when (>= (count header-parts) 5)
+          (let [old-oid  (nth header-parts 2)
+                new-oid  (nth header-parts 3)
+                status+score (nth header-parts 4)
+                ;; Status is first char; may be followed by score like M100
+                status-char (subs status+score 0 1)
+                rename? (.contains path-part " -> ")
+                [old-path new-path] (if rename?
+                                      (let [idx (.indexOf path-part " -> ")]
+                                        [(subs path-part 0 idx)
+                                         (subs path-part (+ idx 4))])
+                                      [path-part path-part])
+                change-type (case status-char
+                              "A" :add
+                              "D" :delete
+                              "R" :rename
+                              "C" :copy
+                              "M" :modify
+                              :unknown)]
+            {:diff/change-type  change-type
+             :diff/old-path     (when-not (= old-path "/dev/null") old-path)
+             :diff/new-path     (when-not (= new-path "/dev/null") new-path)
+             :diff/old-blob-oid (when-not (string/blank? old-oid) old-oid)
+             :diff/new-blob-oid (when-not (string/blank? new-oid) new-oid)}))))))
+
+(defn diff-commits
+  "Compute the diff between two commits identified by OID strings.
+   Shells out to `git diff --raw`. Returns a map with :old-commit-oid,
+   :new-commit-oid, :entries, :failure."
+  [^String repository-path old-commit-oid-str new-commit-oid-str & {:keys [rename-threshold] :or {rename-threshold 60}}]
+  (let [threshold-arg (str "--find-renames=" rename-threshold)
+        copy-threshold (str "--find-copies=" rename-threshold)
+        {:keys [exit out err]} (shell/sh "git" "-C" repository-path
+                                         "diff" "--raw"
+                                         threshold-arg copy-threshold
+                                         old-commit-oid-str new-commit-oid-str)]
+    (if (zero? exit)
+      {:old-commit-oid old-commit-oid-str
+       :new-commit-oid new-commit-oid-str
+       :entries (->> (string/split-lines out)
+                     (remove string/blank?)
+                     (keep parse-diff-line)
+                     vec)
+       :failure nil}
+      {:old-commit-oid old-commit-oid-str
+       :new-commit-oid new-commit-oid-str
+       :entries        []
+       :failure        {:failure/reason  "diff-unreadable"
+                        :failure/message (string/trim err)}})))

@@ -67,7 +67,9 @@
    [:list-ingestion-runs         :any]
    [:list-checkpoints            :any]
    [:list-revision-at-path-by-resource    :any]
-   [:list-section-extractions-by-revision :any]])
+   [:list-section-extractions-by-revision :any]
+   [:export-all                  :any]
+   [:import-all                  :any]])
 
 ;; ---------------------------------------------------------------------------
 ;; Index port
