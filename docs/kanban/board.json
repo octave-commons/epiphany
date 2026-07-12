@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-11T22:21:54.208Z",
+  "generatedAt": "2026-07-11T22:29:31.455Z",
   "totalTasks": 96,
   "columns": [
     {
@@ -949,7 +949,7 @@
     {
       "status": "ready",
       "title": "Ready",
-      "taskCount": 39,
+      "taskCount": 38,
       "tasks": [
         {
           "uuid": "eng-001a-persist-idempotent-repository-location-observations",
@@ -1000,23 +1000,6 @@
           "createdAt": "2026-07-11T21:40:00.472Z",
           "content": "# ENG-001B2: Registration application service and `epiphany register` CLI\n\nSecond slice of ENG-001B. Composes ENG-001B1 identity resolution with the ENG-001A Mongo adapter behind the canonical direct-mode CLI.\n\n## Scope\n\n- Implement the registration application service over the ENG-001B1 identity functions and the ENG-001A location-observation adapter, validated by ENG-001C schemas.\n- Wire `epiphany register <path>` in explicit direct/services mode.\n- Request-ID handling: a supplied request ID is replay-safe; a generated request ID is printed so callers can safely retry.\n- Structured diagnostics for invalid Git paths, unreadable Git metadata, and unavailable MongoDB, leaving no partial Mongo observation.\n\n## Out of scope\n\nNo ingestion traversal, parsing, job queue, REST endpoint, or TUI action. No external fallback for unwritable Git directories.\n\n## Acceptance criteria\n\n- `epiphany register <path>` creates or reuses Git-local identity and records a MongoDB location observation.\n- The command reports its selected target/profile and returns the resource ID with exact path observations.\n- Retry with the same request ID replays the accepted result; a conflicting payload for that ID is an explicit `:idempotency/conflict`.\n- Normal, bare, and linked-worktree integration fixtures succeed end to end.\n- Failure paths return structured diagnostics and leave no partial Mongo observation.\n- Output clearly distinguishes Git-observed values from Epiphany-recorded observation values.",
           "sourcePath": "/home/err/spaces/epiphany/docs/kanban/stories/story-01b2-register-command-service-and-cli.md"
-        },
-        {
-          "uuid": "eng-001c-define-append-only-git-registration-observation-schemas",
-          "title": "ENG-001C: Define append-only Git registration observation schemas",
-          "slug": "eng-001c-define-append-only-git-registration-observation-schemas",
-          "status": "ready",
-          "priority": "P0",
-          "labels": [
-            "phase-1",
-            "archaeological-ledger",
-            "engineering-breakdown",
-            "schemas",
-            "malli"
-          ],
-          "createdAt": "2026-07-11T21:41:10.250Z",
-          "content": "# ENG-001C: Define append-only Git registration observation schemas\n\nDefine Malli contracts and Mongo record shapes for registration and Git-ref observations before walking history.\n\n## Acceptance criteria\n\n- Schemas distinguish Git-observed commit/ref values from platform observation metadata.\n- A registration record retains repository instance, family assessment state, exact path, common Git directory, request ID, observed time, and adapter/schema version.\n- Schema validation rejects normalized/re-written paths and missing provenance fields.\n- Versioned fixtures document the EDN/JSON shapes used by direct-mode output and Mongo adapters.\n\n## Breakdown (revised)\n\nRe-scored during board triage. Dependency inverted: schemas are contracts and come **before** the ENG-001A adapter, not after it — this card also owns the repository-location observation schema that ENG-001A's original subtask #1 duplicated. Honest scope at 4 points:\n\n| # | Task | Points | Dependencies |\n|---|------|--------|--------------|\n| 1 | Malli schemas: Git-observed commit/ref values, registration observation (incl. repository-location), platform observation metadata | 2 | None |\n| 2 | Validation rules: reject normalized/rewritten paths, require provenance fields | 1 | #1 |\n| 3 | Versioned EDN/JSON fixtures + schema validation tests | 1 | #1, #2 |\n\n### Notes\n\n- Schemas are contracts; changes require version bumps.\n- Git-observed values are immutable facts; platform metadata is append-only.\n- Fixtures document expected shapes for direct-mode output and Mongo adapters.",
-          "sourcePath": "/home/err/spaces/epiphany/docs/kanban/stories/story-01c-git-registration-observation-schema.md"
         },
         {
           "uuid": "us-000b-profile-contract-storage-ports-and-in-memory-adapters",
@@ -1587,8 +1570,26 @@
     {
       "status": "in_progress",
       "title": "In Progress",
-      "taskCount": 0,
-      "tasks": []
+      "taskCount": 1,
+      "tasks": [
+        {
+          "uuid": "eng-001c-define-append-only-git-registration-observation-schemas",
+          "title": "ENG-001C: Define append-only Git registration observation schemas",
+          "slug": "eng-001c-define-append-only-git-registration-observation-schemas",
+          "status": "in_progress",
+          "priority": "P0",
+          "labels": [
+            "phase-1",
+            "archaeological-ledger",
+            "engineering-breakdown",
+            "schemas",
+            "malli"
+          ],
+          "createdAt": "2026-07-11T22:29:30.925Z",
+          "content": "# ENG-001C: Define append-only Git registration observation schemas\n\nDefine Malli contracts and Mongo record shapes for registration and Git-ref observations before walking history.\n\n## Acceptance criteria\n\n- Schemas distinguish Git-observed commit/ref values from platform observation metadata.\n- A registration record retains repository instance, family assessment state, exact path, common Git directory, request ID, observed time, and adapter/schema version.\n- Schema validation rejects normalized/re-written paths and missing provenance fields.\n- Versioned fixtures document the EDN/JSON shapes used by direct-mode output and Mongo adapters.\n\n## Breakdown (revised)\n\nRe-scored during board triage. Dependency inverted: schemas are contracts and come **before** the ENG-001A adapter, not after it — this card also owns the repository-location observation schema that ENG-001A's original subtask #1 duplicated. Honest scope at 4 points:\n\n| # | Task | Points | Dependencies |\n|---|------|--------|--------------|\n| 1 | Malli schemas: Git-observed commit/ref values, registration observation (incl. repository-location), platform observation metadata | 2 | None |\n| 2 | Validation rules: reject normalized/rewritten paths, require provenance fields | 1 | #1 |\n| 3 | Versioned EDN/JSON fixtures + schema validation tests | 1 | #1, #2 |\n\n### Notes\n\n- Schemas are contracts; changes require version bumps.\n- Git-observed values are immutable facts; platform metadata is append-only.\n- Fixtures document expected shapes for direct-mode output and Mongo adapters.\n\n---\nENG-001C implemented 2026-07-11 — REVIEW-READY, held in_progress because review WIP (1) is occupied by US-000A. New law/ quadrant: epiphany.law.git (git/oid, git/commit-oid, git/blob-oid, git/object-format, git/ref-name, git/ref), epiphany.law.observation (path/raw, path/observed provenance map, observation/registration-v1, observation/repository-location-v1, observation/git-ref-v1, exact-path? comparison contract), epiphany.law.registry (merged registry + memoized validators). Design choices: Git-observed values nest under :git/observed so the git-fact/platform-metadata distinction is structural; all record maps closed so normalized-path variant keys and unknown keys are rejected; provenance envelope (:observation/id, observed-at, adapter-version, schema-version, request-id) required; schema bodies are pure EDN (string regex patterns, quoted 'inst? symbol) with a test proving the registry round-trips through EDN. Versioned fixtures: test/epiphany/law/fixtures/{registration,repository_location,git_ref}_observation_v1.{edn,json} — EDN = direct-mode shape (validated in tests), JSON twin documents the Mongo document shape (documentation-only: no JSON parser dep is sanctioned until ENG-006A; Mongo adapter round-trip tests belong to ENG-001A). Evidence: clojure -M:test = 29 tests/78 assertions/0 failures; clj-kondo 0 warnings; cljfmt clean. Anomaly: bare Greek ημ has no NFD decomposition, so the Unicode-normalization rejection test uses ή/é (decomposable) — .ημ exact-path preservation is still covered by fixtures. --tasks-dir docs/kanban\n---",
+          "sourcePath": "/home/err/spaces/epiphany/docs/kanban/stories/story-01c-git-registration-observation-schema.md"
+        }
+      ]
     },
     {
       "status": "review",

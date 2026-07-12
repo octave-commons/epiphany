@@ -1,0 +1,17 @@
+;; Fixture: observation/registration-v1 — direct-mode (EDN) output shape.
+;; The JSON twin documents the Mongo adapter document shape.
+{:observation/type :repository/registered
+ :observation/id #uuid "0197f3a0-1000-7000-8000-000000000001"
+ :observation/observed-at #inst "2026-07-11T12:00:00.000-00:00"
+ :observation/adapter-version "registration-direct-0.1.0"
+ :observation/schema-version 1
+ :observation/request-id #uuid "0197f3a0-1000-7000-8000-000000000002"
+ :resource-id #uuid "7a6b0d26-1000-4000-8000-000000000001"
+ :repository/path {:path/raw "/home/aaron/notes/.ημ"
+                   :path/source :filesystem-argument
+                   :path/comparison :exact}
+ :repository/common-git-dir {:path/raw "/home/aaron/notes/.git"
+                             :path/source :filesystem-argument
+                             :path/comparison :exact}
+ :repository/identity-persistence :git-local
+ :family/assessment :new-family}

@@ -1,8 +1,16 @@
 {:paths ["src" "resources"]
 
  :deps {org.clojure/clojure {:mvn/version "1.12.2"}
-        metosin/malli {:mvn/version "0.16.4"}
-        org.clojure/tools.cli {:mvn/version "1.1.230"}}
+         metosin/malli {:mvn/version "0.16.4"}
+         org.clojure/tools.cli {:mvn/version "1.1.230"}
+         com.vladsch.flexmark/flexmark {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-util-ast {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-util-builder {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-util-sequence {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-util-misc {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-ext-yaml-front-matter {:mvn/version "0.64.8"}
+         com.vladsch.flexmark/flexmark-ext-tables {:mvn/version "0.64.8"}
+         org.eclipse.jgit/org.eclipse.jgit {:mvn/version "7.3.0.202506031305-r"}}
 
  :aliases
  {;; The epiphany executable (`ep` is the same entry point via bin/ep).

@@ -1,0 +1,13 @@
+{
+  "observation/type": "git/ref-observed",
+  "observation/id": "0197f3a0-3000-7000-8000-000000000001",
+  "observation/observed-at": "2026-07-11T12:00:02Z",
+  "observation/adapter-version": "git-walk-0.1.0",
+  "observation/schema-version": 1,
+  "resource-id": "7a6b0d26-1000-4000-8000-000000000001",
+  "git/observed": {
+    "ref/name": "refs/heads/main",
+    "ref/target": "85e6618c2c7c3b8e1a94a2f9f5f2f7f8c9d0e1a2",
+    "git/object-format": "sha1"
+  }
+}

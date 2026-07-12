@@ -1,8 +1,4 @@
 {
   "tasksDir": "./docs/kanban",
-  "boardFile": "kanban/.kanban/board.json",
-  "fsm": "promethean",
-  "projects":[
-    {"id":"epics", "title":"Epics", "taskDir":"./docs/epics"}
-  ]
+  "fsm": "promethean"
 }

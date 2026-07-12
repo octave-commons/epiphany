@@ -1,0 +1,19 @@
+{
+  "observation/type": "repository/location-observed",
+  "observation/id": "0197f3a0-2000-7000-8000-000000000001",
+  "observation/observed-at": "2026-07-11T12:00:01Z",
+  "observation/adapter-version": "registration-direct-0.1.0",
+  "observation/schema-version": 1,
+  "observation/request-id": "0197f3a0-2000-7000-8000-000000000002",
+  "resource-id": "7a6b0d26-1000-4000-8000-000000000001",
+  "repository/path": {
+    "path/raw": "/srv/corpus/notes with spaces",
+    "path/source": "filesystem-argument",
+    "path/comparison": "exact"
+  },
+  "repository/common-git-dir": {
+    "path/raw": "/srv/corpus/notes with spaces/.git",
+    "path/source": "filesystem-argument",
+    "path/comparison": "exact"
+  }
+}

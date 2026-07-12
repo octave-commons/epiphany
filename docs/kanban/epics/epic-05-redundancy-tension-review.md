@@ -1,13 +1,13 @@
 ---
-id: 01900d7c-7f3a-7e8b-9c4d-000000000005
+id: "01900d7c-7f3a-7e8b-9c4d-000000000005"
 title: "Epic 5: Redundancy and Tension Review"
-status: accepted
-type: epic
-priority: high
+status: "breakdown"
+type: "epic"
+priority: "high"
 phase: 1
-design: docs/notes/design/phase-1-corpus-archaeology.md
+design: "docs/notes/design/phase-1-corpus-archaeology.md"
 size: 8
-labels: [review, contradiction, duplication, consolidation]
+labels: "review, contradiction, duplication, consolidation, decomposed"
 ---
 
 # Epic 5: Redundancy and Tension Review
@@ -45,3 +45,7 @@ Make every action reversible: keep, link, mark superseded, merge into a synthesi
 ## Next step
 
 Design the claim-normalization schema and the contradiction-detection pipeline.
+
+---
+Decomposed into 6 stories (05a–05f). All children are ready. Epic moves to breakdown per board contract. --tasks-dir docs/kanban
+---

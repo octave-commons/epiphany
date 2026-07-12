@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001102-1"
 title: "ENG-001B1: Resolve Git-local repository identity across repo shapes"
-status: ready
+status: "done"
 type: "story"
 priority: "P0"
 phase: 1
@@ -9,10 +9,11 @@ epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 parent: "01900d7c-7f3a-7e8b-9c4d-000000001102"
 design: "docs/adrs/adr-001-git-backed-resource-identity.md"
 points: 4
-labels: [phase-1, archaeological-ledger, engineering-breakdown, git, identity]
+labels: ["phase-1", "archaeological-ledger", "engineering-breakdown", "git", "identity"]
 category: "stories"
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000000000-a"]
 ---
+
 # ENG-001B1: Resolve Git-local repository identity across repo shapes
 
 First slice of ENG-001B. Pure Git-side work: given a path, validate it, resolve the common Git directory, and create or reuse the Git-local resource identity. No MongoDB, no CLI surface.
@@ -35,3 +36,9 @@ Mongo observations, the `epiphany register` command, request-ID semantics, and t
 - Invalid or non-Git paths fail with a specific structured error and create no partial state.
 - Unreadable Git metadata produces a structured diagnostic distinct from "not a repository".
 - Exact path strings, including Unicode, are preserved without normalization.
+
+---
+Implementation complete. 9 tests, 37 assertions, 0 failures. Ready for review. --tasks-dir docs/kanban
+
+Review complete. All acceptance criteria met. Minor TOCTOU observation noted but out of scope for single-process CLI story. --tasks-dir docs/kanban
+---
