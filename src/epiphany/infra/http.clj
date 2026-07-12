@@ -9,6 +9,7 @@
             [ring.util.response :as response]
             [clojure.data.json :as json]
             [clojure.string :as str]
+            [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
             [epiphany.domain.status :as status]
             [epiphany.infra.profile :as profile]
@@ -203,15 +204,14 @@
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          path (:path body)]
+          path (or (:path body) (:repository-path body))]
       (cond
         (str/blank? path)
         (bad-request-problem "Path is required")
 
         :else
         (try
-          (let [register-fn (:register-repository (:repository-metadata adapters))
-                result (register-fn path)]
+          (let [result (registration/register! adapters {:repository-path path})]
             (-> (response/response (serialize result :json))
                 (response/content-type "application/json")
                 (response/status 201)))
@@ -220,7 +220,10 @@
               (case (:code data)
                 :unavailable (unavailable-problem (.getMessage e))
                 :already-exists (problem-response 409 "Conflict" (.getMessage e))
-                (bad-request-problem (.getMessage e))))))))))
+                (problem-response 400 "Bad Request"
+                                  (str (.getMessage e)
+                                       (when (:explanation data)
+                                         (str "\n" (pr-str (:explanation data))))))))))))))
 
 (defn status-handler
   "Handle status requests."
@@ -325,7 +328,18 @@
       (let [body-params (or (:body-params request)
                             (when-let [body (:body request)]
                               (try
-                                (read-string (slurp body))
+                                (let [raw (slurp body)
+                                      ct (str/lower-case (or (get-in request [:headers "content-type"]) ""))]
+                                  (cond
+                                    (.contains ct "application/json")
+                                    (json/read-str raw :key-fn keyword)
+
+                                    (.contains ct "application/edn")
+                                    (read-string raw)
+
+                                    :else
+                                    (try (json/read-str raw)
+                                         (catch Exception _ (read-string raw)))))
                                 (catch Exception _ nil))))
             request (cond-> request
                       body-params (assoc :body-params body-params)

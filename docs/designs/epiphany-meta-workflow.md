@@ -7,6 +7,7 @@ description: "Refined meta-workflow for Epiphany, including Muses, Phase agents,
 labels: [process, meta, workflow, agents, phase-1]
 created: "2026-07-11"
 source: "docs/inbox/2026.07.11.12.37.56.md"
+status: exploratory
 ---
 
 The kanban tool needs to be more flushed out...

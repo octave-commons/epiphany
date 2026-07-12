@@ -386,10 +386,15 @@
 ;; ---------------------------------------------------------------------------
 ;; Serve subcommand
 
+(defn- parse-profile
+  "Parse a profile keyword from CLI string, stripping leading colon."
+  [s]
+  (keyword (if (.startsWith ^String s ":") (subs s 1) s)))
+
 (def serve-options
   [["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
     :default :services
-    :parse-fn keyword]
+    :parse-fn parse-profile]
    [nil "--port PORT" "Port to listen on"
     :default 5197
     :parse-fn #(Integer/parseInt %)]
@@ -495,6 +500,7 @@
     "  register    Register a local Git repository"
     "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
+    "  serve       Start the workbench HTTP server"
     ""
     "Global Options:"
     options-summary
@@ -534,6 +540,7 @@
           "register" (run-register cmd-args)
           "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
+          "serve"    (run-serve cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))
 

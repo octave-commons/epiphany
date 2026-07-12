@@ -1,288 +1,271 @@
-# Overview
+# Epiphany Process Charter
 
-```
-1. **Intake & Associate**
-```
+## Purpose
 
-Find or create the task; never work off-board; do not edit the board file directly—tasks drive the board. &#x20;
+Epiphany's process exists to help people and agents build understanding, make
+bounded commitments, preserve the basis for consequential claims, and revise
+course without misrepresenting uncertainty or acceptance.
 
-```
-2. **Clarify & Scope**
-```
+This is a constitution, not an execution manual. It states durable constraints
+on how work, evidence, decisions, and acceptance relate. Current workflows,
+templates, commands, board states, and tool-specific checks are delegated to
+process policies and operational guides.
 
-Anchor on the kanban card as the single source of truth and, before advancing, do the solo pass:
+## Scope and non-goals
 
-- Confirm the desired outcomes so the card reflects the slice you intend to deliver.
-- Capture acceptance criteria or explicit exit signals on the task so "done" is unambiguous.
-- Note any uncertainties, risks, or open questions directly on the task to surface follow-ups early.
-- For feature/spec work, link the backing **design** and confirm that design cites grounding research. If no design exists yet, the first slice is to *write the design*, not the feature — see [Grounding](#grounding-research--design--task).
-- Record the scoped plan and supporting notes on the linked task before moving to step 3.
+This charter governs work performed for or represented as work on Epiphany,
+whether it is performed by a person, an agent, or automation. It applies to
+research, planning, design, architectural decisions, implementation, review,
+and process change.
 
-```
-3. **Breakdown & Size**
-```
+It does not prescribe:
 
-Break into small, testable slices; assess **complexity, scope, and Level of Effort (LoE)** and assign a Fibonacci score from **1, 2, 3, 5, 8, 13** on the task card. Scores of **13+ ⇒ must split**; **8 ⇒ continue refinement before implementation**; **≤5 ⇒ eligible to implement**. Any score **>5** must cycle back through clarification/breakdown until the slice is small enough to implement, capturing the updated score on the task card.&#x20;
+- A particular Kanban tool, board layout, state graph, WIP limit, or command.
+- A universal test technique, quality metric, or CI provider.
+- A required sequence for trivial or low-risk work.
+- A particular multi-agent, actor, ledger, or graph implementation.
+- The detailed schema for every document kind or record.
 
-4. **Ready Gate** _(hard stop before code)_
-   Only proceed if:
+Those details belong in revisable policies, templates, and operational guides.
+They may add safeguards but may not weaken this charter without an explicit
+charter amendment.
 
-   - A matching task is **In Progress** (or you move it there), and WIP rules aren’t violated.&#x20;
-   - The slice is scored **≤5** and fits capacity after planning; otherwise continue refinement/splitting.&#x20;
-   - **Feature/spec tasks link a design that cites grounding research** (Definition of Ready). Hygiene, research, and design tasks are exempt — see [Grounding](#grounding-research--design--task).
+## Authority and interpretation
 
-```
-5. **Implement Slice**
-```
+When guidance conflicts, apply this order within its proper scope:
 
-Do the smallest cohesive change that can clear gates defined in agent docs (e.g., no new ESLint errors; touched packages build; tests pass).&#x20;
-When the scope is larger than the available session, carve off a reviewable subset and explicitly document what remains (e.g.,
-inventory lingering files, capture blockers, link references).&#x20;
+1. This charter constrains process claims, evidence, authority, and acceptance.
+2. Approved ADRs constrain architectural decisions within the charter.
+3. Active process policies in `docs/process/` operationalize this charter.
+4. Document standards, templates, examples, and automated checks define the
+   current artifact contract for their declared kind.
+5. Operational guides such as `AGENTS.md` and `docs/kanban/AGENTS.md` explain
+   how to execute the current policy and tooling.
+6. A work item, plan, comment, or agent instruction governs only its declared
+   local scope.
 
-```
-6. **Review → Done**
-```
+A lower-order artifact must not silently override a higher-order one. If the
+applicable authority is ambiguous or conflicts, record the ambiguity and seek
+clarification rather than inventing an interpretation as settled policy.
 
-Move to _In Review_; when the reviewer approves **and** the global [Definition of Done](#definition-of-done-global-gates) is satisfied, advance to _Done_, recording evidence and summaries on the card. Testing and documentation are DoD gates, not their own columns.
+The operational meanings of *artifact*, *observation*, *evidence*, *claim*,
+*finding*, *proposal*, *decision*, *commitment*, *verification*, *acceptance*,
+*policy*, and *exception* are defined in `docs/process/glossary.md`.
 
-# Grounding: Research → Design -> Decide → Task
+## Constitutional commitments
 
-Feature work flows down a three-layer chain, and each layer **cites the one above it**.
-This is the traceability the board previously lacked: specs appeared with no design
-and designs with no evidence, so "why are we building this, and is it grounded?"
-had no answer on the card.
+### Preserve epistemic tiers
 
-1. **Research** — grounding evidence: papers, physical derivations, prior art,
-   measurements, profiling. Lives in `docs/notes/research/` and dated
-   `docs/notes/*.md`. Research is *findings*, not plans.
-2. **Design** — a high-level approach in `docs/designs/*.md`
-  - **cites the - research it rests on** (link the note/paper).
-  - Refers to resolved ADRs which support (or required) the designs drafting, if any.
-  - One design backs many tasks;
-  - answers *what and why*.
-  - It may also ask "How?", and still be accepted, implementation pending  resolution of all unresolved architectural questions
-3. **Decide** - Open architectural questions cited by a design must be resolved by an Architectural Decision Record (ADRs) `docs/adrs/*.md`and approved by the user.
--  for a task implementing features of a design to be `ready` for work, all open questions must be resolved with an approved decision.
-4. **Feature task** — a `kanban/tasks/*.md` card that **references its design**
-   via a `design:` frontmatter key and a `> Design: docs/designs/<file>.md`
-   line in the body. The task answers *the next testable slice*.
+No actor may silently promote an observation into an inference, an inference
+into a finding, a finding into a decision, a plan into completion, or similarity
+into identity.
 
-Rules:
+A material claim must retain its epistemic tier and basis. At minimum, process
+artifacts distinguish:
 
-- **Definition of Ready (feature/spec tasks):** may enter **Ready** only if it
-  links a design, and that design cites grounding research. If the design does
-  not exist yet, the task's first slice is **"write the design"** (a `design`
-  task), not the feature.
-- **Exemptions:** mechanical/hygiene tasks (static-analysis cleanup, formatting,
-  dead-code, benchmarks, no-behavior-change refactors) and pure `research` /
-  `design` tasks need no upstream design link. Mark them with a
-  `hygiene`, `research`, or `design` label.
-- **Broken links are triage findings, not silent gaps:** a feature task whose
-  `design:` points nowhere, or a design that cites no research, must be flagged
-  during triage (→ Breakdown) rather than pulled into work.
-- Designs should list the tasks that implement them where practical, so the
-  chain is walkable in both directions.
-
-# Kanban as a Finite State Machine (FSM)
-
-We treat the board as an FSM over tasks.
-
-- **States (C)**: the board’s columns.
-- **Initial state (S)**: **Incoming** (new tasks land here).
-- **Transitions (T)**: moves between columns.
-- **Rules R(Tₙ, t)**: predicates over task `t` that permit or block transition `Tₙ`.
-- **Single source of status**: each task has exactly one column/status at a time.
-- **Board is law**: never edit the board file directly; tasks drive board generation.
-- **WIP**: a transition fails if the target state’s WIP cap is full.
-
-### FSM diagram
-
-```mermaid
-flowchart TD
-
-  %% ====== Lanes ======
-  subgraph Brainstorm
-    IceBox["🧊 Ice Box"]
-    Incoming["💭 Incoming"]
-  end
-
-  subgraph Planning
-    Accepted["✅ Accepted"]
-    Breakdown["🧩 Breakdown"]
-    Blocked["🚧 Blocked"]
-  end
-
-  subgraph Execution
-    Ready["🛠 Ready"]
-    Todo["🟢 To Do"]
-    InProgress["🟡 In Progress"]
-    InReview["🔍 In Review"]
-    Done["✅ Done"]
-  end
-
-  subgraph Abandoned
-    Rejected["❌ Rejected"]
-  end
-
-  %% ====== Forward flow ======
-  IceBox --> Incoming
-  Incoming --> Accepted
-  Incoming --> Rejected
-  Incoming --> IceBox
-  Accepted --> Breakdown
-  Breakdown --> Ready
-  Ready --> Todo
-  Todo --> InProgress
-  InProgress --> InReview
-  InReview --> Done
-
-  %% ====== Cycles back to Planning / queue ======
-  Ready --> Breakdown
-  Todo --> Breakdown
-  InProgress --> Breakdown
-  InReview --> Breakdown
-
-  %% ====== Session-end, no-PR handoff ======
-  InProgress --> Todo
-
-  %% ====== Review crossroads (re-open work) ======
-  InReview --> InProgress
-  InReview --> Todo
-
-  %% ====== Defer / archive loops ======
-  Accepted --> IceBox
-  Breakdown --> IceBox
-  Rejected --> IceBox
-
-  %% ====== Blocked (narrow, explicit dependency) ======
-  Breakdown --> Blocked
-  Blocked --> Breakdown
+```text
+observed -> derived -> provisional -> accepted
 ```
 
-### Minimal transition rules (only what matters)
+Promotion requires an explicit record of the authority, basis, scope, and time
+of promotion. Rejection, unknown, unavailable, corrupt, stale, and not
+implemented are meaningful states; they must not be represented as a successful
+or empty result merely for convenience.
 
-- START STATES = Ice Box | Incoming
+### Make claims proportionate to evidence
 
-  - All new tasks must start in either **Ice Box** (for future work) or **Incoming** (for immediate triage)
-  - This constraint is enforced by the CLI to ensure proper workflow adherence
-  - Tasks cannot be created directly in active columns (todo, in_progress, etc.)
+The required depth of inquiry, review, and verification is proportional to the
+consequence, reversibility, uncertainty, and blast radius of the claim or
+change. A typo does not require an ADR. A durable identity rule, data migration,
+security boundary, or new autonomous agent authority requires stronger grounding
+and explicit acceptance.
 
-- **Incoming → Accepted | Rejected | Ice Box**
-  Relevance/priority triage; allow defer to Ice Box.
+Policies may classify work by risk and select concrete gates. No classification
+may be used to make a claim more certain, tested, reviewed, or accepted than it
+is.
 
-- **Ice Box → Incoming**
-  When deferred work is ready for triage and prioritization.
+### Keep work accountable and bounded
 
-- **Accepted → Breakdown | Ice Box**
-  Ready to analyze, or consciously deferred.
+Material work must have a discoverable owner or responsible actor, a target
+outcome, a bounded scope, and a current state. Before an actor represents work
+as complete, it must be possible to discover what was attempted, what changed,
+what remains uncertain, and what evidence was produced.
 
-- **Breakdown → Ready | Rejected | Ice Box | Blocked**
-  Scoped & feasible → Ready; non-viable → Rejected; defer → Ice Box;
-  **→ Blocked** only for a true inter-task dependency with **bidirectional links** (Blocking ⇄ Blocked By).
+A commitment is revisable. When new evidence invalidates its basis, exceeds its
+scope, or reveals a material unknown, the actor pauses, records the reason, and
+reorients rather than silently continuing under an obsolete plan.
 
-- **Ready → Todo**
-  Prioritized into the execution queue (respect WIP).
+### Separate inquiry, recommendation, and authority
 
-- **Todo → In Progress**
-  Pulled by a worker (respect WIP).
+Research may reduce uncertainty; it does not automatically authorize action.
+Design may propose an approach; it does not automatically decide architecture.
+An ADR records a decision; it does not automatically implement or verify that
+decision. A board card authorizes a bounded attempt; it does not prove its
+outcome.
 
-- **In Progress → In Review**
-  Coherent, reviewable change exists.
+An accepted decision or completion claim identifies the authority that accepted
+it and the evidence considered. An actor may state its confidence or
+recommendation but may not impersonate that authority.
 
-- **In Review → Done**
-  Review approved **and** the global [Definition of Done](#definition-of-done-global-gates) is satisfied. Testing and documentation are gates here, not separate columns.
+### Preserve provenance and reproducibility
 
-- **In Progress → Todo** _session-end handoff; no PR required_
-  Capacity limit reached without a reviewable change. Record artifacts/notes + next step; move to **Todo** if WIP allows; else remain **In Progress** and mark a minor blocker.
-  Artifacts must include partial outputs (e.g., audit logs, findings lists, reproduction steps) so a follow-on slice can resume immediately.
+Material findings, decisions, implementations, and verification results retain
+enough provenance for another actor to inspect, challenge, reproduce, or
+supersede them responsibly. The exact form varies by policy, but it normally
+includes inputs/sources, method or command, relevant version/context, result,
+limitations, and producer.
 
-- **In Progress → Breakdown**
-  Slice needs re-plan or is wrong shape.
+Generated reports, summaries, indexes, and agent statements are derived
+artifacts. They must not be their own sole authority for a material claim.
 
-- **In Review → In Progress** _(preferred)_
-  Changes requested; current assignee free; **In Progress** WIP allows.
+### Make acceptance explicit and scoped
 
-- **In Review → Todo** _(fallback)_
-  Changes requested; assignee busy **or** **In Progress** WIP full.
+Acceptance is an explicit act, not an implication of silence, merge status, a
+passing check, or a status field. It identifies what was accepted, for which
+purpose and scope, by which authority, and on what basis.
 
-- **Done → (no mandatory back edge)**
-  Follow-ups are modeled as new tasks (optionally seeded from Done).
+Acceptance does not erase rejected alternatives, unresolved uncertainty, or the
+provenance of the evidence that led to it. A later decision may supersede an
+earlier one, but the earlier record remains discoverable.
 
-- **Blocked → Breakdown** _(unblock event)_
-  Fires when any linked blocker advances e.g., to In Review/Done or evidence shows dependency removed; return to Breakdown to re-plan.
+### Favor reversible progress
 
-## Definition of Done (global gates)
+Prefer small, reviewable, testable, and recoverable steps over broad
+irreversible change. Preserve canonical sources and durable decisions; treat
+rebuildable projections, caches, summaries, and indexes as derived artifacts.
 
-These were once their own board columns (**Testing**, **Document**). They are now
-**gates every task clears on the In Review → Done transition**, not states you
-move a card through. A reviewer advances a card to _Done_ only when all apply:
+Where irreversible action is necessary, record the risk, authority, recovery or
+rollback path where feasible, and the evidence sufficient to justify it.
 
-- **Tests pass.** The change ships with tests that exercise it, and the relevant
-  suite is green (`clojure -M:test`, plus `test/architecture_test.clj` for
-  structural work). Record the command and pass/fail counts on the card.
-- **Static gates clean.** `bin/analyze` (or `bin/analyze --strict` for
-  structural work) introduces no new warning classes in the touched files.
-- **Documented.** Public vars have docstrings; the card records a short summary
-  of what changed plus evidence (test output, benchmark numbers, screenshots).
-  Update `docs/designs`/`docs/notes` when behavior or architecture changed.
-- **Invariants intact.** 
-  fan-out (no serial barrier tier), no `domain/` → `infra/` import — see
-  `CLAUDE.md`. `reg/write-conflicts` empty for ECS work.
+### Adapt deliberately, not silently
 
-A card that fails any gate goes back to **In Progress** (or **Todo**), not to a
-Testing/Document column — those no longer exist.
+The process is expected to change as Epiphany, its contributors, and its agents
+change. Process friction, escaped defects, ambiguous tasks, failed research,
+and gaming attempts are evidence for improving policy.
 
-### Blocking policy
+A process change must be proposed, scoped, and recorded. A trial policy states
+its hypothesis, owner, affected scope, measurement or review method, and review
+or expiry date. Adoption, revision, supersession, and retirement are explicit.
 
-- **Minor blockers**: record briefly on the task; continue with other eligible work; resolve asynchronously.
-  - Uncertainty over a single aspect of an assignment which does not prevent completion of other aspects of the assignment
-- **Major blockers**: halt work on that task; capture evidence + attempt remediation
-  - A triggered transition rule would result in a column begin over it's WIP limit
-  - An agent's current task has only blocked sub tasks
+## Lifecycle of responsible work
 
-## 🌊 Fluid Kanban Rule Evolution
+Work does not need to pass every stage. The applicable policy selects a path
+proportionate to risk. When a stage is used, it must leave a successor enough
+context to continue, challenge, or revise the work.
 
-Kanban is a fluid process that adapts to changing development environments while maintaining core principles.
+```text
+request
+  -> intake and orientation
+  -> inquiry or research, when uncertainty matters
+  -> proposal or design
+  -> decision, when authority or architecture is implicated
+  -> plan and specification
+  -> bounded work item
+  -> implementation or other action
+  -> verification and review
+  -> accepted outcome
+  -> reflection and policy improvement
+```
 
-### When Rules Must Change
+The recurring working modes are:
 
-A rule should be changed when:
+- **Explore:** inspect relevant artifacts, sources, constraints, and current
+  state before asserting a direction.
+- **Orient:** compare observations with the requested outcome; identify the
+  next appropriate artifact, authority, and uncertainty.
+- **Commit:** record a bounded, revisable course of action with basis, scope,
+  stop conditions, and expected evidence.
+- **Act:** perform the committed inquiry, design, implementation, review, or
+  other work while preserving material observations.
+- **Verify:** execute the applicable checks and record what they establish and
+  what they do not establish.
+- **Reflect:** record lessons, follow-ups, contradictions, and process changes
+  revealed by the work.
 
-1. **Progress is blocked** despite valid work being ready
-2. **Team composition changes** significantly (new contributors, new agent types)
-3. **Process discovery** reveals better ways of working
-4. **Scaling requirements** exceed current capacity constraints
+Modes recur at any lifecycle stage. They are not board states and do not imply
+that a particular agent architecture is required.
 
-### Rule Change Process
+## Required evidence by claim type
 
-1. **Identify the constraint**: Which specific rule is preventing forward progress?
-2. **Document the rationale**: Why must this rule change now? What's the impact?
-3. **Propose a new rule**: Clear, measurable, and time-bound
-4. **Implement temporarily**: Test the change with explicit review date
-5. **Evaluate and formalize**: Either revert, adjust, or make permanent
+Policies specify detailed templates and gates. The following minimums are
+constitutional:
 
-### WIP Limit Evolution Example
+| Claim or action | Minimum accountable basis |
+|---|---|
+| Material observed fact | Source/context and observation method sufficient to inspect it |
+| Derived finding | Inputs/evidence, method, scope, and limitations |
+| Research result | Named uncertainty, declared method, evidence set, findings, and disposition |
+| Proposal | Scope, rationale/basis, consequences, and accepting authority |
+| Architectural decision | Explicit decision record, alternatives proportionate to consequence, and authorized acceptance |
+| Bounded work item | Outcome, scope/non-goals, dependencies, completion conditions, and responsible actor/state |
+| Completion claim | Applicable verification records, remaining limitations, and accepting authority |
+| Process exception | Waived policy, rationale, scope, risk, approver, expiry/review, and follow-up |
 
-**Original Rule**: 2 tasks in review per human developer
-**Reality**: 1 human + 6-18 AI agents contributing simultaneously
-**Constraint**: Review bottleneck blocking all flow
-**Solution**:
+A policy may define a lightweight form for routine work, but it may not replace
+these minimums with an unsupported assertion.
 
-- Review: 2 → 6 (human review bandwidth for AI work)
-- In Progress: 3 → 10 (multi-agent parallel work capacity)
-- Document: 2 → 4 (maintain flow proportion)
+## Delegated policies
 
-### Guiding Principles for a Supportive Board
+The following policy areas implement this charter and may evolve independently:
 
-- **The board serves the team, not the other way around**
-- **Work gets done, sometimes outside formal processes - and that's okay**
-- **Retrospective card movement is a ritual of acknowledgment, not compliance**
-- **Failed checks are learning opportunities, not violations**
-- **We think better when we're calm** - even urgent work deserves a thoughtful response
-- **Focus on capacity and flow** - "We may have taken on more work than we can handle, let's reevaluate priorities"
+- **Kanban workflow** — board intake, triage, planning, transition rules, WIP,
+  handoff, and completion mechanics (`docs/process/kanban.md`).
+- **Research practice** — research tiers, source/finding records, methods,
+  confidence, and disposition. This policy is to be established.
+- **Documentation governance** — document kinds, templates, exemplars,
+  anti-exemplars, document analysis, and exception handling. This policy is to
+  be established.
+- **Decision practice** — ADR thresholds, decision review, supersession, and
+  architecture-compliance checks. This policy is to be established.
+- **Review and acceptance** — reviewer roles, evidence expectations, and
+  acceptance recording. This policy is to be established.
+- **Engineering practice** — coding conventions, static checks, test selection,
+  release/process evidence, and environment operations. Operational guidance is
+  currently in `AGENTS.md`; an Epiphany-specific engineering policy is to be
+  established.
 
-- **Rules enable flow, they don't dictate activity**
-- **Change is temporary unless proven valuable**
-- **Document every change with clear rationale**
-- **Review changes regularly** (monthly for significant rule changes)
-- **Maintain the spirit** of the rule even when adapting the letter
+Until a delegated policy exists, use the charter, existing approved ADRs, and
+explicitly recorded judgment. Do not manufacture a detailed rule and represent
+it as settled policy.
+
+## Exceptions
+
+An exception permits a bounded departure from an active policy; it does not
+amend this charter or create a hidden precedent. It must be explicit before the
+departure when feasible, and otherwise recorded as soon as the emergency allows.
+
+Every exception identifies:
+
+- The policy and exact requirement waived
+- The affected scope and duration
+- The rationale and known risk
+- The owner and accepting authority
+- The expiry or review condition
+- The required remediation, follow-up, or decision point
+
+Expired exceptions are not authority for continued deviation. Repeated
+exceptions are evidence that the underlying policy needs review.
+
+## Charter amendments
+
+Amending this charter is a consequential process decision. A proposed amendment
+must state:
+
+- The constitutional commitment being added, removed, clarified, or changed
+- The observed problem and evidence motivating it
+- Effects on active policies, templates, tools, and work in progress
+- Alternatives considered, including retaining the current charter
+- The acceptance authority and effective date
+- A migration or review plan where the amendment changes existing obligations
+
+The amendment record must preserve the prior text and identify whether it
+supersedes or merely clarifies it. Routine policy changes belong in
+`docs/process/`, not in this charter.
+
+## Current transition
+
+This charter replaces the former root `PROCESS.md` workflow/FSM document as the
+source of constitutional process guidance. The prior content remains available
+in Git history. Board-specific workflow remains delegated to
+`docs/process/kanban.md` and the active board operational guide; those documents
+must be reconciled with this charter before they are treated as complete policy.

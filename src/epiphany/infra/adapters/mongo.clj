@@ -118,13 +118,15 @@
   "Connect to MongoDB and return a connection map.
 
    Options:
-     :uri       — MongoDB connection URI (default: \"mongodb://127.0.0.1:27017\")
-     :database  — database name (default: \"epiphany\")
+     :uri       — MongoDB connection URI (default: reads MONGODB_URI env var,
+                  falls back to \"mongodb://127.0.0.1:27017\")
+     :database  — database name (default: reads MONGODB_DATABASE env var,
+                  falls back to \"epiphany\")
      :test-mode — when true, uses \"epiphany-test\" database and cleans on connect"
   ([] (connect! {}))
   ([{:keys [uri database test-mode collection-prefix]
-    :or   {uri "mongodb://127.0.0.1:27017"
-           database "epiphany"}}]
+    :or   {uri (or (System/getenv "MONGODB_URI") "mongodb://127.0.0.1:27017")
+           database (or (System/getenv "MONGODB_DATABASE") "epiphany")}}]
    (let [db-name (if test-mode "epiphany-test" database)
          prefix  (or collection-prefix "")
          client  (MongoClients/create ^String uri)

@@ -5,6 +5,7 @@ title: "Epiphany Development Process"
 kind: design
 description: "Draft of the Epiphany actor development process, describing roles, modes of understanding, and phase workflow."
 labels: [process, meta, workflow, phase-1]
+status: exploratory
 created: "2026-07-11"
 source: "docs/inbox/2026.07.11.12.28.37.md"
 ---

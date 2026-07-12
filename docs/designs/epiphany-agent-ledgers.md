@@ -1,4 +1,3 @@
-
 ---
 slug: epiphany-agent-ledgers
 uuid: 01900d7c-7f3a-7e8b-9c4d-000000000214
@@ -7,6 +6,7 @@ kind: design
 description: "Outlines Muses as plugin-defined primary agents and Phases as sub-agents, each with isolated append-only event ledgers."
 labels: [architecture, agents, meta, workflow, phase-1]
 created: "2026-07-11"
+status: exploratory
 source: "docs/inbox/2026.07.11.14.15.20.md"
 ---
 

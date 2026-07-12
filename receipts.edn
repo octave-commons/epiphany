@@ -318,3 +318,9 @@
  :card "ENG-021A"
  :ts #inst "2026-07-12T00:00:00Z"
  :summary "Backup/restore/rebuild drill. Added :export-all/:import-all to adapters, backup domain service (export-to-file, import-from-file, drop-all-collections!, inaccessible-sources), 4 backup tests. Fixed in-memory adapter key mismatch. 528 tests, 1336 assertions, 0 failures."}
+
+{:id #uuid "00000000-0000-0000-0000-000000000005"
+ :kind :service-setup
+ :card "workbench-service"
+ :ts #inst "2026-07-12T00:00:00Z"
+ :summary "Epiphany workbench as systemd user service. Added serve subcommand to main.clj, systemd unit at ~/.config/systemd/user/epiphany-workbench.service. Fixed Clojure 1.12 keyword parsing bug (::services). Reads MONGODB_URI/MONGODB_DATABASE from env. Runs on port 5197, all endpoints 200."}
