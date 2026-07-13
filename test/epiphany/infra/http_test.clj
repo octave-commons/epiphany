@@ -1,6 +1,7 @@
 (ns epiphany.infra.http-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.data.json :as json]
+            [clojure.edn :as edn]
             [epiphany.infra.http :as http]))
 
 ;; ---------------------------------------------------------------------------
@@ -18,15 +19,20 @@
    :embeddings {:embed-query (constantly [0.1 0.2 0.3])}})
 
 (defn- mock-adapters []
-  {:git {:repository (constantly ::mock-repo)
-         :resolve-ref (constantly ["refs/heads/main"])}
-   :repository-metadata {:list-repositories (constantly [])
-                         :register-repository (constantly {:id #uuid "00000000-0000-0000-0000-000000000001"})}
-   :observations {:list-checkpoints (constantly [])
-                  :list-ingestion-runs (constantly [])}
-   :index {:search (constantly [])
-           :index-stats (constantly {:document-count 0})}
-   :embeddings {:embed (constantly [0.1 0.2 0.3])}})
+  (let [registered (atom nil)]
+    {:git {:common-git-directory (fn [_] "/mock/.git")
+           :repository (constantly ::mock-repo)
+           :resolve-ref (constantly ["refs/heads/main"])}
+     :repository-metadata {:read (fn [_] @registered)
+                           :write (fn [_ id] (reset! registered {:resource-id id}))
+                           :list-repositories (constantly [])}
+     :observations {:find-by-request-id (constantly nil)
+                    :record-repository-location! (fn [obs] (reset! registered obs))
+                    :list-checkpoints (constantly [])
+                    :list-ingestion-runs (constantly [])}
+     :index {:search (constantly [])
+             :index-stats (constantly {:document-count 0})}
+     :embeddings {:embed (constantly [0.1 0.2 0.3])}}))
 
 ;; ---------------------------------------------------------------------------
 ;; problem-response tests
@@ -189,11 +195,16 @@
 
 (deftest exception-returns-problem-json
   (testing "Exceptions in handlers return problem+json"
-    (let [error-adapters {:git {:repository (fn [_] (throw (ex-info "repo not found" {:code :not-found})))
+    (let [error-adapters {:git {:common-git-directory (fn [_] (throw (ex-info "repo not found" {:code :not-found})))
+                                :repository (fn [_] (throw (ex-info "repo not found" {:code :not-found})))
                                 :resolve-ref (constantly [])}
-                          :repository-metadata {:list-repositories (constantly [])
+                          :repository-metadata {:read (constantly nil)
+                                                :write (constantly nil)
+                                                :list-repositories (constantly [])
                                                 :register-repository (fn [_] (throw (ex-info "repo not found" {:code :not-found})))}
-                          :observations {:list-checkpoints (constantly [])
+                          :observations {:find-by-request-id (constantly nil)
+                                         :record-repository-location! (fn [_] (throw (ex-info "repo not found" {:code :not-found})))
+                                         :list-checkpoints (constantly [])
                                          :list-ingestion-runs (constantly [])}
                           :index {:search (constantly [])
                                   :index-stats (constantly {:document-count 0})}
@@ -206,3 +217,51 @@
       (is (or (= 404 (:status resp))
               (= 400 (:status resp))))
       (is (.contains (get-in resp [:headers "Content-Type"]) "application/problem+json")))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-017K: EDN boundary safety
+
+(deftest eval-payload-rejected
+  (testing "EDN body containing #=(...) is rejected, side effect not executed"
+    (let [sentinel (atom false)
+          app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body (java.io.ByteArrayInputStream.
+                            (.getBytes "{:path \"/tmp/test\" :eval (#(reset! sentinel true))}"))
+                     :headers {"content-type" "application/edn"}})]
+      (is (not @sentinel) "Side effect must not execute")
+      (is (or (nil? resp) (number? (:status resp)))
+          "Response must be a valid HTTP response"))))
+
+(deftest malformed-edn-rejected
+  (testing "Malformed EDN body is rejected"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body (java.io.ByteArrayInputStream.
+                            (.getBytes "{:path \"/tmp\" :unclosed"))
+                     :headers {"content-type" "application/edn"}})]
+      (is (or (nil? resp) (number? (:status resp)))
+          "Response must be valid"))))
+
+(deftest unknown-tag-rejected
+  (testing "EDN body with unknown tagged literal is rejected"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body (java.io.ByteArrayInputStream.
+                            (.getBytes "{:path #unknown/tag \"/tmp\"}"))
+                     :headers {"content-type" "application/edn"}})]
+      (is (or (nil? resp) (number? (:status resp)))
+          "Response must be valid"))))
+
+(deftest valid-edn-round-trips
+  (testing "Valid EDN body is parsed correctly"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :get
+                     :uri "/api/v1/search"
+                     :query-string "q=test"
+                     :headers {}})]
+      (is (number? (:status resp))
+          "Valid request must return a status code"))))

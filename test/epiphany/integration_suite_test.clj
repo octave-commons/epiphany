@@ -10,15 +10,13 @@
 
 (defn- require-services
   "Fixture that checks service readiness before each test.
-   Skips the test (via throws) if required services are unavailable."
+   Skips the test if required services are unavailable — does not throw,
+   so cloverage and other tooling can load the namespace without failure."
   [f]
   (if (services/all-available?)
     (f)
-    (let [report (services/report)]
-      (throw (ex-info (str "Required services unavailable — skipping integration tests.\n"
-                           report)
-                      {:code :unavailable
-                       :report report})))))
+    (clojure.test/report {:type :skip
+                          :message "Required services unavailable — skipping integration tests"})))
 
 (use-fixtures :each require-services)
 

@@ -76,6 +76,19 @@ and states the reduced evidence, risk, authority, expiry/review date, and
 required follow-up. Repeated exceptions are evidence to improve criteria,
 tooling, capacity, or policy.
 
+## Mechanical floor
+
+This policy is not self-enforcing from prose alone — a 2026-07-12/13 audit
+found six kanban cards moved to `done` on the implementer's own completion
+comment, with no independent review ever recorded. `bin/kanban-done-gate
+<slug>` is a mechanical pre-check for the `review → done` kanban transition:
+it verifies any CLI command a story names is actually wired, that a real test
+run (not prose) is attached, and that some comment records an explicit
+review disposition distinct from the implementation comment. It is a floor,
+not the acceptance form above — it cannot verify a reviewer was independent
+or authorized, only that *a* disposition was recorded by *someone* other than
+whoever wrote the "done" claim. See `docs/kanban/AGENTS.md` hard rule 7.
+
 ## Operational references
 
 - Process Charter: `PROCESS.md`
@@ -83,3 +96,4 @@ tooling, capacity, or policy.
 - Document governance λ: `docs/process/document-governance.md`
 - Design practice δ: `docs/process/design.md`
 - Decision practice: `docs/process/decision.md`
+- Mechanical done-gate: `bin/kanban-done-gate`

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Mechanical pre-check for a kanban card's review -> done transition.
+#
+# Usage:
+#   bin/kanban-done-gate <story-slug> [tasks-dir]
+#
+# Run this BEFORE:
+#   eta-mu kanban frontmatter <slug> status done --tasks-dir docs/kanban
+#
+# This is a FLOOR, not a substitute for docs/process/review-and-acceptance.md's
+# acceptance form (target, criteria, evidence, reviewer, authority ->
+# disposition). It only catches what's mechanically checkable from the card
+# text and the working tree:
+#
+#   1. Every `ep <word>` command the story's body names is actually wired
+#      into src/epiphany/infra/main.clj's dispatch table. This alone would
+#      have caught the ENG-004A/B/D + ENG-005B/F false-done pattern audited
+#      2026-07-12/13: five cards claimed a CLI command as their headline
+#      deliverable while main.clj's `case` never dispatched to it.
+#   2. A completion claim carries real, greppable test evidence -- an actual
+#      "<N> tests, <N> assertions, 0 failures" line, not just prose asserting
+#      "tests pass".
+#   3. A comment records an explicit review disposition (REVIEW/AUDIT tag
+#      with an approve/accepted verdict) -- so a done claim is never just the
+#      implementer's own "I finished" comment with nothing else attached.
+#
+# It cannot verify that the reviewer in (3) is actually a distinct, authorized
+# party -- that half of review-and-acceptance.md's contract is organizational,
+# not mechanical, and this script does not pretend otherwise.
+#
+# Exit 0: mechanical floor passes (transition may proceed to a real review).
+# Exit 1: blocked, with reasons printed.
+
+set -euo pipefail
+
+slug="${1:?usage: kanban-done-gate <story-slug-or-uuid> [tasks-dir]}"
+tasks_dir="${2:-docs/kanban}"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+main_clj="$repo_root/src/epiphany/infra/main.clj"
+
+# The installed `eta-mu` CLI (pre-Rheos-cutover build) only resolves cards by
+# slug, not by the frontmatter `id` (UUID) that Rheos's MCP tools use. If the
+# arg looks like a UUID, resolve it to its slug by grepping frontmatter
+# directly -- this keeps the gate usable from a hook that only has a uuid
+# (e.g. an MCP kanban_update_status call), without depending on the CLI's
+# resolution behavior at all.
+if [[ "$slug" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+  file="$(grep -rlE "^id: *\"?${slug}\"?" "$repo_root/$tasks_dir" 2>/dev/null | head -1 || true)"
+  if [ -z "$file" ]; then
+    echo "BLOCK: no card in $tasks_dir has frontmatter id: $slug"
+    exit 1
+  fi
+  resolved_slug="$(python3 -c '
+import re, sys
+body = open(sys.argv[1]).read()
+m = re.search(r"^title:\s*\"?(.*?)\"?\s*$", body, re.M)
+title = m.group(1) if m else ""
+slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+print(slug)
+' "$file")"
+  slug="$resolved_slug"
+fi
+
+content="$(eta-mu kanban content "$slug" --tasks-dir "$tasks_dir")"
+
+body="$(echo "$content" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+print(d["sections"][0]["content"] if d["sections"] else "")
+')"
+
+comments="$(echo "$content" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)
+print("\n---\n".join(s["content"] for s in d["sections"] if s["type"] == "comment"))
+')"
+
+fail=0
+
+echo "Checking $slug against the mechanical done-gate..."
+echo ""
+
+# --- 1. Claimed CLI commands must exist in main.clj's dispatch table -------
+
+claimed_commands="$(echo "$body" | grep -oE '\`ep [a-z][a-z-]*' | sed -E 's/`ep //' | sort -u || true)"
+
+if [ -n "$claimed_commands" ]; then
+  while IFS= read -r cmd; do
+    [ -z "$cmd" ] && continue
+    if ! grep -qE "\"$cmd\"[[:space:]]+\(run-" "$main_clj"; then
+      echo "BLOCK: story names \`ep $cmd\` but \"$cmd\" is not in main.clj's dispatch (case command ...)."
+      fail=1
+    fi
+  done <<< "$claimed_commands"
+fi
+
+# --- 2. A real test-evidence line must be present ---------------------------
+
+if ! echo "$comments" | grep -qE '[0-9]+ tests, [0-9]+ assertions, 0 failures'; then
+  echo "BLOCK: no comment contains a real 'N tests, N assertions, 0 failures' line."
+  echo "       Paste actual 'clojure -M:unit-test' output, not a prose claim."
+  fail=1
+fi
+
+# --- 3. An explicit second-pass review disposition must be recorded --------
+
+if ! echo "$comments" | grep -qiE '^(REVIEW|AUDIT)[^:]*:[[:space:]]*(approve[d]?|accepted)\b'; then
+  echo "BLOCK: no REVIEW/AUDIT comment records an explicit approve/accepted disposition"
+  echo "       immediately after its tag (e.g. 'REVIEW 2026-07-13: approve. ...')."
+  echo "       A completion comment from the same pass that did the implementation is not a"
+  echo "       review, and the word 'accepted' appearing anywhere in unrelated prose"
+  echo "       (e.g. boilerplate like 'outcome accepted for the card's declared scope')"
+  echo "       does not count as a disposition."
+  fail=1
+fi
+
+echo ""
+if [ "$fail" -ne 0 ]; then
+  echo "Transition to done is BLOCKED for $slug."
+  echo "See docs/process/review-and-acceptance.md before overriding this by hand."
+  exit 1
+fi
+
+echo "OK: $slug passes the mechanical floor."
+echo "This does not certify the review was done by an independent/authorized"
+echo "party -- confirm that against docs/process/review-and-acceptance.md before"
+echo "running: eta-mu kanban frontmatter $slug status done --tasks-dir $tasks_dir"
+exit 0

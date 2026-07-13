@@ -151,5 +151,5 @@ wins elsewhere.
   checks.
 - Define layer-boundary and Java-interop inventory checks.
 - Trial static-analysis, generative-testing, and mutation-testing tools against
-  small, boundary-critical namespaces.
+ small, boundary-critical namespaces.
 - Define a machine-readable CI evidence artifact.

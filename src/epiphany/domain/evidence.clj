@@ -152,7 +152,8 @@
                   (let [content (:blob/content blob)
                         section (when (seq heading)
                                    (find-section-in-content content heading))]
-                    (if section
+                    (cond
+                      section
                       {:evidence/path path
                        :evidence/commit-oid commit-oid
                        :evidence/heading-path heading
@@ -162,7 +163,21 @@
                        :evidence/blob-size (:blob/size blob)
                        :evidence/failure nil
                        :evidence/unavailable false}
-                      ;; Heading not found — return full content
+
+                      ;; No heading requested — return full content, no failure
+                      (empty? heading)
+                      {:evidence/path path
+                       :evidence/commit-oid commit-oid
+                       :evidence/heading-path heading
+                       :evidence/source content
+                       :evidence/start-line 1
+                       :evidence/end-line (inc (count (str/split-lines content)))
+                       :evidence/blob-size (:blob/size blob)
+                       :evidence/failure nil
+                       :evidence/unavailable false}
+
+                      ;; Heading requested but not found — return full content, flagged
+                      :else
                       {:evidence/path path
                        :evidence/commit-oid commit-oid
                        :evidence/heading-path heading

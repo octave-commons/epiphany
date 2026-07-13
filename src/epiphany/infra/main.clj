@@ -8,10 +8,14 @@
             [epiphany.infra.services :as services]
             [epiphany.infra.profile :as profile]
             [epiphany.infra.http :as http]
+            [epiphany.infra.git :as git]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
             [epiphany.application.registration :as registration]
-            [epiphany.domain.hybrid-search :as hs])
+            [epiphany.domain.hybrid-search :as hs]
+            [epiphany.domain.evidence :as evidence]
+            [epiphany.domain.diff :as diff]
+            [epiphany.domain.lineage-trace :as lineage-trace])
   (:gen-class))
 
 (def version "0.1.0")
@@ -486,6 +490,252 @@
           {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
+;; Shared Git evidence helpers (show / diff / trace)
+
+(defn- resolve-common-git-dir
+  "Resolve a repository path's common Git directory via `git rev-parse`."
+  [repository-path]
+  (let [{:keys [exit out err]}
+        (shell/sh "git" "-C" repository-path "rev-parse"
+                  "--path-format=absolute" "--git-common-dir")]
+    (if (zero? exit)
+      (string/trim out)
+      (throw (ex-info (str "Not a Git repository: " repository-path)
+                      {:repository-path repository-path
+                       :git-error (string/trim err)})))))
+
+(defn- resolve-commit-oid
+  "Resolve a ref, short OID, or HEAD-relative expression to a full commit OID."
+  [repository-path expr]
+  (let [{:keys [exit out err]}
+        (shell/sh "git" "-C" repository-path "rev-parse" "--verify"
+                  (str expr "^{commit}"))]
+    (if (zero? exit)
+      (string/trim out)
+      (throw (ex-info (str "Could not resolve commit: " expr)
+                      {:repository-path repository-path
+                       :git-error (string/trim err)})))))
+
+(defn- make-evidence-git-port
+  "Build a :git port backed by real Git object access for a repository's
+  working-tree path (epiphany.infra.git's `repository-path` — it resolves
+  the .git dir itself; this is NOT the common-git-dir returned by
+  resolve-common-git-dir). Matches the (fn [_ arg] ...) shape evidence/diff/
+  trace expect (first arg reserved, mirrors the port-fn calling convention
+  used in their unit tests)."
+  [repository-path]
+  {:read-blob (fn [_ oid] (git/read-blob repository-path oid))
+   :commit-tree-entries (fn [_ commit-oid] (git/commit-tree-entries repository-path commit-oid))
+   :reachable-commits (fn [_ refs] (git/reachable-commits repository-path refs))})
+
+(defn- resolve-evidence-request
+  "Parse a section expression and resolve its commit-oid (ref/short-oid/HEAD)
+  to a full OID via the repository at `repository-path`."
+  [repository-path expr]
+  (let [parsed (evidence/parse-section-expression expr)]
+    (cond-> parsed
+      (:commit-oid parsed)
+      (assoc :commit-oid (resolve-commit-oid repository-path (:commit-oid parsed))))))
+
+(def ^:private repo-option
+  ["-r" "--repo PATH" "Path to the Git repository" :default "."])
+
+(defn- git-boundary-error
+  "Format a caught exception from the Git evidence helpers as a CLI error."
+  [e]
+  (let [data (ex-data e)]
+    {:exit 1
+     :out (str "Error: " (.getMessage ^Exception e)
+               (when (:git-error data)
+                 (str "\n  Git error: " (:git-error data))))}))
+
+;; ---------------------------------------------------------------------------
+;; Show subcommand
+
+(def show-options
+  [repo-option
+   ["-f" "--format FORMAT" "Output format: text or edn"
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn} "Must be text or edn"]]
+   ["-h" "--help" "Show show help and exit."]])
+
+(defn- run-show
+  "Execute the show subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args show-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep show [options] <path[#heading][@commit]>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep show [options] <path[#heading][@commit]>\n\n" summary)}
+
+      (empty? arguments)
+      {:exit 1 :out "Error: section expression required.\nUsage: ep show [options] <path[#heading][@commit]>"}
+
+      :else
+      (try
+        (let [repo (:repo options)
+              _ (resolve-common-git-dir repo)
+              request (resolve-evidence-request repo (first arguments))
+              result (evidence/retrieve-evidence {:git (make-evidence-git-port repo)} request)
+              output (case (:format options)
+                       :edn (evidence/format-evidence-edn result)
+                       (evidence/format-evidence-text result))]
+          {:exit (if (:evidence/unavailable result) 1 0) :out output})
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+;; ---------------------------------------------------------------------------
+;; Diff subcommand
+
+(def diff-options
+  [repo-option
+   ["-f" "--format FORMAT" "Output format: text or edn"
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn} "Must be text or edn"]]
+   ["-h" "--help" "Show diff help and exit."]])
+
+(defn- run-diff
+  "Execute the diff subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args diff-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep diff [options] <left-expr> <right-expr>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep diff [options] <left-expr> <right-expr>\n\n" summary)}
+
+      (not= 2 (count arguments))
+      {:exit 1 :out "Error: exactly two section expressions required.\nUsage: ep diff [options] <left-expr> <right-expr>"}
+
+      :else
+      (try
+        (let [repo (:repo options)
+              _ (resolve-common-git-dir repo)
+              [left-expr right-expr] arguments
+              left (resolve-evidence-request repo left-expr)
+              right (resolve-evidence-request repo right-expr)
+              result (diff/compare-evidence {:git (make-evidence-git-port repo)}
+                                            {:left left :right right})
+              output (case (:format options)
+                       :edn (pr-str result)
+                       (str (diff/format-diff-text (:diff/lines result)
+                                                   (str "--- " left-expr)
+                                                   (str "+++ " right-expr))
+                            "\n\n"
+                            ;; Continuity is display-only context — never folded into the diff above.
+                            "Continuity (not part of the diff): " (pr-str (:diff/continuity result))
+                            "\nSummary: " (pr-str (:diff/summary result))))]
+          {:exit (if (:diff/failure result) 1 0) :out output})
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+;; ---------------------------------------------------------------------------
+;; Trace subcommand
+
+(def trace-options
+  [repo-option
+   [nil "--refs REFS" "Comma-separated refs to walk (default HEAD)"
+    :default "HEAD"]
+   [nil "--observed-only" "Only include observed (Git-history) edges"]
+   [nil "--provisional MODE" "Provisional/rejected edges: include or exclude"
+    :default :include
+    :parse-fn keyword
+    :validate [#{:include :exclude} "Must be include or exclude"]]
+   ["-f" "--format FORMAT" "Output format: text or edn"
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn} "Must be text or edn"]]
+   ["-h" "--help" "Show trace help and exit."]])
+
+(defn- path-revisions
+  "Walk commit history reachable from `refs` in `common-git-dir`, returning
+  every revision of `path` as a section map, chronologically sorted.
+
+  Only Git-history revisions are represented — this does not include
+  cross-file lineage candidates (no candidate store exists yet; see
+  ENG-005A/005B for that prerequisite)."
+  [repository-path refs path]
+  (let [{:keys [commits]} (git/reachable-commits repository-path refs)
+        revisions (keep (fn [c]
+                          (let [{:keys [entries]} (git/commit-tree-entries repository-path (:commit/oid c))
+                                entry (first (filter #(= path (:git/path %)) entries))]
+                            (when entry
+                              {:path-raw path
+                               :heading-path []
+                               :commit-oid (:commit/oid c)
+                               :blob-oid (:git/blob-oid entry)
+                               :timestamp (get-in c [:commit/author :person/timestamp])})))
+                        commits)]
+    (sort-by (fn [s] (.getTime ^java.util.Date (or (:timestamp s) (java.util.Date. 0))))
+             revisions)))
+
+(defn- format-trace-text
+  [trace]
+  (let [nodes (:trace/nodes trace)
+        edges (:trace/edges trace)]
+    (str (count nodes) " node(s), " (count edges) " edge(s) [" (name (:trace/filter trace)) "]"
+         "\n\nNodes:\n"
+         (string/join "\n"
+                      (map-indexed (fn [i n]
+                                     (let [s (:node/section n)]
+                                       (str "  " i ". " (:path-raw s) " @ " (:commit-oid s)
+                                            (when (:timestamp s) (str "  (" (:timestamp s) ")")))))
+                                   nodes))
+         "\n\nEdges:\n"
+         (if (seq edges)
+           (string/join "\n"
+                        (map (fn [e]
+                               (str "  " (:edge/from e) " -> " (:edge/to e)
+                                    " [" (name (:edge/relation e)) ", " (name (:edge/status e))
+                                    ", confidence=" (:edge/confidence e) "]"))
+                             edges))
+           "  (none)"))))
+
+(defn- run-trace
+  "Execute the trace subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args trace-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep trace [options] <path>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep trace [options] <path>\n\n" summary)}
+
+      (empty? arguments)
+      {:exit 1 :out "Error: path required.\nUsage: ep trace [options] <path>"}
+
+      :else
+      (try
+        (let [repo (:repo options)
+              _ (resolve-common-git-dir repo)
+              refs (string/split (:refs options) #",")
+              path (first arguments)
+              revisions (path-revisions repo refs path)]
+          (if (empty? revisions)
+            {:exit 1 :out (str "Error: no revisions found for path " (pr-str path)
+                               " (refs: " (string/join ", " refs) ")")}
+            (let [source (last revisions)
+                  history (butlast revisions)
+                  trace (lineage-trace/trace-lineage source history []
+                                                     {:observed-only? (boolean (:observed-only options))
+                                                      :provisional-rejected (:provisional options)})
+                  output (case (:format options)
+                           :edn (pr-str trace)
+                           (format-trace-text trace))]
+              {:exit 0 :out output})))
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+;; ---------------------------------------------------------------------------
 ;; Top-level dispatch
 
 (defn- usage [options-summary]
@@ -500,6 +750,9 @@
     "  register    Register a local Git repository"
     "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
+    "  show        Open exact historical evidence for a section expression"
+    "  diff        Compare two historical section expressions"
+    "  trace       Trace a section's Git-history lineage chronology"
     "  serve       Start the workbench HTTP server"
     ""
     "Global Options:"
@@ -540,6 +793,9 @@
           "register" (run-register cmd-args)
           "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
+          "show"     (run-show cmd-args)
+          "diff"     (run-diff cmd-args)
+          "trace"    (run-trace cmd-args)
           "serve"    (run-serve cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))

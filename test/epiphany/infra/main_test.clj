@@ -145,3 +145,80 @@
   (let [{:keys [exit out]} (main/run ["search" "-v" "test"])]
     (is (zero? exit))
     (is (string/includes? out "Profile:"))))
+
+;; ---------------------------------------------------------------------------
+;; Show subcommand
+
+(deftest show-requires-expression
+  (let [{:keys [exit out]} (main/run ["show"])]
+    (is (= 1 exit))
+    (is (string/includes? out "section expression required"))))
+
+(deftest show-shows-help
+  (let [{:keys [exit out]} (main/run ["show" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep show"))))
+
+(deftest show-retrieves-real-evidence-from-this-repo
+  (testing "show against a tracked file at HEAD in this repo returns real Git blob content"
+    (let [{:keys [exit out]} (main/run ["show" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "--- Source: AGENTS.md"))
+      (is (string/includes? out "Epiphany")))))
+
+(deftest show-reports-unavailable-for-missing-path
+  (let [{:keys [exit out]} (main/run ["show" "no/such/path.md@HEAD"])]
+    (is (= 1 exit))
+    (is (string/includes? out "UNAVAILABLE"))))
+
+;; ---------------------------------------------------------------------------
+;; Diff subcommand
+
+(deftest diff-requires-two-expressions
+  (let [{:keys [exit out]} (main/run ["diff" "AGENTS.md@HEAD"])]
+    (is (= 1 exit))
+    (is (string/includes? out "exactly two section expressions"))))
+
+(deftest diff-shows-help
+  (let [{:keys [exit out]} (main/run ["diff" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep diff"))))
+
+(deftest diff-compares-real-revisions-in-this-repo
+  (testing "diff between two real HEAD-relative revisions of the same tracked file"
+    (let [{:keys [exit out]} (main/run ["diff" "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "--- AGENTS.md@HEAD~3"))
+      (is (string/includes? out "+++ AGENTS.md@HEAD"))
+      (is (string/includes? out "Continuity"))
+      (is (string/includes? out "Summary")))))
+
+;; ---------------------------------------------------------------------------
+;; Trace subcommand
+
+(deftest trace-requires-path
+  (let [{:keys [exit out]} (main/run ["trace"])]
+    (is (= 1 exit))
+    (is (string/includes? out "path required"))))
+
+(deftest trace-shows-help
+  (let [{:keys [exit out]} (main/run ["trace" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep trace"))))
+
+(deftest trace-walks-real-history-in-this-repo
+  (testing "trace against a tracked file's real Git history produces observed edges"
+    (let [{:keys [exit out]} (main/run ["trace" "AGENTS.md"])]
+      (is (zero? exit))
+      (is (string/includes? out "node(s)"))
+      (is (string/includes? out "observed")))))
+
+(deftest trace-observed-only-flag-is-accepted
+  (let [{:keys [exit out]} (main/run ["trace" "--observed-only" "AGENTS.md"])]
+    (is (zero? exit))
+    (is (string/includes? out "observed-only"))))
+
+(deftest trace-reports-error-for-untracked-path
+  (let [{:keys [exit out]} (main/run ["trace" "no/such/path.md"])]
+    (is (= 1 exit))
+    (is (string/includes? out "no revisions found"))))

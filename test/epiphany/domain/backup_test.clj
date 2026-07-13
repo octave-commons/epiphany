@@ -17,8 +17,8 @@
    :observation/adapter-version "test-v1"
    :observation/schema-version 1
    :resource-id (random-uuid)
-   :repository/path {:path/raw "/test/repo" :path/source :user :path/comparison :exact}
-   :repository/common-git-dir {:path/raw "/test/repo/.git" :path/source :user :path/comparison :exact}})
+   :repository/path {:path/raw "/test/repo" :path/source :filesystem-argument :path/comparison :exact}
+   :repository/common-git-dir {:path/raw "/test/repo/.git" :path/source :filesystem-argument :path/comparison :exact}})
 
 (defn- test-ingestion-run [id resource-id]
   {:observation/type :ingestion/run-completed
@@ -28,7 +28,7 @@
    :observation/adapter-version "test-v1"
    :observation/schema-version 1
    :resource-id resource-id
-   :ingestion/repo-path {:path/raw "/test/repo" :path/source :user :path/comparison :exact}
+   :ingestion/repo-path {:path/raw "/test/repo" :path/source :filesystem-argument :path/comparison :exact}
    :ingestion/selected-refs ["refs/heads/main"]
    :ingestion/commit-count 10
    :ingestion/failure-count 0

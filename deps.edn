@@ -1,5 +1,7 @@
 {:paths ["src" "resources"]
 
+ :mvn/repos {"clojars" {:url "https://repo.clojars.org"}}
+
  :deps {org.clojure/clojure {:mvn/version "1.12.2"}
          metosin/malli {:mvn/version "0.16.4"}
          org.clojure/tools.cli {:mvn/version "1.1.230"}
@@ -52,5 +54,17 @@
                      lambdaisland/kaocha {:mvn/version "1.91.1392"}}
         :main-opts ["-m" "nrepl.cmdline"]}
 
-  :cljfmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.13.0"}}
-           :main-opts ["-m" "cljfmt.main" "check" "src" "test" "dev"]}}}
+   :cljfmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.13.0"}}
+            :main-opts ["-m" "cljfmt.main" "check" "src" "test" "dev"]}
+
+   ;; Coverage reporting.
+   :coverage {:extra-paths ["test"]
+              :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                           cloverage/cloverage {:mvn/version "1.2.4"}}
+              :main-opts ["-m" "cloverage.coverage"
+                          "-p" "src"
+                          "-s" "test"
+                          "-e" "epiphany\\.integration.*"
+                          "-o" "target/coverage"
+                          "--codecov"
+                          "--text"]}}}

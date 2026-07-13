@@ -4,4 +4,7 @@
 .clj-kondo/.cache/
 target/
 data/
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks
+!.claude/hooks/**

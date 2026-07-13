@@ -19,7 +19,8 @@
 
   Uses StandardAnalyzer for text analysis — sufficient for English
   prose and code comments. Unicode paths are stored verbatim."
-  (:require [clojure.string :as str])
+  (:require [clojure.edn :as edn]
+            [clojure.string :as str])
   (:import [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.document Document Field$Store TextField StringField
                                        KnnFloatVectorField]
@@ -140,7 +141,7 @@
   (let [version-file (.resolve index-dir "index-version.edn")]
     (when (.exists (.toFile version-file))
       (try
-        (read-string (slurp (.toFile version-file)))
+        (edn/read-string {} (slurp (.toFile version-file)))
         (catch Exception _ nil)))))
 
 (defn- index-empty?

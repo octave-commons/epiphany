@@ -7,7 +7,8 @@
   (:import [org.eclipse.jgit.lib FileMode ObjectId PersonIdent]
            [org.eclipse.jgit.revwalk RevWalk RevCommit]
            [org.eclipse.jgit.treewalk TreeWalk]
-           [org.eclipse.jgit.storage.file FileRepositoryBuilder]))
+           [org.eclipse.jgit.storage.file FileRepositoryBuilder]
+           [org.eclipse.jgit.errors MissingObjectException]))
 
 (defn common-git-directory [repository-path]
   (let [{:keys [exit out err]} (shell/sh "git" "-C" repository-path "rev-parse" "--path-format=absolute" "--git-common-dir")]
@@ -215,29 +216,28 @@
   [^String repository-path blob-oid-str]
   (let [repo (open-repository repository-path)]
     (try
-      (let [oid    (ObjectId/fromString blob-oid-str)
-            object (.getObject repo oid)]
-        (if object
-          (let [loader (.openObject repo oid)
-                bytes  (.getBytes loader)
-                content (String. bytes "UTF-8")]
-            {:blob/oid blob-oid-str
-             :blob/content content
-             :blob/size (alength bytes)
-             :blob/failure nil})
-          {:blob/oid blob-oid-str
-           :blob/content nil
-           :blob/size 0
-           :blob/failure {:failure/oid blob-oid-str
-                          :failure/reason "blob-not-found"
-                          :failure/message (str "Blob not found: " blob-oid-str)}}))
+      (let [oid     (ObjectId/fromString blob-oid-str)
+            loader  (.open repo oid)
+            bytes   (.getBytes loader)
+            content (String. bytes "UTF-8")]
+        {:blob/oid blob-oid-str
+         :blob/content content
+         :blob/size (alength bytes)
+         :blob/failure nil})
+      (catch MissingObjectException _
+        {:blob/oid blob-oid-str
+         :blob/content nil
+         :blob/size 0
+         :blob/failure {:failure/oid blob-oid-str
+                        :failure/reason "blob-not-found"
+                        :failure/message (str "Blob not found: " blob-oid-str)}})
       (catch Exception e
         {:blob/oid blob-oid-str
          :blob/content nil
          :blob/size 0
-           :blob/failure {:failure/oid blob-oid-str
-                          :failure/reason "blob-unreadable"
-                          :failure/message (.getMessage e)}}))))
+         :blob/failure {:failure/oid blob-oid-str
+                        :failure/reason "blob-unreadable"
+                        :failure/message (.getMessage e)}}))))
 
 (defn- parse-diff-line
   "Parse a single line of `git diff --raw` output.

@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001703"
 title: "ENG-017C: Make the in-memory observations adapter contract-enforcing"
-status: ready
+status: "done"
 type: "story"
 priority: "P0"
 phase: 1
@@ -15,6 +15,7 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001701", "01900d7c-7f3a-7e8b-9c4d-00
 verification: ["unit-test"]
 risk: "medium"
 ---
+
 # ENG-017C: Make the in-memory observations adapter contract-enforcing
 
 ## Intent
@@ -103,4 +104,12 @@ correction to the trustworthiness of future green claims.
 
 ---
 REWORK 2026-07-12: body rewritten to the story contract (original preserved in git history and scratchpad; see ENG-017A comment for the shared rework rationale). Triage authority: user instruction this session. --tasks-dir docs/kanban
+
+IN PROGRESS 2026-07-13 (session): Implementation complete. Changes: (1) in_memory.clj — added validate-write!, idempotent-record-repository-location!, validated-record-fn; all 5 record ops now validate against schema registry before storing; repository-location enforces idempotency (replay→nil, conflict→{:code :idempotency-conflict}); import-all validates per-doc. (2) in_memory_test.clj — rewrote with schema-valid fixtures (valid-repository-location helper), added 5 enforcement tests: invalid-write-rejected, invalid-for-non-idempotent-ops, idempotent-replay-stable, changed-content-replay-conflicts. (3) backup_test.clj — fixed :path/source :user → :filesystem-argument (was latent invalid fixture). Suite: 548 tests, 1405 assertions, 0 failures. --tasks-dir docs/kanban --tasks-dir docs/kanban
+
+REVIEW 2026-07-13: Implementation complete. Verification evidence: (1) invalid write rejected — direct adapter use throws ExceptionInfo with :schema-validation-failed ✓, (2) state unchanged — export-all identical before/after rejected write ✓, (3) invalid rejected for all 5 write ops — ingestion-run, checkpoint, section-extraction, revision-at-path all throw on invalid records ✓, (4) idempotent replay stable — same request-ID twice returns nil, stored fact unchanged ✓, (5) changed-content replay conflicts — same request-ID with different content returns {:code :idempotency-conflict} ✓, (6) full unit suite passes — 548 tests, 1405 assertions, 0 failures. Adapter is now the contract-enforcing reference implementation per ADR-004 decision 3. --tasks-dir docs/kanban --tasks-dir docs/kanban
+
+REVIEW 2026-07-13: approve. Verified directly: in_memory.clj now validates every :record-* write (including per-doc validation inside import-all) against the schema registry before any swap!, and record-repository-location! correctly enforces idempotent-replay vs. :idempotency-conflict semantics. Ran clojure -M:unit-test: 554 tests, 1421 assertions, 0 failures. New tests are real enforcement checks, not mocks -- invalid-write-rejected-before-delegation throws ExceptionInfo with :code :schema-validation-failed and confirms export-all is byte-identical before/after the rejected write; changed-content-replay-conflicts/idempotent-replay-stable cover both idempotency branches. Minor non-blocking gaps: the export-all/state-unchanged check is only exercised for repository-location, not the other four record ops (though correct by construction since validation precedes storage), and the card comment discloses the backup_test.clj fixture fix but not the in_memory_test.clj fixture rewrite as a separate migrated-test disposition. Moving to done. --tasks-dir docs/kanban
+
+REVIEW-PASS 2026-07-13: Approved. Validated: every write is schema-checked before storage (validate-write! on all 5 record ops + import-all per-doc), negative tests genuinely prove rejection (invalid-write-rejected-before-delegation, invalid-for-non-idempotent-ops), idempotent replay stable, changed-content conflicts. 554/554 tests pass. git diff confirms enforcement code is real, not stubbed. --tasks-dir docs/kanban
 ---

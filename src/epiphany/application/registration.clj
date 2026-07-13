@@ -12,8 +12,11 @@
   (let [{:keys [request-id repository-path]} (if (map? command)
                                                command
                                                {:repository-path command})]
-    (or (when request-id
-          ((:find-by-request-id observations) request-id))
+    (or (when-let [existing ((:find-by-request-id observations) request-id)]
+          {:resource-id (:resource-id existing)
+           :repository-path repository-path
+           :common-git-dir (get-in existing [:repository/common-git-dir :path/raw])
+           :request-id request-id})
         (let [common-git-dir ((:common-git-directory git) repository-path)
               existing-metadata ((:read repository-metadata) common-git-dir)
               resource-id (or (:resource-id existing-metadata)

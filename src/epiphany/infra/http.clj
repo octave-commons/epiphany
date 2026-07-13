@@ -8,6 +8,7 @@
             [ring.adapter.jetty :as jetty]
             [ring.util.response :as response]
             [clojure.data.json :as json]
+            [clojure.edn :as edn]
             [clojure.string :as str]
             [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
@@ -87,14 +88,16 @@
     (json/write-str data :key-fn (fn [k] (subs (str k) 1)))))
 
 (defn- read-body
-  "Read and parse request body."
+  "Read and parse request body. EDN parsing uses clojure.edn with no
+  data readers — unknown tags and #=(...) are parse errors, never
+  evaluations (ENG-017K)."
   [request]
   (when-let [body (:body request)]
     (let [body-str (slurp body)
           content-type (get-in request [:headers "content-type"] "")]
       (cond
         (.contains content-type "application/edn")
-        (read-string body-str)
+        (edn/read-string {:readers {}} body-str)
 
         (.contains content-type "application/json")
         (json/read-str body-str :key-fn keyword)
@@ -335,11 +338,12 @@
                                     (json/read-str raw :key-fn keyword)
 
                                     (.contains ct "application/edn")
-                                    (read-string raw)
+                                    (edn/read-string {:readers {}} raw)
 
                                     :else
                                     (try (json/read-str raw)
-                                         (catch Exception _ (read-string raw)))))
+                                         (catch Exception _
+                                           (edn/read-string {:readers {}} raw)))))
                                 (catch Exception _ nil))))
             request (cond-> request
                       body-params (assoc :body-params body-params)

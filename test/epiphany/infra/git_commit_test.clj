@@ -202,3 +202,26 @@
                                       (:commits result)))]
     (is (some? feature-commit))
     (is (= "refs/heads/feature-branch" (:git/ref-context feature-commit)))))
+
+;; ---- read-blob tests (regression: Repository has no .getObject method;
+;;      must use .open, which throws MissingObjectException when absent) ----
+
+(defn- blob-oid-for [path]
+  (let [main-commit (first (filter #(= "third commit" (:commit/message-text %))
+                                   (:commits (git/reachable-commits @fixture-repo-dir #{"refs/heads/main"}))))
+        entries (:entries (git/commit-tree-entries @fixture-repo-dir (:commit/oid main-commit)))]
+    (:git/blob-oid (first (filter #(= path (:git/path %)) entries)))))
+
+(deftest read-blob-returns-real-content
+  (let [oid (blob-oid-for "README.md")
+        result (git/read-blob @fixture-repo-dir oid)]
+    (is (some? oid) "fixture blob-oid resolves")
+    (is (nil? (:blob/failure result)))
+    (is (= "fixture\n" (:blob/content result)))
+    (is (= (:blob/size result) (count (.getBytes "fixture\n" "UTF-8"))))))
+
+(deftest read-blob-missing-oid-reports-failure-not-exception
+  (let [fake-oid "0000000000000000000000000000000000000000"
+        result (git/read-blob @fixture-repo-dir fake-oid)]
+    (is (nil? (:blob/content result)))
+    (is (= "blob-not-found" (:failure/reason (:blob/failure result))))))

@@ -68,6 +68,7 @@ dependency: ["<card id>", ...]    # ids of cards that must be done first
 4. **Schemas/contracts precede adapters.** Contract cards depend only on scaffolding; adapter cards depend on contract cards.
 5. **Append, don't rewrite.** Record triage/progress/decisions as card comments (`eta-mu kanban comment`) or "revised" sections; never silently rewrite history. Same rule the product itself follows.
 6. **`board.json` is generated.** After editing cards, regenerate the snapshot; never hand-edit it.
+7. **`review → done` requires `bin/kanban-done-gate <slug>` to exit 0 first.** A 2026-07-12/13 audit found six cards (ENG-004A/B/D, ENG-005A/B/F) promoted to `done` on the implementer's own completion comment alone — several honestly disclosing the gap ("no CLI command yet — needs ports wiring") in the very same comment that got promoted anyway. The gate is a mechanical floor, not a substitute for `docs/process/review-and-acceptance.md`'s reviewer/authority/disposition record: it checks that any CLI command the story names actually exists in `main.clj`'s dispatch table, that a real `N tests, N assertions, 0 failures` line is present (not prose asserting tests pass), and that some comment records an explicit `REVIEW`/`AUDIT` disposition distinct from the implementation comment. Passing the gate does not certify the reviewer was independent or authorized — that part is still on you. A failing gate blocks the transition; do not hand-edit `status: done` around it.
 
 ## How an agent picks work
 

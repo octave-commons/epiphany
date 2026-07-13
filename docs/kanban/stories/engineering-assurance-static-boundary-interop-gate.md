@@ -1,7 +1,7 @@
 ---
 id: "01900d7c-7f3a-7e8b-9c4d-000000001708"
 title: "ENG-017H: Add static architecture and interop boundary gates"
-status: ready
+status: "ready"
 type: "story"
 priority: "P1"
 phase: 1
@@ -15,6 +15,7 @@ dependency: []
 verification: ["lint"]
 risk: "low"
 ---
+
 # ENG-017H: Add static architecture and interop boundary gates
 
 ## Intent
@@ -22,9 +23,9 @@ risk: "low"
 Give the repo a deterministic static floor: a pinned linter with a clean
 baseline, an architecture-boundary check for the STYLE.md layer laws, and a
 Java-interop inventory with a ratchet. Verified today: no
-`.clj-kondo/config.edn`, no `.splint.edn`, no `:lint` alias exists — the
+`.clj-kondo/config.edn`, no `.splint.edn`, no `:lint` exists — the
 "Chore-000: static analysis" draft (inbox `06.12.04`: splint, clj-kondo,
-heretic, cloverage) folds into this card rather than becoming a separate one.
+heretic) folds into this card. cloverage is handled separately by ENG-017L.
 
 ## Decision context
 
@@ -56,7 +57,7 @@ STYLE.md engineering kernel's layer laws (`law`/`shape`/`extern`/`domain`/
   Git 47 dot calls per the conversation's counts) is measured, not banned.
 - No `extern.*` migration (STYLE.md's staged-migration posture; moves happen
   at natural seams under their own cards).
-- No mutation tooling (ENG-017J) and no coverage gating.
+- No mutation tooling (ENG-017J). Coverage reporting is ENG-017L.
 
 ## Invariants
 
@@ -105,4 +106,6 @@ have been ratchet findings at introduction time instead of an audit discovery.
 
 ---
 REWORK 2026-07-12: body rewritten to the story contract (original preserved in git history and scratchpad; see ENG-017A comment for the shared rework rationale). Triage authority: user instruction this session. --tasks-dir docs/kanban
+
+CORRECTION 2026-07-13: Removed cloverage from scope (line 27 and non-goals). Coverage reporting is now owned by ENG-017L. The original chore draft (06.12.04) listed 4 tools: splint, clj-kondo, heretic, cloverage. ENG-017H owns the first 3; ENG-017L owns cloverage. --tasks-dir docs/kanban
 ---

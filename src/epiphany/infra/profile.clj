@@ -10,7 +10,8 @@
   No profile silently falls back to another. Selection is explicit and
   visible in diagnostics and command output."
 
-  (:require [epiphany.infra.adapters.in-memory :as in-memory]))
+  (:require [epiphany.infra.adapters.in-memory :as in-memory]
+            [epiphany.application.validation :as validation]))
 
 (def valid-profiles
   "Set of recognized profile keywords."
@@ -48,7 +49,8 @@
   (validate-profile! profile)
   (case profile
     :local
-    (in-memory/make {:common-git-dir-fn common-git-dir-fn})
+    (let [adapters (in-memory/make {:common-git-dir-fn common-git-dir-fn})]
+      (update adapters :observations validation/validating-observations-port))
 
     :services
     (throw (ex-info (str "Profile :services is not yet available. "

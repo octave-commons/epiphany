@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__rheos-kanban__kanban_update_status",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/kanban-mcp-status-gate.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/kanban-direct-edit-guard.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

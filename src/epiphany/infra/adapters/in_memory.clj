@@ -7,9 +7,15 @@
   direct-mode REPL workflow — never for :services mode.
 
   The constructor `make` returns a fresh, isolated adapter set. Each
-  call produces an independent world with its own atoms."
+  call produces an independent world with its own atoms.
 
-  )
+  The observations adapter is contract-enforcing (ENG-017C): every
+  write validates its input against the schema registry and enforces
+  idempotency semantics. Rejected writes leave all observable state
+  byte-identical to the pre-write state."
+
+  (:require [epiphany.law.operations :as operations]
+            [epiphany.law.registry :as registry]))
 
 ;; ---------------------------------------------------------------------------
 ;; Git adapter
@@ -36,12 +42,69 @@
               nil)}))
 
 ;; ---------------------------------------------------------------------------
+;; Contract enforcement helpers (ENG-017C)
+
+(defn- validate-write!
+  "Validate a record against the schema registered for `op`.
+  Returns nil when valid; throws :schema-validation-failed when invalid."
+  [op record]
+  (when-let [entry (get operations/operations op)]
+    (when-let [schema-name (:input-schema entry)]
+      (when-let [explain (registry/explain schema-name record)]
+        (throw (ex-info (str "Schema validation failed for " op)
+                        {:code :schema-validation-failed
+                         :operation op
+                         :schema/name schema-name
+                         :explanation (mapv #(select-keys % [:path :schema :message])
+                                           (:errors explain))}))))))
+
+(defn- idempotent-record-repository-location!
+  "Enforce idempotency for repository-location writes.
+
+  Same request-ID replay: returns the existing recorded fact (no mutation).
+  Same request-ID with materially different content: returns
+  {:code :idempotency-conflict}.
+  New request-ID: validates, stores, returns nil."
+  [by-request-id observation]
+  (let [rid (:observation/request-id observation)]
+    (if-not rid
+      ;; No request-id — validate and store unconditionally
+      (do (validate-write! :record-repository-location! observation)
+          (swap! by-request-id assoc (random-uuid) observation)
+          nil)
+      ;; Has request-id — check for existing
+      (if-let [existing (get @by-request-id rid)]
+        ;; Existing found — check for content conflict
+        (if (= existing observation)
+          nil  ;; Idempotent replay — no mutation, no error
+          {:code :idempotency-conflict
+           :request-id rid
+           :message "Same request-id with materially different content"})
+        ;; New request-id — validate and store
+        (do (validate-write! :record-repository-location! observation)
+            (swap! by-request-id assoc rid observation)
+            nil)))))
+
+(defn- validated-record-fn
+  "Create a validating write function for non-idempotent record ops.
+  Validates against the schema registry before delegating to the store fn."
+  [op store-fn]
+  (fn [observation]
+    (validate-write! op observation)
+    (store-fn observation)))
+
+;; ---------------------------------------------------------------------------
 ;; Observations adapter
 
 (defn- make-observations-adapter
   "In-memory observations port. Append-only store for repository location
    observations, ingestion runs, projection checkpoints, and section
-   extractions, indexed by request-id for idempotent lookup."
+   extractions, indexed by request-id for idempotent lookup.
+
+   Every write is validated against the schema registry (ENG-017C).
+   Repository-location writes enforce idempotency: same request-ID
+   replay returns the recorded fact; same request-ID with different
+   content returns {:code :idempotency-conflict}."
   []
   (let [by-request-id (atom {})
         ingestion-runs (atom [])
@@ -51,21 +114,28 @@
     {:find-by-request-id (fn [request-id]
                            (get @by-request-id request-id))
      :record-repository-location! (fn [observation]
-                                     (when-let [rid (:observation/request-id observation)]
-                                       (swap! by-request-id assoc rid observation))
-                                     nil)
-     :record-revision-at-path! (fn [observation]
-                                 (swap! revision-at-paths conj observation)
-                                 nil)
-     :record-ingestion-run! (fn [observation]
-                              (swap! ingestion-runs conj observation)
-                              nil)
-     :record-checkpoint! (fn [observation]
-                           (swap! checkpoints conj observation)
-                           nil)
-     :record-section-extraction! (fn [observation]
-                                   (swap! section-extractions conj observation)
-                                   nil)
+                                    (idempotent-record-repository-location!
+                                     by-request-id observation))
+     :record-revision-at-path! (validated-record-fn
+                                 :record-revision-at-path!
+                                 (fn [observation]
+                                   (swap! revision-at-paths conj observation)
+                                   nil))
+     :record-ingestion-run! (validated-record-fn
+                              :record-ingestion-run!
+                              (fn [observation]
+                                (swap! ingestion-runs conj observation)
+                                nil))
+     :record-checkpoint! (validated-record-fn
+                           :record-checkpoint!
+                           (fn [observation]
+                             (swap! checkpoints conj observation)
+                             nil))
+     :record-section-extraction! (validated-record-fn
+                                   :record-section-extraction!
+                                   (fn [observation]
+                                     (swap! section-extractions conj observation)
+                                     nil))
      :list-ingestion-runs (fn [resource-id]
                             (filterv #(= resource-id (:resource-id %))
                                      @ingestion-runs))
@@ -93,16 +163,26 @@
                       (case coll-name
                         "repository-location"
                         (doseq [doc docs]
-                          (when-let [rid (:observation/request-id doc)]
-                            (swap! by-request-id assoc rid doc)))
+                          (let [rid (:observation/request-id doc)]
+                            (when (and rid (not (get @by-request-id rid)))
+                              (validate-write! :record-repository-location! doc)
+                              (swap! by-request-id assoc rid doc))))
                         "ingestion-run"
-                        (swap! ingestion-runs into docs)
+                        (doseq [doc docs]
+                          (validate-write! :record-ingestion-run! doc)
+                          (swap! ingestion-runs conj doc))
                         "projection-checkpoint"
-                        (swap! checkpoints into docs)
+                        (doseq [doc docs]
+                          (validate-write! :record-checkpoint! doc)
+                          (swap! checkpoints conj doc))
                         "section-extraction"
-                        (swap! section-extractions into docs)
+                        (doseq [doc docs]
+                          (validate-write! :record-section-extraction! doc)
+                          (swap! section-extractions conj doc))
                         "revision-at-path"
-                        (swap! revision-at-paths into docs)
+                        (doseq [doc docs]
+                          (validate-write! :record-revision-at-path! doc)
+                          (swap! revision-at-paths conj doc))
                         nil)))}))
 
 ;; ---------------------------------------------------------------------------
