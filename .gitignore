@@ -2,6 +2,7 @@
 .nrepl-port
 .lsp/.cache/
 .clj-kondo/.cache/
+.clj-kondo/imports/
 target/
 data/
 .claude/*
