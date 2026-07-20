@@ -5,7 +5,7 @@ dependency: [""]
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784566846876-0.pmfc08ef4fbswdo9wfr"
+write-id: "1784567200473-0.o2l25ims17efpqov33y"
 points: "2"
 verification: ["unit-test"]
 risk: "low"
@@ -124,4 +124,12 @@ Sweep: `git grep -n 'read-string' src/ test/ | grep -v edn/read-string` → only
 Suite: 569 tests, 1460 assertions, 0 failures (`clojure -M:unit-test`).
 
 Moving to review.
+
+RE-VERIFIED 2026-07-20 (session): Confirmed commit 5a18710 addresses both prior review-fail findings. (1) eval-payload-rejected now posts a real `#=(reset! epiphany.infra.http-test/eval-sentinel true)` payload through the actual `create-handler` (now public) rather than `make-router`, which never parsed `:body-params` at all — so the test now genuinely exercises the vulnerable/fixed code path. (2) `read-version-file` in lucene.clj now returns `:integrity/corrupt-version-file` distinct from a missing file, no longer silently coercing both to 0.
+
+Ran `clojure -M:unit-test` fresh: 569 tests, 1460 assertions, 0 failures.
+
+Sweep confirmed: `git grep -n 'read-string' src/ test/` — only `edn/read-string` remains everywhere. The two originally-flagged external boundaries (http.clj request bodies, lucene.clj version file) both pass `{:readers {}}`. Remaining `edn/read-string` call sites are all on trusted local/internal input, not external boundaries: `domain/backup.clj:37` (local manifest file), `domain/repository_identity.clj:26` (local repo metadata file), `test/.../benchmark_test.clj:115` and `test/.../registry_test.clj:11,108` (test fixtures/data). None read attacker-controlled bytes.
+
+Acceptance criteria met. Moving to done.
 ---

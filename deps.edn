@@ -30,17 +30,17 @@
   :run {:main-opts ["-m" "epiphany.infra.main"]}
 
   ;; Full suite — the green baseline.
-  :test {:extra-paths ["test"]
+  :test {:extra-paths ["test" "tools"]
          :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
          :main-opts ["-m" "kaocha.runner"]}
 
   ;; No Docker, no network.
-  :unit-test {:extra-paths ["test"]
+  :unit-test {:extra-paths ["test" "tools"]
               :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
               :main-opts ["-m" "kaocha.runner" "unit"]}
 
   ;; Needs local services (real UNAVAILABLE semantics arrive with US-000C).
-  :integration-test {:extra-paths ["test"]
+  :integration-test {:extra-paths ["test" "tools"]
                      :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
                      :main-opts ["-m" "kaocha.runner" "integration"]}
 
@@ -56,6 +56,22 @@
 
    :cljfmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.13.0"}}
             :main-opts ["-m" "cljfmt.main" "check" "src" "test" "dev"]}
+
+   ;; Static lint gate — pinned linter, .clj-kondo/config.edn baseline.
+   :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2025.07.28"}}
+          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "dev" "--fail-level" "error"]}
+
+   ;; Layer-boundary + interop-inventory ratchet (STYLE.md law/shape/extern/domain/infra).
+   :boundary-check {:extra-paths ["tools"]
+                     :main-opts ["-m" "epiphany.static.boundary-check"]}
+
+   ;; ENG-017H interop ratchet; `--write` regenerates reports/interop.edn (review the diff before committing).
+   :interop-inventory {:extra-paths ["tools"]
+                        :main-opts ["-m" "epiphany.static.interop-inventory"]}
+
+   ;; Splint — reporting-only per ENG-017H (.splint.edn); not part of the required CI static job.
+   :splint {:extra-deps {io.github.noahtheduke/splint {:mvn/version "1.24.0"}}
+            :main-opts ["-m" "noahtheduke.splint" "-o" "simple" "src" "test" "dev"]}
 
    ;; Coverage reporting.
    :coverage {:extra-paths ["test"]

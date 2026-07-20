@@ -1,0 +1,6 @@
+{:linters {:unresolved-symbol {:level :error}
+           :unresolved-var {:level :error}
+           :invalid-arity {:level :error}
+           :discouraged-var {:level :error
+                              :vars {clojure.core/read-string
+                                     {:message "read-string performs reader-eval; use clojure.edn/read-string with {:readers {}} at external boundaries (ENG-017K)."}}}}}

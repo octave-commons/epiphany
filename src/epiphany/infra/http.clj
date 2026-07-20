@@ -144,8 +144,24 @@
                     (update :query-params merge (parse-query-params qs)))]
       (handler request))))
 
+(def ^:private generic-internal-error-detail
+  "A server-side fault has no client-actionable detail; the real message
+  goes to *err*, never to the response body (ENG-017G boundary hardening)."
+  "An internal error occurred.")
+
+(defn- log-server-error!
+  [^Exception e]
+  (binding [*out* *err*]
+    (println "Unhandled exception in HTTP handler:" (.getMessage e))))
+
 (defn wrap-exceptions
-  "Middleware to catch exceptions and return problem+json responses."
+  "Middleware to catch exceptions and return problem+json responses.
+
+  Recognized :code values on an ex-info carry a client-safe message by
+  contract and are returned verbatim. Anything else — an unrecognized
+  :code or a bare exception — is a programming/internal fault: the real
+  message is logged server-side only, and the client gets a generic,
+  non-leaking detail (ENG-017G)."
   [handler]
   (fn [request]
     (try
@@ -159,9 +175,11 @@
             :unavailable (unavailable-problem (.getMessage e))
             :not-found (not-found-problem (.getMessage e))
             :bad-request (bad-request-problem (.getMessage e))
-            (internal-error-problem (.getMessage e)))))
+            (do (log-server-error! e)
+                (internal-error-problem generic-internal-error-detail)))))
       (catch Exception e
-        (internal-error-problem (.getMessage e))))))
+        (log-server-error! e)
+        (internal-error-problem generic-internal-error-detail)))))
 
 (defn wrap-profile
   "Middleware to inject profile from query params or header."
@@ -178,6 +196,15 @@
 
 ;; ---------------------------------------------------------------------------
 ;; Handlers
+
+(def max-search-limit
+  "Upper bound on :limit shared with the CLI's --limit validation
+  (ENG-017G boundary hardening); guards against unbounded result sets."
+  1000)
+
+(defn valid-limit?
+  [limit]
+  (and (integer? limit) (pos? limit) (<= limit max-search-limit)))
 
 (defn search-handler
   "Handle search requests."
@@ -198,6 +225,10 @@
         (not (#{:lexical :semantic :hybrid} mode))
         (bad-request-problem (str "Invalid mode: " (pr-str mode)
                                   ". Must be lexical, semantic, or hybrid"))
+
+        (not (valid-limit? limit))
+        (bad-request-problem (str "Invalid limit: " (pr-str limit)
+                                  ". Must be a positive integer <= " max-search-limit))
 
         :else
         (let [request-map (cond-> {:query query

@@ -1,0 +1,7 @@
+;; ENG-017H: splint evaluated, adopted reporting-only for now (empty override
+;; = full default rule set). No rule is promoted to a build-failing error —
+;; see the ENG-017H card comment for the adoption-deferral rationale and the
+;; baseline count. `clojure -M:splint` is not part of the required `static`
+;; CI job; only :lint (clj-kondo), :boundary-check, and :interop-inventory
+;; are required.
+{}

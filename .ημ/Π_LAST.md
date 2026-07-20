@@ -1,33 +1,54 @@
-# Π Handoff — 2026-07-20T17:30:00Z
+# Π Handoff — 2026-07-20T17:23:49Z
 
 - **Branch:** `main`
-- **Base commit:** `4a074be`
-- **Tests:** 569 tests, 1460 assertions, 0 failures
+- **Base commit:** `5a18710`
+- **Tests:** 586 tests, 1489 assertions, 0 failures
+- **Lint:** 0 errors, 92 warnings (all pre-existing)
+- **Boundary check:** clean
+- **Interop ratchet:** clean
 
-## ENG-017K: EDN boundary hardening (completed)
+## ENG-017H: Static architecture and interop boundary gates (completed)
+
+### New source
+- `tools/epiphany/static/boundary_check.clj` — layer-boundary enforcement (law/shape/domain/application/infra)
+- `tools/epiphany/static/interop_inventory.clj` — Java interop ratchet with per-namespace baselines
+
+### New tests
+- `test/epiphany/static/boundary_check_test.clj` — 8 tests, 19 assertions
+- `test/epiphany/static/interop_inventory_test.clj` — 9 tests, 10 assertions
+
+### New config
+- `.clj-kondo/config.edn` — lint baseline: `discouraged-var` on `clojure.core/read-string` (ENG-017K gate)
+- `.splint.edn` — splint defaults, non-gating (deferred adoption)
+- `reports/interop.edn` — 45-namespace interop baseline
 
 ### Modified source
-- `src/epiphany/infra/adapters/lucene.clj` — `read-version-file` returns `:integrity/corrupt-version-file` for unparseable sidecar; `:index-version` surfaces it
-- `src/epiphany/infra/http.clj` — `create-handler` made public; body parsing consolidated onto `read-body`; parse failures produce typed `:boundary/malformed-edn` 400; `malformed-edn-problem` helper added
+- `deps.edn` — added `:lint`, `:boundary-check`, `:interop-inventory`, `:splint` aliases; `tools` path in test aliases
+- `.github/workflows/test.yml` — added `static` CI job (lint → boundary → interop)
 
-### Modified tests
-- `test/epiphany/infra/adapters/lucene_test.clj` — `corrupt-version-file-surfaces-integrity-outcome-test`
-- `test/epiphany/infra/http_test.clj` — all four ENG-017K tests rewired to `create-handler` with real `#=(...)` payloads
+## ENG-017G: CLI/HTTP command parity (in progress — boundary hardening)
+
+### Modified source
+- `src/epiphany/infra/http.clj` — `wrap-exceptions` no longer leaks internal messages to clients (ENG-017G boundary hardening); added `max-search-limit` + `valid-limit?` guard on search handler
 
 ### Modified docs
-- `docs/kanban/.events/ledger.edn` — status change + comment events
-- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md` — story updated to `review`
+- `docs/kanban/stories/engineering-assurance-interface-command-parity.md` — status → `in_progress`
 
-### Modified config
-- `.ημ/PRINCIPLE.edn` — skill registry path migration: `~/.pi/agent/skills` → `~/.agents/skills`
+## ENG-017K: EDN boundary hardening (re-verified → done)
 
-### Deleted
-- `docs/adrs/.#adr-004-contract-first-adversarial-verification.md` — Emacs lockfile symlink removed
+### Modified docs
+- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md` — re-verification appended
+- `docs/kanban/stories/engineering-assurance-static-boundary-interop-gate.md` — implementation notes appended
+- `docs/kanban/.events/ledger.edn` — re-verification + ENG-017H progress events
+
+### Receipts
+- `receipts.edn` — previous Π receipt appended
 
 ## Intentionally untracked
 - `.mcp.json` — MCP server config
 - `CLAUDE.md` — Claude Code guidance
 - `opencode.json` — OpenCode config
+- `.clj-kondo/.cache/` — lint cache (generated)
 
 ## Known regressions
 - None introduced. Integration tests require running services (pre-existing).

@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001707"
-title: "ENG-017G: Normalize CLI and HTTP command contracts"
-status: "ready"
-type: "story"
-priority: "P1"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 5
-labels: ["quality", "cli", "http", "parity", "boundaries", "phase-1"]
 category: "stories"
+labels: ["quality", "cli", "http", "parity", "boundaries", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001702", "01900d7c-7f3a-7e8b-9c4d-000000001601"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784568243975-0.806ki8lj5mprf7le75"
+points: "5"
 verification: ["unit-test"]
 risk: "medium"
+title: "ENG-017G: Normalize CLI and HTTP command contracts"
+priority: "P1"
+status: "in_progress"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001707"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017G: Normalize CLI and HTTP command contracts

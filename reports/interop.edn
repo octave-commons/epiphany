@@ -1,0 +1,334 @@
+;; Reviewed interop baseline (ENG-017H). Regenerate with
+;; `clojure -M:boundary-check --write` only after reviewing the diff.
+{epiphany.application.registration
+ {:quadrant :application,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.application.validation
+ {:quadrant :application,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.backup
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 3,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.benchmark
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 4,
+  :type-hints 0},
+ epiphany.domain.boundary
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.concept
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.continuity
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 2,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.diff
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.evidence
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 3,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.export
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.extraction-projection
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.file-lineage
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.history-replacement
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.hybrid-search
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.inbox
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 4,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.ingestion
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.lineage
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.lineage-trace
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.markdown-selection
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 4,
+  :static-calls 0,
+  :type-hints 4},
+ epiphany.domain.redundancy
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.repository-identity
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.research-gap
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.review
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 3,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.revision-at-path
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.section-extraction
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 3,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.status
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 12,
+  :static-calls 2,
+  :type-hints 0},
+ epiphany.infra.adapters.in-memory
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 1,
+  :type-hints 0},
+ epiphany.infra.adapters.lucene
+ {:quadrant :infra,
+  :imports
+  #{org.apache.lucene.index.IndexWriter
+    org.apache.lucene.store.FSDirectory
+    org.apache.lucene.document.Field$Store
+    org.apache.lucene.index.IndexWriterConfig
+    org.apache.lucene.document.Document
+    java.nio.file.Path
+    java.nio.file.Files
+    org.apache.lucene.index.DirectoryReader
+    org.apache.lucene.document.KnnFloatVectorField
+    org.apache.lucene.analysis.standard.StandardAnalyzer
+    org.apache.lucene.search.BooleanQuery$Builder
+    org.apache.lucene.document.StringField
+    org.apache.lucene.search.BooleanClause$Occur
+    org.apache.lucene.document.TextField
+    org.apache.lucene.search.IndexSearcher
+    org.apache.lucene.search.TermQuery
+    org.apache.lucene.search.ScoreDoc
+    org.apache.lucene.index.VectorSimilarityFunction
+    org.apache.lucene.search.BooleanQuery
+    org.apache.lucene.index.IndexWriterConfig$OpenMode
+    org.apache.lucene.queryparser.classic.QueryParser
+    org.apache.lucene.index.Term},
+  :dot-calls 65,
+  :static-calls 7,
+  :type-hints 10},
+ epiphany.infra.adapters.mongo
+ {:quadrant :infra,
+  :imports
+  #{java.util.Date
+    com.mongodb.MongoWriteException
+    org.bson.Document
+    com.mongodb.client.model.Indexes
+    com.mongodb.client.MongoClients
+    com.mongodb.client.MongoDatabase
+    com.mongodb.client.model.IndexOptions
+    com.mongodb.client.MongoCollection},
+  :dot-calls 238,
+  :static-calls 4,
+  :type-hints 32},
+ epiphany.infra.adapters.ollama
+ {:quadrant :infra,
+  :imports
+  #{java.time.Duration
+    java.net.http.HttpResponse
+    java.net.URI
+    java.net.http.HttpResponse$BodyHandlers
+    java.net.http.HttpRequest
+    java.net.http.HttpClient
+    java.net.http.HttpRequest$BodyPublishers},
+  :dot-calls 10,
+  :static-calls 3,
+  :type-hints 1},
+ epiphany.infra.git
+ {:quadrant :infra,
+  :imports
+  #{org.eclipse.jgit.revwalk.RevWalk
+    org.eclipse.jgit.treewalk.TreeWalk
+    org.eclipse.jgit.storage.file.FileRepositoryBuilder
+    org.eclipse.jgit.lib.PersonIdent
+    org.eclipse.jgit.lib.ObjectId
+    org.eclipse.jgit.revwalk.RevCommit
+    org.eclipse.jgit.lib.FileMode
+    org.eclipse.jgit.errors.MissingObjectException},
+  :dot-calls 55,
+  :static-calls 3,
+  :type-hints 13},
+ epiphany.infra.http
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 16,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.infra.main
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 19,
+  :static-calls 6,
+  :type-hints 2},
+ epiphany.infra.profile
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.infra.repository-identity
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 2,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.infra.repository-metadata-file
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 3,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.infra.services
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 0,
+  :type-hints 1},
+ epiphany.infra.workbench
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 2,
+  :type-hints 0},
+ epiphany.law.git
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.markdown
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.observation
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.operations
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.ports
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.registry
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.selection
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.shape.markdown
+ {:quadrant :shape,
+  :imports
+  #{com.vladsch.flexmark.ext.tables.TablesExtension
+    com.vladsch.flexmark.util.sequence.BasedSequence
+    com.vladsch.flexmark.ext.tables.TableBody
+    com.vladsch.flexmark.util.ast.Document
+    com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterBlock
+    com.vladsch.flexmark.parser.Parser
+    com.vladsch.flexmark.ext.tables.TableHead
+    com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+    com.vladsch.flexmark.util.ast.Block
+    java.util.Arrays
+    com.vladsch.flexmark.util.ast.Node},
+  :dot-calls 26,
+  :static-calls 5,
+  :type-hints 25}}
