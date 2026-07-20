@@ -5,8 +5,9 @@
   (staged-count 17)
   (unstaged)
   (push
-    (status "no-remote")
-    (note "No remote configured — local-only repo. Branch + tag local."))
+    (status "pushed")
+    (remote "upstream")
+    (note "Branch + 2 tags pushed to upstream/main"))
   (untracked
     (.mcp.json "MCP server config — not committed")
     (CLAUDE.md "Claude Code guidance — not committed")
