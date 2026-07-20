@@ -17,10 +17,13 @@
       :record-ingestion-run! (fn [obs] (swap! calls conj [:record-ingestion-run! obs]) nil)
       :record-checkpoint! (fn [obs] (swap! calls conj [:record-checkpoint! obs]) nil)
       :record-section-extraction! (fn [obs] (swap! calls conj [:record-section-extraction! obs]) nil)
+      :record-review-decision! (fn [obs] (swap! calls conj [:record-review-decision! obs]) nil)
       :list-ingestion-runs (fn [rid] (swap! calls conj [:list-ingestion-runs rid]) [])
       :list-checkpoints (fn [rid] (swap! calls conj [:list-checkpoints rid]) [])
       :list-revision-at-path-by-resource (fn [rid] (swap! calls conj [:list-revision-at-path-by-resource rid]) [])
       :list-section-extractions-by-revision (fn [rid] (swap! calls conj [:list-section-extractions-by-revision rid]) [])
+      :list-review-decisions (fn [rid] (swap! calls conj [:list-review-decisions rid]) [])
+      :list-review-decisions-by-candidate (fn [cid] (swap! calls conj [:list-review-decisions-by-candidate cid]) [])
       :export-all (fn [] (swap! calls conj [:export-all]) {})
       :import-all (fn [data] (swap! calls conj [:import-all data]) nil)}
      calls]))

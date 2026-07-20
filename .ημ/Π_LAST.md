@@ -1,54 +1,45 @@
-# Π Handoff — 2026-07-20T17:23:49Z
+# Π Handoff — 2026-07-20T20:15:00Z
 
 - **Branch:** `main`
-- **Base commit:** `5a18710`
-- **Tests:** 586 tests, 1489 assertions, 0 failures
-- **Lint:** 0 errors, 92 warnings (all pre-existing)
-- **Boundary check:** clean
-- **Interop ratchet:** clean
+- **Base commit:** `7f9c6ae`
+- **Tests:** 608 tests, 1540 assertions, 0 failures
+- **Previous Π:** 586 tests, 1489 assertions (22 new tests, 91 new assertions since last Π)
 
-## ENG-017H: Static architecture and interop boundary gates (completed)
+## Changes since last Π
 
-### New source
-- `tools/epiphany/static/boundary_check.clj` — layer-boundary enforcement (law/shape/domain/application/infra)
-- `tools/epiphany/static/interop_inventory.clj` — Java interop ratchet with per-namespace baselines
+### Modified source (13 files)
+- `bin/kanban-done-gate` — expanded gate logic
+- `src/epiphany/domain/review.clj` — review decision events
+- `src/epiphany/infra/adapters/in_memory.clj` — in-memory adapter additions
+- `src/epiphany/infra/adapters/mongo.clj` — MongoDB adapter expansion
+- `src/epiphany/infra/main.clj` — minor update
+- `src/epiphany/law/observation.clj` — observation law additions
+- `src/epiphany/law/operations.clj` — operation contracts
+- `src/epiphany/law/ports.clj` — port definitions
 
-### New tests
-- `test/epiphany/static/boundary_check_test.clj` — 8 tests, 19 assertions
-- `test/epiphany/static/interop_inventory_test.clj` — 9 tests, 10 assertions
+### Modified tests (4 files)
+- `test/epiphany/application/validation_test.clj` — validation coverage
+- `test/epiphany/domain/review_test.clj` — review domain tests
+- `test/epiphany/infra/adapters/in_memory_test.clj` — in-memory adapter tests
+- `test/epiphany/infra/http_test.clj` — HTTP parity tests
 
-### New config
-- `.clj-kondo/config.edn` — lint baseline: `discouraged-var` on `clojure.core/read-string` (ENG-017K gate)
-- `.splint.edn` — splint defaults, non-gating (deferred adoption)
-- `reports/interop.edn` — 45-namespace interop baseline
+### Modified docs (5 files)
+- `docs/kanban/.events/ledger.edn` — event ledger updates
+- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md`
+- `docs/kanban/stories/engineering-assurance-interface-command-parity.md`
+- `docs/kanban/stories/engineering-assurance-static-boundary-interop-gate.md`
+- `docs/kanban/stories/story-05a-review-decision-events.md`
+- `docs/kanban/stories/story-05b-review-inbox.md`
+- `docs/kanban/stories/story-05f-export-evidence-packet.md`
 
-### Modified source
-- `deps.edn` — added `:lint`, `:boundary-check`, `:interop-inventory`, `:splint` aliases; `tools` path in test aliases
-- `.github/workflows/test.yml` — added `static` CI job (lint → boundary → interop)
-
-## ENG-017G: CLI/HTTP command parity (in progress — boundary hardening)
-
-### Modified source
-- `src/epiphany/infra/http.clj` — `wrap-exceptions` no longer leaks internal messages to clients (ENG-017G boundary hardening); added `max-search-limit` + `valid-limit?` guard on search handler
-
-### Modified docs
-- `docs/kanban/stories/engineering-assurance-interface-command-parity.md` — status → `in_progress`
-
-## ENG-017K: EDN boundary hardening (re-verified → done)
-
-### Modified docs
-- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md` — re-verification appended
-- `docs/kanban/stories/engineering-assurance-static-boundary-interop-gate.md` — implementation notes appended
-- `docs/kanban/.events/ledger.edn` — re-verification + ENG-017H progress events
-
-### Receipts
-- `receipts.edn` — previous Π receipt appended
+### New files (untracked, not committed)
+- `test/epiphany/parity/` — parity test results directory
 
 ## Intentionally untracked
 - `.mcp.json` — MCP server config
 - `CLAUDE.md` — Claude Code guidance
 - `opencode.json` — OpenCode config
-- `.clj-kondo/.cache/` — lint cache (generated)
 
-## Known regressions
-- None introduced. Integration tests require running services (pre-existing).
+## Verification
+- Unit tests: 608 tests, 1540 assertions, 0 failures
+- Secret scan: clean (only test fixtures with placeholder values)

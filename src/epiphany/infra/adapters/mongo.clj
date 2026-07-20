@@ -86,6 +86,16 @@
   "Create or update indexes for the repository-location-v1 collection.
    Versioned: skips if the current version is already applied."
   [conn]
+  (when-let [^MongoCollection rd-coll (:review-decision-collection conn)]
+    ;; Unique index on request_id gives review decisions the same
+    ;; idempotency guarantee as repository-location: a retry carrying an
+    ;; already-recorded request-id fails the write (dup key) rather than
+    ;; appending a second decision. createIndex is a no-op if it exists.
+    (.createIndex rd-coll
+                  (Indexes/ascending (into-array String ["request_id"]))
+                  (-> (IndexOptions.)
+                      (.unique true)
+                      (.name "request_id_unique_v1"))))
   (let [collection (:repository-location-collection conn)
         index-versions (:index-versions-collection conn)
         current-doc (-> (.find index-versions)
@@ -136,8 +146,10 @@
          ckpt-coll (.getCollection db (str prefix "projection-checkpoint-v1"))
          sect-coll (.getCollection db (str prefix "section-extraction-v1"))
          rev-coll (.getCollection db (str prefix "revision-at-path-v1"))
+         rd-coll (.getCollection db (str prefix "review-decision-v1"))
          idx-coll (.getCollection db (str prefix "_index-versions"))]
       (ensure-indexes! {:repository-location-collection loc-coll
+                        :review-decision-collection rd-coll
                         :index-versions-collection idx-coll})
       {:client client
        :database db
@@ -147,6 +159,7 @@
        :projection-checkpoint-collection ckpt-coll
        :section-extraction-collection sect-coll
        :revision-at-path-collection rev-coll
+       :review-decision-collection rd-coll
        :index-versions-collection idx-coll})))
 
 (defn disconnect!
@@ -162,12 +175,14 @@
            ^MongoCollection projection-checkpoint-collection
            ^MongoCollection section-extraction-collection
            ^MongoCollection revision-at-path-collection
+           ^MongoCollection review-decision-collection
            ^MongoCollection index-versions-collection]}]
   (.drop repository-location-collection)
   (.drop ingestion-run-collection)
   (.drop projection-checkpoint-collection)
   (.drop section-extraction-collection)
   (.drop revision-at-path-collection)
+  (when review-decision-collection (.drop review-decision-collection))
   (.drop index-versions-collection))
 
 ;; ---------------------------------------------------------------------------
@@ -393,6 +408,53 @@
     (assoc :revision/parent-blob-oid (.getString doc "parent_blob_oid"))))
 
 ;; ---------------------------------------------------------------------------
+;; Review-decision document conversion
+
+(defn- review-decision->doc
+  "Convert a review-decision observation to a MongoDB Document."
+  [observation]
+  (doto (Document.)
+    (.put "_id" (str (:observation/id observation)))
+    (.put "observation_type" (subs (str (:observation/type observation)) 1))
+    (.put "request_id" (str (:observation/request-id observation)))
+    (.put "observation_id" (str (:observation/id observation)))
+    (.put "observed_at" (:observation/observed-at observation))
+    (.put "adapter_version" (:observation/adapter-version observation))
+    (.put "schema_version" (long (:observation/schema-version observation)))
+    (.put "resource_id" (str (:resource-id observation)))
+    (.put "decision_id" (str (:review-decision/id observation)))
+    (.put "candidate_id" (str (:review-decision/candidate-id observation)))
+    (.put "decision" (name (:review-decision/decision observation)))
+    (.put "decided_at" (:review-decision/decided-at observation))
+    (cond-> (:review-decision/reason observation)
+      (.put "reason" (:review-decision/reason observation)))
+    (cond-> (:review-decision/relabel-to observation)
+      (.put "relabel_to" (name (:review-decision/relabel-to observation))))
+    (cond-> (:review-decision/annotation observation)
+      (.put "annotation" (:review-decision/annotation observation)))
+    (cond-> (some? (:review-decision/suppressed observation))
+      (.put "suppressed" (boolean (:review-decision/suppressed observation))))))
+
+(defn doc->review-decision
+  "Convert a MongoDB Document back to a review-decision observation."
+  [^Document doc]
+  (cond-> {:observation/type             (keyword (.getString doc "observation_type"))
+           :observation/request-id       (java.util.UUID/fromString (.getString doc "request_id"))
+           :observation/id               (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at      (.getDate doc "observed_at")
+           :observation/adapter-version  (.getString doc "adapter_version")
+           :observation/schema-version   (.getLong doc "schema_version")
+           :resource-id                  (java.util.UUID/fromString (.getString doc "resource_id"))
+           :review-decision/id           (java.util.UUID/fromString (.getString doc "decision_id"))
+           :review-decision/candidate-id (java.util.UUID/fromString (.getString doc "candidate_id"))
+           :review-decision/decision     (keyword (.getString doc "decision"))
+           :review-decision/decided-at   (.getDate doc "decided_at")}
+    (.containsKey doc "reason")     (assoc :review-decision/reason (.getString doc "reason"))
+    (.containsKey doc "relabel_to") (assoc :review-decision/relabel-to (keyword (.getString doc "relabel_to")))
+    (.containsKey doc "annotation") (assoc :review-decision/annotation (.getString doc "annotation"))
+    (.containsKey doc "suppressed") (assoc :review-decision/suppressed (.getBoolean doc "suppressed"))))
+
+;; ---------------------------------------------------------------------------
 ;; Adapter implementation
 
 (defn- doc->observation-equal?
@@ -467,6 +529,18 @@
           (.insertOne coll (revision-at-path->doc observation))
           nil))
 
+      :record-review-decision!
+      (fn [observation]
+        (let [^MongoCollection coll (:review-decision-collection conn)]
+          (try
+            (.insertOne coll (review-decision->doc observation))
+            nil
+            (catch MongoWriteException e
+              ;; Duplicate request_id — idempotent replay, not an error.
+              (if (= 11000 (.getCode e))
+                nil
+                (throw e))))))
+
       :list-ingestion-runs
      (fn [resource-id]
        (let [^MongoCollection coll (:ingestion-run-collection conn)
@@ -499,6 +573,22 @@
                       (.into (java.util.ArrayList.)))]
          (mapv doc->section-extraction docs)))
 
+      :list-review-decisions
+     (fn [resource-id]
+       (let [^MongoCollection coll (:review-decision-collection conn)
+             docs (-> (.find coll)
+                      (.filter (Document. "resource_id" (str resource-id)))
+                      (.into (java.util.ArrayList.)))]
+         (mapv doc->review-decision docs)))
+
+      :list-review-decisions-by-candidate
+     (fn [candidate-id]
+       (let [^MongoCollection coll (:review-decision-collection conn)
+             docs (-> (.find coll)
+                      (.filter (Document. "candidate_id" (str candidate-id)))
+                      (.into (java.util.ArrayList.)))]
+         (mapv doc->review-decision docs)))
+
       :export-all
      (fn []
        {"repository-location" (mapv doc->observation
@@ -515,7 +605,10 @@
                                            (.find ^MongoCollection (:section-extraction-collection conn))))
         "revision-at-path"    (mapv doc->revision-at-path
                                     (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:revision-at-path-collection conn))))})
+                                           (.find ^MongoCollection (:revision-at-path-collection conn))))
+        "review-decision"     (mapv doc->review-decision
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:review-decision-collection conn))))})
 
       :import-all
      (fn [data]
@@ -526,6 +619,7 @@
                                        "projection-checkpoint" (:projection-checkpoint-collection conn)
                                        "section-extraction"  (:section-extraction-collection conn)
                                        "revision-at-path"    (:revision-at-path-collection conn)
+                                       "review-decision"     (:review-decision-collection conn)
                                        (throw (ex-info (str "Unknown collection: " coll-name)
                                                        {:collection coll-name})))]
            (doseq [doc docs]
@@ -534,7 +628,8 @@
                                         "ingestion-run"       (ingestion-run->doc doc)
                                         "projection-checkpoint" (checkpoint->doc doc)
                                         "section-extraction"  (section-extraction->doc doc)
-                                        "revision-at-path"    (revision-at-path->doc doc))]
+                                        "revision-at-path"    (revision-at-path->doc doc)
+                                        "review-decision"     (review-decision->doc doc))]
                (try
                  (.insertOne coll bson-doc)
                  (catch MongoWriteException _e

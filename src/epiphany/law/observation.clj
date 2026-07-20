@@ -213,7 +213,29 @@
                                                  [:section/body-span-start-byte :int]
                                                  [:section/body-span-end-byte :int]
                                                  [:section/body-span-start-line :int]
-                                                 [:section/body-span-end-line :int]]]]]))})
+                                                 [:section/body-span-end-line :int]]]]]))
+
+    ;; A review-decision observation: one durable, append-only review action
+    ;; on a lineage candidate (accept/reject/relabel/defer/annotate/
+    ;; do-not-suggest). It never rewrites the candidate or its Git evidence.
+    ;; :observation/request-id is the idempotency key — a retry carrying the
+    ;; same request-id never appends a second decision. Query-by-candidate,
+    ;; -relation-type, and -time are served from the :review-decision/* payload.
+    "observation/review-decision-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :review/decision-recorded]]
+           [:observation/request-id :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:review-decision/id :uuid]
+                 [:review-decision/candidate-id :uuid]
+                 [:review-decision/decision
+                  [:enum :accepted :rejected :relabel :deferred :annotated :do-not-suggest]]
+                 [:review-decision/decided-at 'inst?]
+                 [:review-decision/reason {:optional true} [:string {:min 1}]]
+                 [:review-decision/relabel-to {:optional true} :keyword]
+                 [:review-decision/annotation {:optional true} [:string {:min 1}]]
+                 [:review-decision/suppressed {:optional true} :boolean]]))})
 
 (defn exact-path?
   "The `:path/comparison :exact` contract: a candidate string counts as

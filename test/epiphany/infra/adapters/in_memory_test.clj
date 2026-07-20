@@ -1,6 +1,7 @@
 (ns epiphany.infra.adapters.in-memory-test
   (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.adapters.in-memory :as in-memory]
+            [epiphany.domain.review :as review]
             [epiphany.law.registry :as registry]))
 
 (defn- fake-common-git-dir [path]
@@ -28,6 +29,16 @@
   []
   {:observation/request-id (random-uuid)
    :resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"})
+
+(def ^:private resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+
+(defn- review-decision-observation
+  "Build a valid observation/review-decision-v1 record via the real
+   domain builder, so the test exercises the same path production uses."
+  [candidate-id decision-type & opts]
+  (review/decision->observation
+   (apply review/make-decision candidate-id decision-type opts)
+   {:resource-id resource-id :adapter-version "test"}))
 
 ;; ---------------------------------------------------------------------------
 ;; Port satisfaction
@@ -133,3 +144,56 @@
             "Conflict must include the request-id"))
       (is (= record1 ((:find-by-request-id obs) rid))
           "Stored fact must be the original, not the conflicting one"))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-005A: Review-decision events (append-only, idempotent, queryable)
+
+(deftest review-decision-recorded-and-listed
+  (testing "a recorded decision is queryable by resource and by candidate"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          cid (random-uuid)
+          rec (review-decision-observation cid :accepted)]
+      (is (nil? ((:record-review-decision! obs) rec)) "first write returns nil (success)")
+      (is (= [rec] ((:list-review-decisions obs) resource-id)))
+      (is (= [rec] ((:list-review-decisions-by-candidate obs) cid)))
+      (is (empty? ((:list-review-decisions-by-candidate obs) (random-uuid)))
+          "an unrelated candidate has no decisions"))))
+
+(deftest review-decision-idempotent-by-request-id
+  (testing "a retry carrying the same request-id does not duplicate the decision"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          rid (random-uuid)
+          rec (review-decision-observation (random-uuid) :rejected :request-id rid :reason "stale")]
+      ((:record-review-decision! obs) rec)
+      (is (nil? ((:record-review-decision! obs) rec)) "replay returns nil")
+      (is (= 1 (count ((:list-review-decisions obs) resource-id)))
+          "the decision appears exactly once after a retry"))))
+
+(deftest review-decision-invalid-record-rejected
+  (testing "a schema-invalid record throws and leaves state unchanged"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          before ((:export-all obs))]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   ((:record-review-decision! obs) (invalid-record))))
+      (is (= before ((:export-all obs))) "state is byte-identical after a rejected write")
+      (is (empty? ((:list-review-decisions obs) resource-id))))))
+
+(deftest review-decisions-queryable-by-type-and-time
+  (testing "domain query helpers work over the durable list (AC: by candidate, relation type, time)"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          cid (random-uuid)]
+      ((:record-review-decision! obs) (review-decision-observation cid :accepted))
+      ((:record-review-decision! obs) (review-decision-observation cid :rejected :reason "dup"))
+      (let [all ((:list-review-decisions obs) resource-id)]
+        (is (= 2 (count all)))
+        (is (= 1 (count (review/by-decision-type all :accepted))))
+        (is (= 2 (count (review/by-time-range all nil nil))))))))
+
+(deftest review-decisions-survive-export-import
+  (testing "review decisions round-trip through export-all/import-all"
+    (let [src (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          dst (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          rec (review-decision-observation (random-uuid) :do-not-suggest :suppressed true)]
+      ((:record-review-decision! src) rec)
+      ((:import-all dst) ((:export-all src)))
+      (is (= [rec] ((:list-review-decisions dst) resource-id))))))

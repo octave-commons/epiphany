@@ -47,6 +47,11 @@
     :version 1
     :persistence :append-only}
 
+   :record-review-decision!
+   {:input-schema "observation/review-decision-v1"
+    :version 1
+    :persistence :append-only}
+
    ;; Bulk import — payload references the same per-collection schemas;
    ;; enforcement is ENG-017F scope but the mapping lives here.
    :import-all
@@ -114,4 +119,5 @@
     :record-ingestion-run!
     :record-checkpoint!
     :record-section-extraction!
+    :record-review-decision!
     :import-all})

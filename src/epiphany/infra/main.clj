@@ -254,7 +254,8 @@
     :id :limit
     :default 20
     :parse-fn #(Integer/parseInt %)
-    :validate [pos? "Must be positive"]]
+    :validate [#(and (pos? %) (<= % http/max-search-limit))
+               (str "Must be a positive integer <= " http/max-search-limit)]]
    ["-f" "--format FORMAT" "Output format: text, edn, json"
     :id :format
     :default :text

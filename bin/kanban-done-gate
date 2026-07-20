@@ -2,10 +2,11 @@
 # Mechanical pre-check for a kanban card's review -> done transition.
 #
 # Usage:
-#   bin/kanban-done-gate <story-slug> [tasks-dir]
+#   bin/kanban-done-gate <card-slug-or-uuid-or-filename> [tasks-dir]
 #
-# Run this BEFORE:
-#   eta-mu kanban frontmatter <slug> status done --tasks-dir docs/kanban
+# Run this BEFORE moving a card to done (via the Rheos MCP kanban_update_status
+# tool, or by hand). The .claude hook kanban-mcp-status-gate.sh invokes it in
+# front of any kanban_update_status call targeting `done`.
 #
 # This is a FLOOR, not a substitute for docs/process/review-and-acceptance.md's
 # acceptance form (target, criteria, evidence, reviewer, authority ->
@@ -28,61 +29,110 @@
 # party -- that half of review-and-acceptance.md's contract is organizational,
 # not mechanical, and this script does not pretend otherwise.
 #
+# Resolution & parsing read the card's markdown file directly from disk. The
+# gate deliberately depends on NOTHING external -- no eta-mu CLI, no Rheos
+# server. (Earlier versions shelled out to `eta-mu kanban content`; after the
+# Rheos cutover that build resolves cards inconsistently and its subcommand
+# help is degenerate, so the dependency was removed. The card file + the source
+# tree are the only ground truth this check needs.)
+#
 # Exit 0: mechanical floor passes (transition may proceed to a real review).
 # Exit 1: blocked, with reasons printed.
 
 set -euo pipefail
 
-slug="${1:?usage: kanban-done-gate <story-slug-or-uuid> [tasks-dir]}"
+ident="${1:?usage: kanban-done-gate <card-slug-or-uuid-or-filename> [tasks-dir]}"
 tasks_dir="${2:-docs/kanban}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 main_clj="$repo_root/src/epiphany/infra/main.clj"
+abs_tasks_dir="$repo_root/$tasks_dir"
+[ -d "$abs_tasks_dir" ] || abs_tasks_dir="$tasks_dir"
 
-# The installed `eta-mu` CLI (pre-Rheos-cutover build) only resolves cards by
-# slug, not by the frontmatter `id` (UUID) that Rheos's MCP tools use. If the
-# arg looks like a UUID, resolve it to its slug by grepping frontmatter
-# directly -- this keeps the gate usable from a hook that only has a uuid
-# (e.g. an MCP kanban_update_status call), without depending on the CLI's
-# resolution behavior at all.
-if [[ "$slug" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
-  file="$(grep -rlE "^id: *\"?${slug}\"?" "$repo_root/$tasks_dir" 2>/dev/null | head -1 || true)"
-  if [ -z "$file" ]; then
-    echo "BLOCK: no card in $tasks_dir has frontmatter id: $slug"
-    exit 1
-  fi
-  resolved_slug="$(python3 -c '
-import re, sys
-body = open(sys.argv[1]).read()
-m = re.search(r"^title:\s*\"?(.*?)\"?\s*$", body, re.M)
-title = m.group(1) if m else ""
-slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-print(slug)
-' "$file")"
-  slug="$resolved_slug"
+# Resolve the card file and split it into frontmatter / body / comments,
+# entirely from disk. The identifier may be the Rheos slug (derived from the
+# title), the frontmatter `id` UUID, or the card's filename stem -- a hook
+# firing on an MCP kanban_update_status call only has the slug/uuid, while a
+# human may pass either. Sections are `---`-fenced (the same convention the
+# board tool uses): first fence pair is frontmatter, the next segment is the
+# body, everything after is the comment region.
+content="$(python3 - "$ident" "$abs_tasks_dir" <<'PY'
+import json, os, re, sys
+
+ident, tasks_dir = sys.argv[1], sys.argv[2]
+
+def norm(s):
+    # Normalize to the board's slug shape, then strip boundary dashes on BOTH
+    # sides of a comparison so a Rheos slug that keeps a trailing dash (from a
+    # title ending in ")") still matches the title-derived slug.
+    return re.sub(r'[^a-z0-9]+', '-', (s or '').lower()).strip('-')
+
+def parse(path):
+    lines = open(path, encoding='utf-8').read().split('\n')
+    fm, i = {}, 0
+    if lines and lines[0].strip() == '---':
+        j = 1
+        while j < len(lines) and lines[j].strip() != '---':
+            m = re.match(r'\s*([\w-]+):\s*(.*)', lines[j])
+            if m:
+                fm[m.group(1)] = m.group(2).strip().strip('"')
+            j += 1
+        i = j + 1
+    segments, cur = [], []
+    for ln in lines[i:]:
+        if ln.strip() == '---':
+            segments.append('\n'.join(cur)); cur = []
+        else:
+            cur.append(ln)
+    segments.append('\n'.join(cur))
+    body = segments[0].strip() if segments else ''
+    comments = '\n'.join(segments[1:]).strip() if len(segments) > 1 else ''
+    return fm, body, comments
+
+match = None
+for root, _, files in os.walk(tasks_dir):
+    for fn in sorted(files):
+        if not fn.endswith('.md'):
+            continue
+        path = os.path.join(root, fn)
+        try:
+            fm, body, comments = parse(path)
+        except Exception:
+            continue
+        nident = norm(ident)
+        if (ident in (fm.get('id', ''), fn[:-3])
+                or nident == norm(fm.get('title', ''))
+                or nident == norm(fn[:-3])):
+            match = {"file": path, "body": body, "comments": comments}
+            break
+    if match:
+        break
+
+print(json.dumps(match or {"error": "no card matching '%s' in %s" % (ident, tasks_dir)}))
+PY
+)"
+
+err="$(echo "$content" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("error",""))')"
+if [ -n "$err" ]; then
+  echo "BLOCK: $err"
+  exit 1
 fi
 
-content="$(eta-mu kanban content "$slug" --tasks-dir "$tasks_dir")"
-
-body="$(echo "$content" | python3 -c '
-import json, sys
-d = json.load(sys.stdin)
-print(d["sections"][0]["content"] if d["sections"] else "")
-')"
-
-comments="$(echo "$content" | python3 -c '
-import json, sys
-d = json.load(sys.stdin)
-print("\n---\n".join(s["content"] for s in d["sections"] if s["type"] == "comment"))
-')"
+slug="$(echo "$content" | python3 -c 'import json,os,sys; print(os.path.basename(json.load(sys.stdin)["file"])[:-3])')"
+body="$(echo "$content" | python3 -c 'import json,sys; print(json.load(sys.stdin)["body"])')"
+comments="$(echo "$content" | python3 -c 'import json,sys; print(json.load(sys.stdin)["comments"])')"
 
 fail=0
 
-echo "Checking $slug against the mechanical done-gate..."
+echo "Checking $ident ($slug) against the mechanical done-gate..."
 echo ""
 
 # --- 1. Claimed CLI commands must exist in main.clj's dispatch table -------
+# NB: the backtick is matched literally. Do NOT write it as \` — in GNU grep
+# ERE, \` is the start-of-buffer anchor, which silently made this check a
+# no-op in every earlier version of this gate (it would only match a body
+# that literally began with "ep ").
 
-claimed_commands="$(echo "$body" | grep -oE '\`ep [a-z][a-z-]*' | sed -E 's/`ep //' | sort -u || true)"
+claimed_commands="$(echo "$body" | grep -oE '`ep [a-z][a-z-]*' | sed -E 's/`ep //' | sort -u || true)"
 
 if [ -n "$claimed_commands" ]; then
   while IFS= read -r cmd; do
@@ -124,5 +174,5 @@ fi
 echo "OK: $slug passes the mechanical floor."
 echo "This does not certify the review was done by an independent/authorized"
 echo "party -- confirm that against docs/process/review-and-acceptance.md before"
-echo "running: eta-mu kanban frontmatter $slug status done --tasks-dir $tasks_dir"
+echo "moving the card to done (Rheos MCP kanban_update_status, project epiphany)."
 exit 0

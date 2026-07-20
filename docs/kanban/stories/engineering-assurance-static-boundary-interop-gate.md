@@ -5,13 +5,13 @@ dependency: [""]
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784568011290-0.72ctui02u8iwj1iepp"
+write-id: "1784571791503-0.lzle9l6su0e3ypo8zf1"
 points: "5"
 verification: ["lint"]
 risk: "low"
 title: "ENG-017H: Add static architecture and interop boundary gates"
 priority: "P1"
-status: "review"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001708"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -127,4 +127,16 @@ IN PROGRESS 2026-07-20 (session): Implementation complete against all four scope
 Full suite: `clojure -M:unit-test` → 586 tests, 1489 assertions, 0 failures (up from 569/1460 pre-card; +17 tests from the two new checker test namespaces).
 
 Moving to review.
+
+REVIEW 2026-07-20: approve. Independent review (reviewer: Claude Code, a distinct pass from implementation — I authored only ENG-005A this session, not this card; authority: Aaron, this session). Each gate was run directly rather than trusted from the completion comment:
+
+1. clojure -M:boundary-check produced "Layer-boundary check: clean." at exit 0.
+2. clojure -M:interop-inventory produced "Interop ratchet: clean (law/domain/application unchanged or reduced)." at exit 0.
+3. clojure -M:lint reported errors 0 (92 warnings; fail-level error matches the card scope of unresolved-symbol/var plus invalid-arity as errors, warnings ratcheted later).
+4. AC one, required CI static job: github workflows test.yml has a static job running lint, boundary-check, interop-inventory. Confirmed present.
+5. AC two, committed baselines: the clj-kondo config, splint config, and reports/interop.edn are all git-tracked; initial interop counts and grandfathered exceptions are recorded in the card body.
+6. AC three, splint adoption decision: recorded as defer, none promoted to errors, splint config committed as reporting-only, with a stated basis (warning volume is almost entirely test-file style debt).
+7. Checker teeth: the boundary-check and interop-inventory tools plus their test namespaces (fixture-based layer-law violations, ratchet fixtures, reproducibility) are in the green suite. clojure -M:unit-test reports 608 tests, 1540 assertions, 0 failures.
+
+Disposition: approve. All acceptance criteria met. Passes to done.
 ---

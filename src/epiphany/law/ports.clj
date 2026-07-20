@@ -52,8 +52,11 @@
 ;;   - :record-ingestion-run! — append an ingestion run record
 ;;   - :record-checkpoint! — append a projection checkpoint record
 ;;   - :record-section-extraction! — append a section extraction record
+;;   - :record-review-decision! — append a review-decision event (idempotent by request-id)
 ;;   - :list-ingestion-runs — list all ingestion runs for a resource
 ;;   - :list-checkpoints — list all checkpoints for a run
+;;   - :list-review-decisions — list all review decisions for a resource
+;;   - :list-review-decisions-by-candidate — list decisions targeting one candidate
 
 (def observations-port-schema
   "Schema for the :observations port group."
@@ -64,10 +67,13 @@
    [:record-ingestion-run!       :any]
    [:record-checkpoint!          :any]
    [:record-section-extraction!  :any]
+   [:record-review-decision!     :any]
    [:list-ingestion-runs         :any]
    [:list-checkpoints            :any]
    [:list-revision-at-path-by-resource    :any]
    [:list-section-extractions-by-revision :any]
+   [:list-review-decisions       :any]
+   [:list-review-decisions-by-candidate   :any]
    [:export-all                  :any]
    [:import-all                  :any]])
 

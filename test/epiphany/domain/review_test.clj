@@ -1,6 +1,7 @@
 (ns epiphany.domain.review-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [epiphany.domain.review :as review]))
+            [epiphany.domain.review :as review]
+            [epiphany.law.registry :as registry]))
 
 ;; ---------------------------------------------------------------------------
 ;; make-decision
@@ -54,6 +55,40 @@
           d (review/make-decision (java.util.UUID/randomUUID) :accepted
                                   :request-id rid)]
       (is (= rid (:review-decision/request-id d))))))
+
+;; ---------------------------------------------------------------------------
+;; decision->observation (ENG-005A: durable, schema-valid wrapping)
+
+(def ^:private obs-ctx
+  {:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+   :adapter-version "test"})
+
+(deftest decision->observation-is-schema-valid-test
+  (testing "wraps every decision variant into a valid observation/review-decision-v1"
+    (are [decision] (registry/valid? "observation/review-decision-v1"
+                                     (review/decision->observation decision obs-ctx))
+      (review/make-decision (java.util.UUID/randomUUID) :accepted)
+      (review/make-decision (java.util.UUID/randomUUID) :rejected :reason "stale")
+      (review/make-decision (java.util.UUID/randomUUID) :relabel :relabel-to :refines)
+      (review/make-decision (java.util.UUID/randomUUID) :annotated :annotation "see note")
+      (review/make-decision (java.util.UUID/randomUUID) :do-not-suggest :suppressed true)
+      (review/make-decision (java.util.UUID/randomUUID) :deferred))))
+
+(deftest decision->observation-carries-request-id-as-idempotency-key-test
+  (testing "the decision's request-id becomes the observation request-id"
+    (let [rid (java.util.UUID/randomUUID)
+          d   (review/make-decision (java.util.UUID/randomUUID) :accepted :request-id rid)
+          obs (review/decision->observation d obs-ctx)]
+      (is (= rid (:observation/request-id obs)))
+      (is (= :review/decision-recorded (:observation/type obs)))
+      (is (= 1 (:observation/schema-version obs)))
+      (is (= (:resource-id obs-ctx) (:resource-id obs))))))
+
+(deftest decision->observation-requires-provenance-test
+  (testing "resource-id and adapter-version are required"
+    (let [d (review/make-decision (java.util.UUID/randomUUID) :accepted)]
+      (is (thrown? AssertionError (review/decision->observation d {:adapter-version "x"})))
+      (is (thrown? AssertionError (review/decision->observation d {:resource-id (java.util.UUID/randomUUID)}))))))
 
 (deftest make-decision-invalid-type-test
   (testing "throws on invalid decision type"

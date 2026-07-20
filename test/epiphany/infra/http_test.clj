@@ -275,3 +275,107 @@
                             (.getBytes "{:path \"/tmp/test-repo\"}"))
                      :headers {"content-type" "application/edn"}})]
       (is (= 201 (:status resp))))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-017G: boundary hardening
+
+(deftest search-rejects-negative-limit
+  (testing ":limit <= 0 is a 400, never reaches the search adapter"
+    (let [app (http/make-router (mock-search-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/search"
+                     :body-params {:query "test" :mode :hybrid :limit -1}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest search-rejects-zero-limit
+  (testing ":limit of 0 is a 400"
+    (let [app (http/make-router (mock-search-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/search"
+                     :body-params {:query "test" :mode :hybrid :limit 0}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest search-rejects-huge-limit
+  (testing ":limit beyond the shared upper bound is a 400"
+    (let [app (http/make-router (mock-search-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/search"
+                     :body-params {:query "test" :mode :hybrid :limit (inc http/max-search-limit)}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest search-rejects-string-limit
+  (testing ":limit as a string (not an integer) is a 400, not a coercion attempt"
+    (let [app (http/make-router (mock-search-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/search"
+                     :body-params {:query "test" :mode :hybrid :limit "20"}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest search-accepts-limit-at-upper-bound
+  (testing ":limit exactly at the upper bound is accepted"
+    (let [app (http/make-router (mock-search-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/search"
+                     :body-params {:query "test" :mode :hybrid :limit http/max-search-limit}
+                     :headers {}})]
+      (is (= 200 (:status resp))))))
+
+(deftest unhandled-exception-does-not-leak-message
+  (testing "a bare (non-ex-info) exception in a handler returns a generic detail, never its own message"
+    (let [sensitive-message "connection string: postgres://admin:hunter2@internal-db/prod"
+          leaky-adapters {:git {:common-git-directory (fn [_] (throw (RuntimeException. sensitive-message)))
+                                :repository (constantly ::mock-repo)
+                                :resolve-ref (constantly [])}
+                          :repository-metadata {:read (constantly nil)
+                                                :write (constantly nil)
+                                                :list-repositories (constantly [])}
+                          :observations {:find-by-request-id (constantly nil)
+                                         :record-repository-location! (constantly nil)
+                                         :list-checkpoints (constantly [])
+                                         :list-ingestion-runs (constantly [])}
+                          :index {:search (constantly [])
+                                  :index-stats (constantly {:document-count 0})}
+                          :embeddings {:embed-query (constantly [])}}
+          app (http/make-router leaky-adapters)
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body-params {:path "/tmp/test"}
+                     :headers {}})
+          body (json/read-str (:body resp) :key-fn keyword)]
+      (is (= 500 (:status resp)))
+      (is (= "An internal error occurred." (:detail body)))
+      (is (not (.contains (:detail body) "hunter2"))))))
+
+(deftest register-unrecognized-ex-info-code-currently-echoes-message
+  (testing (str "DOCUMENTS CURRENT BEHAVIOR, not a desired contract: register-handler's own "
+                "catch (distinct from wrap-exceptions) treats any ExceptionInfo without "
+                ":unavailable/:already-exists as a 400 with the raw message, on the assumption "
+                "register! only throws client-facing validation errors. Flagged in the ENG-017G "
+                "card comment as worth a follow-up if register! ever gains a failure mode that "
+                "isn't purely about the caller's input.")
+    (let [sensitive-message "duplicate key violates unique constraint users_pkey"
+          leaky-adapters {:git {:common-git-directory (fn [_] (throw (ex-info sensitive-message {:code :some-internal-db-code})))
+                                :repository (constantly ::mock-repo)
+                                :resolve-ref (constantly [])}
+                          :repository-metadata {:read (constantly nil)
+                                                :write (constantly nil)
+                                                :list-repositories (constantly [])}
+                          :observations {:find-by-request-id (constantly nil)
+                                         :record-repository-location! (constantly nil)
+                                         :list-checkpoints (constantly [])
+                                         :list-ingestion-runs (constantly [])}
+                          :index {:search (constantly [])
+                                  :index-stats (constantly {:document-count 0})}
+                          :embeddings {:embed-query (constantly [])}}
+          app (http/make-router leaky-adapters)
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body-params {:path "/tmp/test"}
+                     :headers {}})
+          body (json/read-str (:body resp) :key-fn keyword)]
+      (is (= 400 (:status resp)))
+      (is (.contains (:detail body) "users_pkey")))))

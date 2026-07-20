@@ -44,6 +44,50 @@
     annotation    (assoc :review-decision/annotation annotation)
     (some? suppressed) (assoc :review-decision/suppressed suppressed)))
 
+(defn decision->observation
+  "Wrap a decision (from `make-decision`) into a durable
+   `observation/review-decision-v1` record for the observations port.
+
+   Pure: the caller supplies all provenance; this function generates no
+   IDs or timestamps of its own beyond the envelope defaults below.
+
+   Context map:
+     :resource-id     — UUID of the registered repository the candidate
+                        belongs to (required)
+     :adapter-version — recording adapter/contract version string (required)
+     :observed-at     — java.util.Date the platform recorded it (default: now)
+     :observation-id  — envelope id (default: a fresh random UUID)
+
+   The decision's :review-decision/request-id becomes the observation's
+   :observation/request-id — the idempotency key the port dedups on, so a
+   retry carrying the same request-id never appends a second decision.
+
+   Returns a record satisfying observation/review-decision-v1."
+  [decision {:keys [resource-id adapter-version observed-at observation-id]
+             :or {observed-at (java.util.Date.)
+                  observation-id (java.util.UUID/randomUUID)}}]
+  (assert resource-id "decision->observation requires :resource-id")
+  (assert adapter-version "decision->observation requires :adapter-version")
+  (cond-> {:observation/id observation-id
+           :observation/type :review/decision-recorded
+           :observation/observed-at observed-at
+           :observation/adapter-version adapter-version
+           :observation/schema-version 1
+           :observation/request-id (:review-decision/request-id decision)
+           :resource-id resource-id
+           :review-decision/id (:review-decision/id decision)
+           :review-decision/candidate-id (:review-decision/candidate-id decision)
+           :review-decision/decision (:review-decision/decision decision)
+           :review-decision/decided-at (:review-decision/decided-at decision)}
+    (:review-decision/reason decision)
+    (assoc :review-decision/reason (:review-decision/reason decision))
+    (:review-decision/relabel-to decision)
+    (assoc :review-decision/relabel-to (:review-decision/relabel-to decision))
+    (:review-decision/annotation decision)
+    (assoc :review-decision/annotation (:review-decision/annotation decision))
+    (some? (:review-decision/suppressed decision))
+    (assoc :review-decision/suppressed (:review-decision/suppressed decision))))
+
 ;; ---------------------------------------------------------------------------
 ;; Query helpers (pure, over in-memory collections)
 

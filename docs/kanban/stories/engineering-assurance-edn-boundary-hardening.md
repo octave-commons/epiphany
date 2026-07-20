@@ -5,13 +5,13 @@ dependency: [""]
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784567200473-0.o2l25ims17efpqov33y"
+write-id: "1784571788934-0.yy3cfk27atekbonhpy6"
 points: "2"
 verification: ["unit-test"]
 risk: "low"
 title: "ENG-017K: Replace reader-eval EDN parsing at external boundaries"
 priority: "P0"
-status: "review"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001711"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -132,4 +132,14 @@ Ran `clojure -M:unit-test` fresh: 569 tests, 1460 assertions, 0 failures.
 Sweep confirmed: `git grep -n 'read-string' src/ test/` — only `edn/read-string` remains everywhere. The two originally-flagged external boundaries (http.clj request bodies, lucene.clj version file) both pass `{:readers {}}`. Remaining `edn/read-string` call sites are all on trusted local/internal input, not external boundaries: `domain/backup.clj:37` (local manifest file), `domain/repository_identity.clj:26` (local repo metadata file), `test/.../benchmark_test.clj:115` and `test/.../registry_test.clj:11,108` (test fixtures/data). None read attacker-controlled bytes.
 
 Acceptance criteria met. Moving to done.
+
+REVIEW 2026-07-20: approve. Independent review (reviewer: Claude Code, distinct from the implementing pass — this session I authored only ENG-005A, not this card; authority: Aaron, this session). Adversarial verification actually run, not taken on the card's word:
+
+1. RCE was real and the fix closes it — reproduced in isolation: `clojure.core/read-string "#=(+ 1 2)"` returns 3 (evaluates at read time); `clojure.edn/read-string {:readers {}} "#=(+ 1 2)"` throws "No dispatch macro for: =". This is the red→green the prior REVIEW-FAIL asked for, demonstrated with a benign arithmetic payload.
+2. The regression test now genuinely exercises the vulnerable path — eval-payload-rejected (http_test.clj:234) calls http/create-handler (the handler start-server! runs, the only one that parses :body into :body-params; the earlier tests wrongly used make-router which never parsed bodies), posts a live #=(reset! ...eval-sentinel true) with content-type application/edn, and asserts 400 + application/problem+json + sentinel untouched. malformed-edn / unknown-tag → 400; valid EDN → 201.
+3. Typed outcomes exist as scoped: http.clj malformed-edn-problem -> urn:epiphany:boundary/malformed-edn (400, short-circuits before route handlers); lucene.clj read-version-file returns :integrity/corrupt-version-file distinct from a missing file.
+4. Sweep clean: no bare clojure.core/read-string anywhere in src/; the two external boundaries (http.clj:107/115, lucene.clj:146) parse with clojure.edn and empty readers. Remaining edn/read-string sites are trusted local input (backup manifest, repo metadata, test fixtures).
+5. Full suite green: clojure -M:unit-test — 608 tests, 1540 assertions, 0 failures.
+
+Disposition: approve for the card's declared scope. RCE vector eliminated. Passes to done.
 ---

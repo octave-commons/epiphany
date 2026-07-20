@@ -1,16 +1,17 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001502"
-title: "ENG-005B: Serve the review inbox (`ep inbox`)"
-status: "in_progress"
+category: "stories"
+labels: ["phase-1", "review", "inbox", "cli"]
+dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001501"]
+phase: "1"
 type: "story"
+write-id: "1784570751508-0.nq08qg6ckcos2xypatt"
+points: "3"
+title: "ENG-005B: Serve the review inbox (`ep inbox`)"
 priority: "P1"
-phase: 1
+status: "in_progress"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001502"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000005"
 design: "docs/kanban/epics/epic-05-redundancy-tension-review.md"
-points: 3
-labels: ["phase-1", "review", "inbox", "cli"]
-category: "stories"
-dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001501"]
 ---
 
 # ENG-005B: Serve the review inbox (`ep inbox`)
@@ -32,4 +33,6 @@ REVIEW 2026-07-13: request-changes. ep inbox does not exist -- main.clj:539-544'
 REVIEW-FAIL 2026-07-13: (1) 'ep inbox' doesn't exist in CLI dispatch. (2) Web fallback UI is stubbed — placeholder data, decisions aren't persisted. --tasks-dir docs/kanban
 
 FOLLOW-UP 2026-07-13: investigated whether this is fixable alongside ep show/diff/trace. It is not, honestly -- the actual blocker is one level deeper than 'CLI wiring is missing.' There is no durable, queryable store for lineage candidates or review decisions anywhere in the codebase (confirmed via grep across law/ports.clj, in_memory.clj, mongo.clj). ENG-005A ('Record review decisions as append-only events'), which this card depends on and which was marked done, turns out to have the same false-done pattern -- no port was ever built, just demoted separately with a comment on that card. I'm not fixing ep inbox now because doing so honestly requires building that storage/query layer first (ENG-005A's real scope), not something this card's own wiring gap. Leaving at in_progress; do not re-promote to done until ENG-005A has a real port and ep inbox can query real candidates/decisions through it. --tasks-dir docs/kanban
+
+UNBLOCKED 2026-07-20: the root blocker your 2026-07-13 FOLLOW-UP named — "no durable, queryable store for lineage candidates or review decisions" — is now half-cleared. ENG-005A landed the review-decision side: the observations port now has :record-review-decision! (idempotent) + :list-review-decisions / :list-review-decisions-by-candidate, schema-enforced through observation/review-decision-v1, in both the in-memory and mongo adapters (608 tests green). ep inbox can now query real recorded decisions to implement exclude-already-decided and the suppressed/do-not-suggest distinction via domain/review visible-decisions. Remaining for this card: (1) the ep inbox CLI subcommand wired into main.clj dispatch + a CLI test, (2) a real (non-placeholder) consuming surface, (3) the 'repository family' filter and the suppressed-vs-decided distinction called out in the AC. Note: candidate *generation/storage* (lineage candidates themselves) is a separate concern from decisions — confirm whether the inbox reads candidates from lineage projections or only surfaces decisions before wiring.
 ---

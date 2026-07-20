@@ -110,7 +110,9 @@
         ingestion-runs (atom [])
         checkpoints (atom [])
         section-extractions (atom [])
-        revision-at-paths (atom [])]
+        revision-at-paths (atom [])
+        review-decisions (atom [])
+        review-decision-index (atom {})]
     {:find-by-request-id (fn [request-id]
                            (get @by-request-id request-id))
      :record-repository-location! (fn [observation]
@@ -136,6 +138,17 @@
                                    (fn [observation]
                                      (swap! section-extractions conj observation)
                                      nil))
+     ;; Append-only, idempotent by request-id: a retry carrying a
+     ;; request-id already recorded returns nil without appending a
+     ;; second decision (ENG-005A AC: "retries do not duplicate").
+     :record-review-decision! (fn [observation]
+                                (let [rid (:observation/request-id observation)]
+                                  (if (contains? @review-decision-index rid)
+                                    nil
+                                    (do (validate-write! :record-review-decision! observation)
+                                        (swap! review-decision-index assoc rid observation)
+                                        (swap! review-decisions conj observation)
+                                        nil))))
      :list-ingestion-runs (fn [resource-id]
                             (filterv #(= resource-id (:resource-id %))
                                      @ingestion-runs))
@@ -152,12 +165,20 @@
                                                                (:extraction/revision-at-path-id %))
                                                             (= :section/extraction-completed (:observation/type %)))
                                                        @section-extractions))
+     :list-review-decisions (fn [resource-id]
+                              (filterv #(= resource-id (:resource-id %))
+                                       @review-decisions))
+     :list-review-decisions-by-candidate (fn [candidate-id]
+                                           (filterv #(= candidate-id
+                                                        (:review-decision/candidate-id %))
+                                                    @review-decisions))
       :export-all (fn []
                     {"repository-location" (vals @by-request-id)
                      "ingestion-run"       @ingestion-runs
                      "projection-checkpoint" @checkpoints
                      "section-extraction"  @section-extractions
-                     "revision-at-path"    @revision-at-paths})
+                     "revision-at-path"    @revision-at-paths
+                     "review-decision"     @review-decisions})
       :import-all (fn [data]
                     (doseq [[coll-name docs] data]
                       (case coll-name
@@ -183,6 +204,13 @@
                         (doseq [doc docs]
                           (validate-write! :record-revision-at-path! doc)
                           (swap! revision-at-paths conj doc))
+                        "review-decision"
+                        (doseq [doc docs]
+                          (let [rid (:observation/request-id doc)]
+                            (when (and rid (not (contains? @review-decision-index rid)))
+                              (validate-write! :record-review-decision! doc)
+                              (swap! review-decision-index assoc rid doc)
+                              (swap! review-decisions conj doc))))
                         nil)))}))
 
 ;; ---------------------------------------------------------------------------

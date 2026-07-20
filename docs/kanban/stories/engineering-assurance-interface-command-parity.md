@@ -5,7 +5,7 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001702", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784568243975-0.806ki8lj5mprf7le75"
+write-id: "1784568573871-0.mrkwpbkiifk3gv2xpzj"
 points: "5"
 verification: ["unit-test"]
 risk: "medium"
@@ -119,4 +119,24 @@ REWORK 2026-07-12: body rewritten to the story contract (original preserved in g
 SCOPE ANCHOR 2026-07-12 (after clj -M:test): this card owns two of the three failing clusters in the current red suite. Cluster A (3 http_test failures: register 500-not-201, Content-Type, exception->4xx) is the HTTP-boundary normalization already in scope. Cluster C (3 failures) is a concrete bug this card's command-result contract must fix: registration/register! returns the full observation on the idempotent path (registration.clj:15-16) and a thin map on the fresh path (:33-36) — the normalized result must be one shape both paths and both interfaces produce. Cluster B (3 stale observation-shape assertions) is fixture drift owned by ENG-017C/D. Full breakdown: docs/notes/inbox-synthesis-2026-07-12-board-audit.md. --tasks-dir docs/kanban
 
 PROGRESS 2026-07-13 (session): The 9 unit-test failures this card owns are now resolved (see ENG-006A comment for details). Suite is green: 528 tests, 1344 assertions, 0 failures. The register! return-contract inconsistency (Cluster C) is fixed — both paths return the same thin map. HTTP mock shape (Cluster A) is fixed — mocks match the actual port contracts. Remaining scope for this card: parity tests (CLI vs HTTP produce equivalent outcomes), boundary hardening in HTTP decoder, and the command/schema normalization that gives the demoted CLI cards (004A/B/D, 005B/F) their wiring target. --tasks-dir docs/kanban --tasks-dir docs/kanban
+
+IN PROGRESS 2026-07-20 (session): Landed a scoped, testable slice of this card's boundary-hardening and parity verification. NOT claiming the full card done — see "Remaining scope" below; recommend either continuing here or splitting per rule 7 if the remainder doesn't fit the original 5-point estimate.
+
+Done, with tests, suite green (600 tests, 1513 assertions, 0 failures):
+
+1. `:limit` bounded validation. HTTP `search-handler` previously accepted any `:limit` value unvalidated (string/negative/zero/huge all passed straight to the search adapter). Added `http/valid-limit?` + `http/max-search-limit` (1000), wired into the HTTP handler as a 400, and updated the CLI's `--limit` validator (`main.clj`) to share the same upper bound (it already had `pos?`, was missing the ceiling) — CLI and HTTP now enforce the identical bound. 5 new regression tests in `http_test.clj` (negative/zero/huge/string/at-bound).
+
+2. Internal-error leak fix. `wrap-exceptions`' generic Exception/unrecognized-`:code` branches previously returned `(.getMessage e)` straight into the problem+json `:detail` field — any unexpected exception message (config, driver, whatever it happened to say) reached the client. Now logs the real message to `*err*` and returns a fixed generic detail (`"An internal error occurred."`) for anything not an explicitly-recognized `:code`. 2 new regression tests proving a bare `RuntimeException` with a sensitive payload doesn't leak it.
+
+   Found but did NOT change: `register-handler`'s *own* catch (separate from `wrap-exceptions`) treats any `ExceptionInfo` without `:unavailable`/`:already-exists` as a 400 with the raw message, on the assumption `register!` only ever throws client-facing validation errors (true today — it only calls git-resolve and the observation port). Wrote a test (`register-unrecognized-ex-info-code-currently-echoes-message`) that documents this as current behavior rather than asserting it's a bug, since changing it would require register! to distinguish client-input failures from adapter-internal failures, which it doesn't do yet. Flagging as a follow-up if register! ever gains a failure mode that isn't purely about the caller's input.
+
+3. CLI/HTTP outcome-category parity tests: new `test/epiphany/parity/cli_http_test.clj`, 7 tests covering `register` (missing path, non-Git path, real repo path) and `search` (missing query, invalid mode, valid empty-index query, limit out of bounds) — asserts CLI exit-code and HTTP status-code map to the same accepted/rejected category for equivalent input. Both surfaces build adapters independently (CLI's own `:local` construction vs. a matching `in-memory/make` for HTTP) rather than sharing one instance, since there's no shared decoder yet to exercise — see below.
+
+Remaining scope, deliberately not attempted this pass:
+- The actual `decode-cli`/`decode-http`/`execute`/`encode-cli`/`encode-http` command-vocabulary seam the design doc and this card's "Scope" section call for. What exists today is what existed before: CLI and HTTP each independently parse, build adapters, and call the same application/domain functions — parity is *observed and now regression-tested*, not *architecturally guaranteed* by a shared decoder. A future divergence would only be caught by these tests, not prevented by construction.
+- Parity tests for `status` and `review-decisions` (only register/search covered).
+- `main.clj`'s CLI commands (`show`/`diff`/`trace`) already exist and pass their own tests (`main_test.clj`) — the ENG-017G card body's framing of these as "demoted, phantom CLI cards" appears stale relative to the current tree; didn't touch this since it's not this card's claim to correct.
+- `infra.main` shelling out to the real `git` binary via `clojure.java.shell/sh` for `--path-format=absolute --git-common-dir` (`run-register`, `run-serve`) rather than going through JGit — noticed while writing the parity test's `shell-git-resolve` helper (mirrors the same pattern). This looks like it conflicts with ADR-000/CLAUDE.md's "Git is read-only, never shelled out to" principle, but is out of scope for this card and not something to fix as a drive-by; flagging for its own card.
+
+Suite: `clojure -M:unit-test` → 600 tests, 1513 assertions, 0 failures. `clojure -M:lint`, `:boundary-check`, `:interop-inventory` all clean.
 ---
