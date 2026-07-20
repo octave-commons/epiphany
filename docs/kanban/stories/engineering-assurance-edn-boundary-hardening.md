@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001711"
-title: "ENG-017K: Replace reader-eval EDN parsing at external boundaries"
-status: "in_progress"
-type: "story"
-priority: "P0"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 2
-labels: ["quality", "security", "http", "boundaries", "phase-1"]
 category: "stories"
-dependency: []
+labels: ["quality", "security", "http", "boundaries", "phase-1"]
+dependency: [""]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784566846876-0.pmfc08ef4fbswdo9wfr"
+points: "2"
 verification: ["unit-test"]
 risk: "low"
+title: "ENG-017K: Replace reader-eval EDN parsing at external boundaries"
+priority: "P0"
+status: "review"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001711"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017K: Replace reader-eval EDN parsing at external boundaries
@@ -107,4 +108,20 @@ REVIEW 2026-07-13: Implementation complete. Verification evidence: (1) eval payl
 REVIEW 2026-07-13: request-changes (fix itself is sound; regression test has a factual gap). All four originally-flagged call sites (http.clj:97/338/342, lucene.clj:143) are now clojure.edn/read-string, and a full sweep of src/ and test/ shows no remaining clojure.core/read-string anywhere. Manual REPL check confirms the fix is effective: clojure.core/read-string on '#=(println ...)' executes the payload, while clojure.edn/read-string {:readers {}} throws 'No dispatch macro for: ='. Suite is green: 554 tests, 1421 assertions, 0 failures. However, the eval-payload-rejected regression test in http_test.clj does not use #=(...) at all -- it posts #(reset! sentinel true) (an anonymous-fn literal), which was never a read-time-eval vector even under the old code, so this test would pass unchanged against the pre-fix implementation and doesn't satisfy the card's 'fails against pre-fix code' acceptance criterion. Please replace it with an actual #=(...) payload (e.g. #=(reset! sentinel true)) demonstrating the true red->green transition, and re-run before moving to done. Also note lucene.clj's version-file catch still returns bare nil rather than the :integrity/corrupt-version-file outcome the scope calls for -- non-blocking but worth a follow-up. --tasks-dir docs/kanban
 
 REVIEW-FAIL 2026-07-13: fix is correct and verified — #=(...) is now rejected by edn/read-string {:readers {}}. But the regression test (eval-payload-rejected) doesn't use an actual reader-eval payload in the request body — it constructs a ByteArray with the string but the test wouldn't have failed pre-fix because the mock adapter doesn't parse EDN bodies through the vulnerable path. Needs a test that proves the old code would have executed the side effect. --tasks-dir docs/kanban
+
+IN PROGRESS 2026-07-20 (session): Addressed the two REVIEW-FAIL findings.
+
+1. Root cause behind the invalid regression test: ALL http_test.clj tests (including the ENG-017K ones) called `http/make-router` directly. `make-router` never parses `:body` into `:body-params` — that parsing only happened in the private `create-handler` (the one `start-server!` actually runs). So the EDN-boundary regression tests never touched the vulnerable/fixed code path at all; they passed only because `register-handler` saw a blank `:path` (no `:body-params`) and returned 400 for an unrelated reason. Fix: made `create-handler` public and rewired all four ENG-017K tests in `http_test.clj` to call it directly.
+
+2. Replaced the fn-literal payload (`#(reset! sentinel true)`, never a reader-eval vector) with an actual `#=(...)` payload against a fully-qualified sentinel var, so the test can prove the true red→green transition: verified interactively that `clojure.core/read-string` evaluates `#=(+ 1 2)` at read time (returns 3) while `clojure.edn/read-string {:readers {}}` throws "No dispatch macro for: =" on the same input. Did not re-run the full suite against reverted vulnerable code — the harness's own safety classifier correctly blocked that Bash invocation once the source briefly used `read-string` again (a live-eval payload flowing through a real test run), which is the right call; reverted immediately. The isolated `clojure -e` demonstration is the substitute evidence.
+
+3. Closed the previously-flagged non-blocking gap: `read-version-file` in `lucene.clj` now returns `:integrity/corrupt-version-file` distinct from a missing file (was: both silently coerced to `0`). `:index-version` surfaces that outcome instead of masking it. Added `corrupt-version-file-surfaces-integrity-outcome-test`.
+
+4. Also found `read-body` (the docstring already claimed the ENG-017K fix) was dead code — never called from anywhere. `create-handler` had its own duplicated parsing logic instead. Consolidated onto the one `read-body` function; parse failures now produce a `:boundary/malformed-edn` typed 400 (`urn:epiphany:boundary/malformed-edn`) via the new `malformed-edn-problem` helper, short-circuiting before any route handler runs — previously a parse exception was silently caught and turned into `nil` body-params, never actually returning the typed outcome the card's acceptance criteria specified.
+
+Sweep: `git grep -n 'read-string' src/ test/ | grep -v edn/read-string` → only a code comment referencing the vulnerability, no call sites.
+
+Suite: 569 tests, 1460 assertions, 0 failures (`clojure -M:unit-test`).
+
+Moving to review.
 ---

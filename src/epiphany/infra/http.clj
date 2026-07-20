@@ -56,6 +56,13 @@
   [detail]
   (problem-response 500 "Internal Server Error" detail))
 
+(defn malformed-edn-problem
+  "Create a BAD REQUEST (400) problem response for a body that failed to
+  parse as data (ENG-017K) — reader-eval attempts, unknown tags, and
+  malformed EDN/JSON all land here rather than throwing past the boundary."
+  [detail]
+  (problem-response 400 "Bad Request" detail :type "urn:epiphany:boundary/malformed-edn"))
+
 ;; ---------------------------------------------------------------------------
 ;; Content negotiation
 
@@ -103,7 +110,9 @@
         (json/read-str body-str :key-fn keyword)
 
         :else
-        (json/read-str body-str :key-fn keyword)))))
+        (try (json/read-str body-str :key-fn keyword)
+             (catch Exception _
+               (edn/read-string {:readers {}} body-str)))))))
 
 (defn- parse-query-params
   "Parse a query string into a keyword-keyed map. Returns nil when blank."
@@ -323,32 +332,25 @@
         wrap-exceptions
         wrap-query-params)))
 
-(defn- create-handler
-  "Create the complete handler with middleware."
+(defn create-handler
+  "Create the complete handler with middleware.
+
+  A request body that fails to parse as data — a reader-eval attempt, an
+  unknown tag, or malformed EDN/JSON — is rejected here as a stable
+  :boundary/malformed-edn problem response (ENG-017K); it never reaches a
+  route handler and never throws past this boundary."
   [adapters]
   (let [router (make-router adapters)]
     (fn [request]
-      (let [body-params (or (:body-params request)
-                            (when-let [body (:body request)]
-                              (try
-                                (let [raw (slurp body)
-                                      ct (str/lower-case (or (get-in request [:headers "content-type"]) ""))]
-                                  (cond
-                                    (.contains ct "application/json")
-                                    (json/read-str raw :key-fn keyword)
-
-                                    (.contains ct "application/edn")
-                                    (edn/read-string {:readers {}} raw)
-
-                                    :else
-                                    (try (json/read-str raw)
-                                         (catch Exception _
-                                           (edn/read-string {:readers {}} raw)))))
-                                (catch Exception _ nil))))
-            request (cond-> request
-                      body-params (assoc :body-params body-params)
-                      (not (:path-params request)) (assoc :path-params {}))]
-        ((wrap-profile router) request)))))
+      (try
+        (let [body-params (or (:body-params request)
+                              (when (:body request) (read-body request)))
+              request (cond-> request
+                        body-params (assoc :body-params body-params)
+                        (not (:path-params request)) (assoc :path-params {}))]
+          ((wrap-profile router) request))
+        (catch Exception e
+          (malformed-edn-problem (.getMessage e)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Server

@@ -1,54 +1,33 @@
-# Π Handoff — 2026-07-13T04:00:00Z
+# Π Handoff — 2026-07-20T17:30:00Z
 
 - **Branch:** `main`
-- **Base commit:** `40aaac4`
-- **Tests:** 583 tests, 1493 assertions, 2 failures (integration tests requiring services)
+- **Base commit:** `4a074be`
+- **Tests:** 569 tests, 1460 assertions, 0 failures
 
-## New source files
-- `src/epiphany/application/validation.clj` — validation application service
-- `src/epiphany/law/operations.clj` — operation schemas and validators
-- `test/epiphany/application/validation_test.clj` — validation service tests
-- `test/epiphany/law/operations_test.clj` — operation schema tests
-- `test/epiphany/law_suite/observations_laws.clj` — observation law definitions
-- `test/epiphany/law_suite/observations_test.clj` — observation law tests
+## ENG-017K: EDN boundary hardening (completed)
 
-## Modified source files
-- `src/epiphany/application/registration.clj` — registration service updates
-- `src/epiphany/domain/evidence.clj` — evidence domain changes
-- `src/epiphany/infra/adapters/in_memory.clj` — in-memory adapter enhancements
-- `src/epiphany/infra/adapters/lucene.clj` — Lucene adapter updates
-- `src/epiphany/infra/git.clj` — Git infrastructure changes
-- `src/epiphany/infra/http.clj` — HTTP adapter updates
-- `src/epiphany/infra/main.clj` — main infrastructure changes
-- `src/epiphany/infra/profile.clj` — profile infrastructure updates
-- `deps.edn` — dependency updates
+### Modified source
+- `src/epiphany/infra/adapters/lucene.clj` — `read-version-file` returns `:integrity/corrupt-version-file` for unparseable sidecar; `:index-version` surfaces it
+- `src/epiphany/infra/http.clj` — `create-handler` made public; body parsing consolidated onto `read-body`; parse failures produce typed `:boundary/malformed-edn` 400; `malformed-edn-problem` helper added
 
-## Modified docs
-- `docs/kanban/AGENTS.md` — board contract updates
-- `docs/kanban/stories/engineering-assurance-*.md` — 7 assurance stories updated
-- `docs/kanban/stories/story-*.md` — 8 story files updated with status/metadata changes
-- `docs/process/review-and-acceptance.md` — process documentation updates
-- `receipts.edn` — append-only receipt log updated
+### Modified tests
+- `test/epiphany/infra/adapters/lucene_test.clj` — `corrupt-version-file-surfaces-integrity-outcome-test`
+- `test/epiphany/infra/http_test.clj` — all four ENG-017K tests rewired to `create-handler` with real `#=(...)` payloads
 
-## New docs
-- `docs/kanban/stories/engineering-assurance-test-coverage-reporting.md` — new assurance story
+### Modified docs
+- `docs/kanban/.events/ledger.edn` — status change + comment events
+- `docs/kanban/stories/engineering-assurance-edn-boundary-hardening.md` — story updated to `review`
 
-## Agent/tool configuration (new, not in repo)
-- `.claude/settings.json` — Claude Code hooks for kanban gates
-- `.claude/hooks/kanban-mcp-status-gate.sh` — MCP status transition guard
-- `.claude/hooks/kanban-direct-edit-guard.sh` — direct edit guard
-- `.mcp.json` — MCP server configuration
+### Modified config
+- `.ημ/PRINCIPLE.edn` — skill registry path migration: `~/.pi/agent/skills` → `~/.agents/skills`
+
+### Deleted
+- `docs/adrs/.#adr-004-contract-first-adversarial-verification.md` — Emacs lockfile symlink removed
+
+## Intentionally untracked
+- `.mcp.json` — MCP server config
 - `CLAUDE.md` — Claude Code guidance
-- `opencode.json` — OpenCode configuration
-- `bin/kanban-done-gate` — kanban done gate script
+- `opencode.json` — OpenCode config
 
-## Intentionally unstaged/untracked
-- `docs/inbox/.#2026.07.12.10.17.57.md` — Emacs lockfile symlink, not committed
-- `.claude/settings.local.json` — Local agent settings, not committed
-- `.mcp.json` — MCP server config, not committed
-- `CLAUDE.md` — Claude Code guidance, not committed
-- `opencode.json` — OpenCode config, not committed
-- `.clj-kondo/imports/hiccup/` — Linter cache, not committed
-
-## Known regressions (pre-existing, not introduced this Π)
-- Integration tests require running services (MongoDB, Ollama) — 2 failures
+## Known regressions
+- None introduced. Integration tests require running services (pre-existing).

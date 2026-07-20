@@ -136,13 +136,15 @@
     (spit (.toFile version-file) (str {:index/version current-index-version}))))
 
 (defn- read-version-file
-  "Read the index version from the sidecar file, nil if missing."
+  "Read the index version from the sidecar file: nil if missing,
+  :integrity/corrupt-version-file if present but unparseable (ENG-017K) —
+  never an exception escaping the adapter."
   [^Path index-dir]
   (let [version-file (.resolve index-dir "index-version.edn")]
     (when (.exists (.toFile version-file))
       (try
         (edn/read-string {} (slurp (.toFile version-file)))
-        (catch Exception _ nil)))))
+        (catch Exception _ :integrity/corrupt-version-file)))))
 
 (defn- index-empty?
   "Check if the Lucene index directory has any segment files."
@@ -249,8 +251,11 @@
 
    :index-version
    (fn []
-     (or (:index/version (read-version-file index-dir))
-         0))
+     (let [result (read-version-file index-dir)]
+       (cond
+         (= result :integrity/corrupt-version-file) result
+         (map? result) (or (:index/version result) 0)
+         :else 0)))
 
    :rebuild-index!
    (fn [records]

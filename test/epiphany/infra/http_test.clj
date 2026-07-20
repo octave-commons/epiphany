@@ -220,48 +220,58 @@
 
 ;; ---------------------------------------------------------------------------
 ;; ENG-017K: EDN boundary safety
+;;
+;; These exercise http/create-handler — the actual handler start-server! runs
+;; and the only one that parses :body into :body-params — not make-router,
+;; which never parses a body at all and so never touches the vulnerable code
+;; path. A fully-qualified sentinel var lets a #=(...) payload prove it did
+;; or didn't fire: clojure.core/read-string would evaluate it at read time,
+;; clojure.edn/read-string {:readers {}} cannot (confirmed: "No dispatch
+;; macro for: =").
+
+(def ^:private eval-sentinel (atom false))
 
 (deftest eval-payload-rejected
-  (testing "EDN body containing #=(...) is rejected, side effect not executed"
-    (let [sentinel (atom false)
-          app (http/make-router (mock-adapters))
+  (testing "EDN body containing #=(...) is rejected as 400, side effect not executed"
+    (reset! eval-sentinel false)
+    (let [app (http/create-handler (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
                      :body (java.io.ByteArrayInputStream.
-                            (.getBytes "{:path \"/tmp/test\" :eval (#(reset! sentinel true))}"))
+                            (.getBytes "#=(reset! epiphany.infra.http-test/eval-sentinel true)"))
                      :headers {"content-type" "application/edn"}})]
-      (is (not @sentinel) "Side effect must not execute")
-      (is (or (nil? resp) (number? (:status resp)))
-          "Response must be a valid HTTP response"))))
+      (is (= 400 (:status resp)))
+      (is (.contains (get-in resp [:headers "Content-Type"]) "application/problem+json"))
+      (is (not @eval-sentinel) "Reader-eval side effect must not execute"))))
 
 (deftest malformed-edn-rejected
-  (testing "Malformed EDN body is rejected"
-    (let [app (http/make-router (mock-adapters))
+  (testing "Malformed EDN body is rejected as 400"
+    (let [app (http/create-handler (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
                      :body (java.io.ByteArrayInputStream.
                             (.getBytes "{:path \"/tmp\" :unclosed"))
                      :headers {"content-type" "application/edn"}})]
-      (is (or (nil? resp) (number? (:status resp)))
-          "Response must be valid"))))
+      (is (= 400 (:status resp)))
+      (is (.contains (get-in resp [:headers "Content-Type"]) "application/problem+json")))))
 
 (deftest unknown-tag-rejected
-  (testing "EDN body with unknown tagged literal is rejected"
-    (let [app (http/make-router (mock-adapters))
+  (testing "EDN body with unknown tagged literal is rejected as 400"
+    (let [app (http/create-handler (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
                      :body (java.io.ByteArrayInputStream.
                             (.getBytes "{:path #unknown/tag \"/tmp\"}"))
                      :headers {"content-type" "application/edn"}})]
-      (is (or (nil? resp) (number? (:status resp)))
-          "Response must be valid"))))
+      (is (= 400 (:status resp)))
+      (is (.contains (get-in resp [:headers "Content-Type"]) "application/problem+json")))))
 
 (deftest valid-edn-round-trips
-  (testing "Valid EDN body is parsed correctly"
-    (let [app (http/make-router (mock-adapters))
-          resp (app {:request-method :get
-                     :uri "/api/v1/search"
-                     :query-string "q=test"
-                     :headers {}})]
-      (is (number? (:status resp))
-          "Valid request must return a status code"))))
+  (testing "Valid EDN body is parsed and reaches the handler unchanged"
+    (let [app (http/create-handler (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/register"
+                     :body (java.io.ByteArrayInputStream.
+                            (.getBytes "{:path \"/tmp/test-repo\"}"))
+                     :headers {"content-type" "application/edn"}})]
+      (is (= 201 (:status resp))))))

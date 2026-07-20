@@ -134,6 +134,14 @@
       ((:clear-index! adapter))
       (is (= 0 ((:index-version adapter)))))))
 
+(deftest corrupt-version-file-surfaces-integrity-outcome-test
+  (testing "a corrupt version sidecar file is a distinct outcome, not silently 0 (ENG-017K)"
+    (let [dir (temp-index-dir)
+          adapter (lucene/make-index-adapter {:index-dir dir})
+          version-file (.toFile (.resolve dir "index-version.edn"))]
+      (spit version-file "#=(+ 1 2)")
+      (is (= :integrity/corrupt-version-file ((:index-version adapter)))))))
+
 ;; ---------------------------------------------------------------------------
 ;; Unicode support
 
