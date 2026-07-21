@@ -193,6 +193,20 @@
       (is (string/includes? out "Continuity"))
       (is (string/includes? out "Summary")))))
 
+(deftest diff-seed-candidate-records-a-provisional-candidate
+  (testing "--seed-candidate durably records a provisional lineage candidate via the observations port"
+    (let [{:keys [exit out]} (main/run ["diff" "--seed-candidate" "continues"
+                                        "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "Seeded candidate "))
+      (is (string/includes? out "[continues, provisional]")))))
+
+(deftest diff-seed-candidate-rejects-invalid-relation
+  (let [{:keys [exit out]} (main/run ["diff" "--seed-candidate" "not-a-real-relation"
+                                      "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be one of"))))
+
 ;; ---------------------------------------------------------------------------
 ;; Trace subcommand
 

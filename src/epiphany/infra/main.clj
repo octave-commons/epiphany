@@ -11,11 +11,13 @@
             [epiphany.infra.git :as git]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
+            [epiphany.infra.repository-identity :as repository-identity]
             [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
             [epiphany.domain.evidence :as evidence]
             [epiphany.domain.diff :as diff]
-            [epiphany.domain.lineage-trace :as lineage-trace])
+            [epiphany.domain.lineage-trace :as lineage-trace]
+            [epiphany.domain.candidates :as candidates])
   (:gen-class))
 
 (def version "0.1.0")
@@ -598,7 +600,59 @@
     :default :text
     :parse-fn keyword
     :validate [#{:text :edn} "Must be text or edn"]]
+   [nil "--seed-candidate RELATION" "Seed a provisional lineage candidate from this comparison (relation type)"
+    :parse-fn keyword
+    :validate [candidates/relation-types
+               (str "Must be one of: " (string/join ", " (map name candidates/relation-types)))]]
+   ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-h" "--help" "Show diff help and exit."]])
+
+(defn- with-observations-adapter
+  "Construct an observations-port adapter for `profile` and hand it to `f`,
+   cleaning up any Mongo connection afterward. Mirrors run-register's
+   per-profile adapter construction."
+  [profile f]
+  (case profile
+    :local
+    (f (:observations (in-memory/make {:common-git-dir-fn resolve-common-git-dir})))
+
+    :services
+    (let [conn (try
+                 (mongo/connect!)
+                 (catch Exception e
+                   (throw (ex-info
+                           (str "Cannot connect to MongoDB: " (.getMessage e))
+                           {:code :unavailable
+                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+      (try
+        (f (mongo/make-observations-adapter conn))
+        (finally (mongo/disconnect! conn))))))
+
+(defn- seed-candidate!
+  "Seed a provisional lineage candidate relating `left` to `right` (parsed
+   section expressions) under `relation`, durably recorded through the
+   observations port for `repo`/`profile`. Returns the candidate map (the
+   candidate is always PROVISIONAL — it is never auto-accepted; a human
+   reviews it via the ENG-005A decision events)."
+  [repo profile relation left right]
+  (let [{:keys [resource-id]} (repository-identity/resolve-repository repo)
+        source-span (candidates/make-span {:path-raw (:path left)
+                                            :heading-path (:heading left)
+                                            :commit-oid (:commit-oid left)})
+        target-span (candidates/make-span {:path-raw (:path right)
+                                            :heading-path (:heading right)
+                                            :commit-oid (:commit-oid right)})
+        candidate (candidates/make-candidate relation source-span target-span
+                                             :confidence 1.0
+                                             :generator-version "ep-diff-v1")
+        observation (candidates/candidate->observation
+                     candidate {:resource-id resource-id :adapter-version "0.1.0"})]
+    (with-observations-adapter profile
+      (fn [obs-adapter] ((:record-lineage-candidate! obs-adapter) observation)))
+    candidate))
 
 (defn- run-diff
   "Execute the diff subcommand. Returns {:exit int, :out string}."
@@ -624,15 +678,21 @@
               right (resolve-evidence-request repo right-expr)
               result (diff/compare-evidence {:git (make-evidence-git-port repo)}
                                             {:left left :right right})
-              output (case (:format options)
-                       :edn (pr-str result)
-                       (str (diff/format-diff-text (:diff/lines result)
-                                                   (str "--- " left-expr)
-                                                   (str "+++ " right-expr))
-                            "\n\n"
-                            ;; Continuity is display-only context — never folded into the diff above.
-                            "Continuity (not part of the diff): " (pr-str (:diff/continuity result))
-                            "\nSummary: " (pr-str (:diff/summary result))))]
+              seeded (when (:seed-candidate options)
+                       (seed-candidate! repo (:profile options) (:seed-candidate options) left right))
+              output (str (case (:format options)
+                            :edn (pr-str result)
+                            (str (diff/format-diff-text (:diff/lines result)
+                                                        (str "--- " left-expr)
+                                                        (str "+++ " right-expr))
+                                 "\n\n"
+                                 ;; Continuity is display-only context — never folded into the diff above.
+                                 "Continuity (not part of the diff): " (pr-str (:diff/continuity result))
+                                 "\nSummary: " (pr-str (:diff/summary result))))
+                          (when seeded
+                            (str "\n\nSeeded candidate " (:lineage-candidate/id seeded)
+                                 " [" (name (:lineage-candidate/relation seeded)) ", provisional]"
+                                 " — review with the ENG-005A decision events before treating it as established.")))]
           {:exit (if (:diff/failure result) 1 0) :out output})
         (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
         (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
