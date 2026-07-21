@@ -211,7 +211,8 @@
     (let [{:keys [exit out]} (main/run ["trace" "AGENTS.md"])]
       (is (zero? exit))
       (is (string/includes? out "node(s)"))
-      (is (string/includes? out "observed")))))
+      (is (string/includes? out "observed"))
+      (is (string/includes? out "ep show AGENTS.md@")))))
 
 (deftest trace-observed-only-flag-is-accepted
   (let [{:keys [exit out]} (main/run ["trace" "--observed-only" "AGENTS.md"])]

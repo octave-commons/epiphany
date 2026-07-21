@@ -75,11 +75,11 @@
       (is (= 2 (count (lt/filter-by-status edges true)))))))
 
 (deftest filter-by-status-exclude-rejected-test
-  (testing "exclude-rejected removes rejected edges"
+  (testing "exclude removes both rejected and provisional edges"
     (let [edges [{:edge/status :observed}
                  {:edge/status :rejected}
                  {:edge/status :provisional}]]
-      (is (= 2 (count (lt/filter-by-status edges false :exclude)))))))
+      (is (= 1 (count (lt/filter-by-status edges false :exclude)))))))
 
 (deftest filter-by-status-observed-and-exclude-rejected-test
   (testing "observed-only + exclude-rejected"
@@ -145,7 +145,7 @@
       (is (= :observed-only (:trace/filter result))))))
 
 (deftest trace-lineage-exclude-rejected-filter-test
-  (testing "exclude-rejected filter removes rejected edges"
+  (testing "exclude filter removes both provisional and rejected edges"
     (let [src (make-section "a.md" ["Intro"] "abc"
                             :timestamp (java.util.Date. 1000))
           tgt (make-section "a.md" ["Intro"] "def"
@@ -160,7 +160,9 @@
                                    {:provisional-rejected :exclude})]
       (is (not (some #(= :rejected (:edge/status %))
                      (:trace/edges result))))
-      (is (= :no-rejected (:trace/filter result))))))
+      (is (not (some #(= :provisional (:edge/status %))
+                     (:trace/edges result))))
+      (is (= :no-provisional (:trace/filter result))))))
 
 (deftest trace-lineage-no-adjacent-test
   (testing "include-adjacent? false removes Git history edges"

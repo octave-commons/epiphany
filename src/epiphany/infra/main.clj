@@ -677,6 +677,15 @@
     (sort-by (fn [s] (.getTime ^java.util.Date (or (:timestamp s) (java.util.Date. 0))))
              revisions)))
 
+(defn- section->show-expr
+  "Build the `ep show` section expression for a trace node's section,
+   so its exact historical evidence is one command away."
+  [section]
+  (let [heading (:heading-path section)]
+    (str (:path-raw section)
+         (when (seq heading) (str "#" (string/join ">" heading)))
+         "@" (:commit-oid section))))
+
 (defn- format-trace-text
   [trace]
   (let [nodes (:trace/nodes trace)
@@ -687,7 +696,8 @@
                       (map-indexed (fn [i n]
                                      (let [s (:node/section n)]
                                        (str "  " i ". " (:path-raw s) " @ " (:commit-oid s)
-                                            (when (:timestamp s) (str "  (" (:timestamp s) ")")))))
+                                            (when (:timestamp s) (str "  (" (:timestamp s) ")"))
+                                            "\n     ep show " (section->show-expr s))))
                                    nodes))
          "\n\nEdges:\n"
          (if (seq edges)
