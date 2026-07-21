@@ -6,6 +6,26 @@
 (defn- fake-common-git-dir [path]
   (str path "/.git"))
 
+(defn- fake-observations-port
+  "A complete, no-op observations port (all registered write ops + reads)
+  usable to stand in for a resolved adapter's :observations map."
+  []
+  {:find-by-request-id (fn [_] nil)
+   :record-repository-location! (fn [_] nil)
+   :record-revision-at-path! (fn [_] nil)
+   :record-ingestion-run! (fn [_] nil)
+   :record-checkpoint! (fn [_] nil)
+   :record-section-extraction! (fn [_] nil)
+   :record-review-decision! (fn [_] nil)
+   :list-ingestion-runs (fn [_] [])
+   :list-checkpoints (fn [_] [])
+   :list-revision-at-path-by-resource (fn [_] [])
+   :list-section-extractions-by-revision (fn [_] [])
+   :list-review-decisions (fn [_] [])
+   :list-review-decisions-by-candidate (fn [_] [])
+   :export-all (fn [] {})
+   :import-all (fn [_] nil)})
+
 ;; ---------------------------------------------------------------------------
 ;; Profile validation
 
@@ -71,6 +91,32 @@
         first-result  (registration/register! adapters cmd)
         second-result (registration/register! adapters cmd)]
     (is (= first-result second-result))))
+
+;; ---------------------------------------------------------------------------
+;; Validation wrapper composed for BOTH profiles (ENG-017B)
+
+(deftest local-profile-composes-validating-observations-wrapper
+  (let [adapters (profile/resolve-adapters {:profile :local
+                                            :common-git-dir-fn fake-common-git-dir})]
+    ;; An invalid record must be rejected by the wrapper before it reaches
+    ;; the adapter — proof the observations port is the validating wrapper.
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"Schema validation failed"
+         ((:record-repository-location! (:observations adapters))
+          {:not-a-valid-observation true})))))
+
+(deftest services-profile-composes-validating-observations-wrapper
+  ;; :services adapters are UNAVAILABLE today, so stub the per-profile raw
+  ;; resolution. This proves the validation wrapping is profile-agnostic
+  ;; (applied outside the per-profile branch): whatever :services resolves
+  ;; to, its observations port is wrapped by the same code path as :local.
+  (with-redefs [profile/resolve-raw-adapters
+                (fn [_] {:observations (fake-observations-port)})]
+    (let [adapters (profile/resolve-adapters {:profile :services})]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"Schema validation failed"
+           ((:record-repository-location! (:observations adapters))
+            {:not-a-valid-observation true}))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Diagnostics

@@ -8,7 +8,8 @@
 
   Registry entries are plain EDN data — usable by tests, docs
   generation, and the future checker without invoking any function."
-  (:require [epiphany.law.ports :as ports]))
+  (:require [clojure.string :as str]
+            [epiphany.law.ports :as ports]))
 
 ;; ---------------------------------------------------------------------------
 ;; Operation registry
@@ -105,19 +106,39 @@
       :else nil)))
 
 ;; ---------------------------------------------------------------------------
-;; Port operation keys (for completeness checks)
+;; Port operation classification + completeness set
 ;;
-;; The write operations on the observations port: every :record-* fn
+;; The write operations on the observations port: every :record-*! fn
 ;; plus :import-all. Read operations (:find-by-request-id, :list-*,
 ;; :export-all) are excluded because they do not persist records.
 
+(defn write-operation?
+  "True when `op` names a durable write on the observations port: any
+  :record-*! operation plus :import-all. Read operations (:find-*,
+  :list-*, :export-all) return false. Pure classification over the
+  operation keyword's name — no I/O."
+  [op]
+  (or (= op :import-all)
+      (and (keyword? op)
+           (let [n (name op)]
+             (and (str/starts-with? n "record-")
+                  (str/ends-with? n "!"))))))
+
+(defn- map-schema-entry-keys
+  "Extract the entry keys from a raw Malli `:map` schema vector,
+  skipping the leading `:map` marker and the optional properties map."
+  [schema]
+  (->> schema
+       (drop 1)
+       (remove map?)
+       (map first)))
+
 (def port-write-operations
-  "Set of write-operation keywords declared in the observations port.
-  Derived from the port schema at compile time."
-  #{:record-repository-location!
-    :record-revision-at-path!
-    :record-ingestion-run!
-    :record-checkpoint!
-    :record-section-extraction!
-    :record-review-decision!
-    :import-all})
+  "Set of write-operation keywords derived from the observations-port
+  schema in `law/ports`. Computed by classifying every declared port
+  entry with `write-operation?`, so adding a new write to the port
+  schema without a matching registry entry turns the completeness
+  suite red by construction (never a hand-maintained parallel copy)."
+  (into #{}
+        (filter write-operation?)
+        (map-schema-entry-keys ports/observations-port-schema)))

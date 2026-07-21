@@ -54,6 +54,31 @@
         (is (fn? (get wrapped op))
             (str "Operation " op " should be wrapped"))))))
 
+(deftest all-wrapped-ops-are-registry-driven
+  (testing "wrapped write ops are exactly the registered operations"
+    (let [[spy _] (spy-adapter)
+          wrapped (validation/validating-observations-port spy)]
+      (doseq [op (operations/registered-operations)]
+        (is (fn? (get wrapped op))
+            (str "Registered operation " op " should be wrapped"))))))
+
+;; ---------------------------------------------------------------------------
+;; Eager (wrap-time) failure for an unregistered write operation
+
+(deftest unregistered-write-op-fails-eagerly-at-wrap-time
+  (testing "a write-shaped op with no registry entry throws at COMPOSITION time"
+    (let [[spy _] (spy-adapter)
+          ;; :record-bogus! looks like a durable write but has no registry entry
+          port (assoc spy :record-bogus! (fn [_] nil))
+          ex   (try
+                 (validation/validating-observations-port port)
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? ex)
+          "wrapping must throw eagerly, not lazily on first call")
+      (is (= :unregistered-write-operation (:code (ex-data ex))))
+      (is (contains? (set (:operations (ex-data ex))) :record-bogus!)))))
+
 (deftest read-ops-pass-through-unwrapped
   (testing "read operations are not wrapped"
     (let [[spy calls] (spy-adapter)

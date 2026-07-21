@@ -2,18 +2,33 @@
   "Parameterized law suite for observation-port adapters.
 
   Every adapter that implements the observations port must pass this
-  suite. The harness is data-parameterized: supply a factory function
-  and a capabilities declaration, and the laws judge the adapter by
-  identical criteria with normalized domain outcomes.
+  suite. The harness is data-parameterized: supply either a factory
+  function (`:make-port`) or a concrete `:port`, plus a `:capabilities`
+  declaration, and the laws judge the adapter by identical criteria.
 
-  Laws skipped for undeclared capabilities are reported as skipped,
-  never silently passed.
+  The runner is a pure function of its argument map: it returns a
+  normalized map of `law-name -> outcome` and emits no `clojure.test`
+  assertions itself. Callers inspect the returned data and make their
+  own assertions. This lets a negative fixture prove the harness has
+  teeth (i.e. that a permissive adapter genuinely FAILS the rejection
+  laws) without failing the enclosing test suite.
+
+  Each outcome is a map:
+    {:outcome :pass}                       ; law held
+    {:outcome :fail   :detail \"...\"}      ; law violated
+    {:outcome :skip   :capability :kw}     ; capability not declared
+
+  `:skip` and `:pass` are genuinely distinguishable — a law whose
+  required capability is not declared is reported as `:skip`, never as
+  a silent pass.
+
+  A fresh port is drawn per law (via `:make-port`) so laws do not
+  contaminate one another's state; when only a shared `:port` is given
+  every law runs against that same instance.
 
   Usage:
-    (observations-laws {:make-port (fn [] (:observations (in-memory/make ...)))
-                        :capabilities #{:schema-validation :idempotency :export-import}})"
-  (:require [clojure.test :refer [deftest is testing]]
-            [epiphany.law.operations :as operations]))
+    (observations-laws {:make-port   (fn [] (:observations (in-memory/make ...)))
+                        :capabilities #{:schema-validation :idempotency :export-import}})")
 
 ;; ---------------------------------------------------------------------------
 ;; Fixture builders
@@ -49,108 +64,181 @@
 
 ;; ---------------------------------------------------------------------------
 ;; Law definitions
+;;
+;; Each law is a pure predicate over a fresh port: it returns an outcome
+;; map ({:outcome :pass} or {:outcome :fail :detail "..."}) and NEVER
+;; emits a clojure.test assertion. That is what lets the negative
+;; fixture assert "these laws failed" without failing the suite.
+
+(defn- pass [] {:outcome :pass})
+(defn- fail [detail] {:outcome :fail :detail detail})
 
 (defn- law-valid-write-accepted
-  "A valid record is accepted without error."
+  "A valid record is accepted without error (returns nil)."
   [port]
-  (testing "LAW: valid write accepted"
-    (let [rid #uuid "10000000-0000-0000-0000-000000000001"
-          record (valid-repository-location rid)
-          result ((:record-repository-location! port) record)]
-      (is (nil? result) "First write must return nil (success)"))))
+  (let [rid #uuid "10000000-0000-0000-0000-000000000001"
+        record (valid-repository-location rid)]
+    (try
+      (let [result ((:record-repository-location! port) record)]
+        (if (nil? result)
+          (pass)
+          (fail (str "expected nil for a valid first write, got " (pr-str result)))))
+      (catch Exception e
+        (fail (str "valid write threw " (.getName (class e)) ": " (.getMessage e)))))))
 
 (defn- law-invalid-write-rejected
   "An invalid record is rejected with ExceptionInfo."
   [port]
-  (testing "LAW: invalid write rejected"
-    (is (thrown? clojure.lang.ExceptionInfo
-                ((:record-repository-location! port) (invalid-record)))
-        "Invalid record must throw ExceptionInfo")))
+  (try
+    (let [result ((:record-repository-location! port) (invalid-record))]
+      (fail (str "invalid record was accepted (no ExceptionInfo); returned "
+                 (pr-str result))))
+    (catch clojure.lang.ExceptionInfo _
+      (pass))
+    (catch Exception e
+      (fail (str "invalid write threw " (.getName (class e))
+                 ", expected clojure.lang.ExceptionInfo")))))
 
 (defn- law-rejection-leaves-state-unchanged
   "A rejected write leaves export-all byte-identical."
   [port]
-  (testing "LAW: rejection leaves state unchanged"
-    (let [snapshot-before ((:export-all port))]
-      (try
-        ((:record-repository-location! port) (invalid-record))
-        (catch clojure.lang.ExceptionInfo _))
-      (is (= snapshot-before ((:export-all port)))
-          "export-all must be identical before and after rejected write"))))
+  (let [snapshot-before ((:export-all port))]
+    (try
+      ((:record-repository-location! port) (invalid-record))
+      (catch clojure.lang.ExceptionInfo _)
+      (catch Exception _))
+    (let [snapshot-after ((:export-all port))]
+      (if (= snapshot-before snapshot-after)
+        (pass)
+        (fail "export-all differs before vs after a rejected write")))))
 
 (defn- law-idempotent-replay-stable
   "Same request-ID with identical content replays without mutation."
   [port]
-  (testing "LAW: idempotent replay stable"
-    (let [rid #uuid "20000000-0000-0000-0000-000000000001"
-          record (valid-repository-location rid)]
+  (let [rid #uuid "20000000-0000-0000-0000-000000000001"
+        record (valid-repository-location rid)]
+    (try
       ((:record-repository-location! port) record)
       (let [result ((:record-repository-location! port) record)]
-        (is (nil? result) "Replay with identical content must return nil"))
-      (is (= record ((:find-by-request-id port) rid))
-          "Stored fact must be unchanged after replay"))))
+        (cond
+          (some? result)
+          (fail (str "replay with identical content must return nil, got " (pr-str result)))
+          (not= record ((:find-by-request-id port) rid))
+          (fail "stored fact changed after an identical replay")
+          :else (pass)))
+      (catch Exception e
+        (fail (str "idempotent replay threw " (.getName (class e)) ": " (.getMessage e)))))))
 
 (defn- law-changed-content-replay-conflicts
   "Same request-ID with different content returns :idempotency-conflict."
   [port]
-  (testing "LAW: changed-content replay conflicts"
-    (let [rid #uuid "30000000-0000-0000-0000-000000000001"
-          record1 (valid-repository-location rid)
-          record2 (second-valid-repository-location rid)]
+  (let [rid #uuid "30000000-0000-0000-0000-000000000001"
+        record1 (valid-repository-location rid)
+        record2 (second-valid-repository-location rid)]
+    (try
       ((:record-repository-location! port) record1)
       (let [result ((:record-repository-location! port) record2)]
-        (is (= :idempotency-conflict (:code result))
-            "Must return :idempotency-conflict")
-        (is (= rid (:request-id result))
-            "Conflict must include the request-id"))
-      (is (= record1 ((:find-by-request-id port) rid))
-          "Stored fact must be the original, not the conflicting one"))))
+        (cond
+          (not= :idempotency-conflict (:code result))
+          (fail (str "expected {:code :idempotency-conflict}, got " (pr-str result)))
+          (not= rid (:request-id result))
+          (fail "conflict result must include the offending request-id")
+          (not= record1 ((:find-by-request-id port) rid))
+          (fail "stored fact must remain the original, not the conflicting one")
+          :else (pass)))
+      (catch Exception e
+        (fail (str "changed-content replay threw " (.getName (class e)) ": " (.getMessage e)))))))
 
 (defn- law-export-import-round-trip
   "Export then import preserves all data."
   [port]
-  (testing "LAW: export/import round-trip"
-    (let [rid #uuid "40000000-0000-0000-0000-000000000001"
-          record (valid-repository-location rid)]
+  (let [rid #uuid "40000000-0000-0000-0000-000000000001"
+        record (valid-repository-location rid)]
+    (try
       ((:record-repository-location! port) record)
       (let [exported ((:export-all port))]
         ((:import-all port) exported)
-        (is (= (get exported "repository-location")
+        (if (= (get exported "repository-location")
                (get ((:export-all port)) "repository-location"))
-            "Re-export must match original export")))))
+          (pass)
+          (fail "re-export after import does not match original export")))
+      (catch Exception e
+        (fail (str "export/import round-trip threw " (.getName (class e)) ": " (.getMessage e)))))))
+
+;; ---------------------------------------------------------------------------
+;; Law registry
+;;
+;; Declarative: each entry names the law, the capability it requires
+;; (nil = applies to every adapter), and the predicate that judges it.
+;; Gating lives here, so "which laws are capability-gated" is data, not
+;; control flow buried in the runner. In particular the export/import
+;; round-trip is GATED on :export-import and only runs when declared.
+
+(def ^:private law-registry
+  [{:law :valid-write-accepted            :capability nil                :run law-valid-write-accepted}
+   {:law :invalid-write-rejected          :capability :schema-validation :run law-invalid-write-rejected}
+   {:law :rejection-leaves-state-unchanged :capability :schema-validation :run law-rejection-leaves-state-unchanged}
+   {:law :idempotent-replay-stable        :capability :idempotency       :run law-idempotent-replay-stable}
+   {:law :changed-content-replay-conflicts :capability :idempotency       :run law-changed-content-replay-conflicts}
+   {:law :export-import-round-trip        :capability :export-import      :run law-export-import-round-trip}])
+
+(defn- resolve-port-provider
+  "Return a zero-arg provider that yields a port for a single law run.
+  Prefers `:make-port` (fresh, isolated per law); falls back to a shared
+  `:port`."
+  [{:keys [make-port port]}]
+  (cond
+    make-port make-port
+    port (constantly port)
+    :else (throw (ex-info "law suite requires :make-port or :port"
+                          {:code :invalid-law-suite-argument}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Law suite runner
 
 (defn observations-laws
-  "Run the full observation-port law suite against `port`.
+  "Run the observation-port law suite and return normalized outcomes.
 
-  `port` — an observations port map (keyword -> function).
-  `capabilities` — a set of capability keywords. Laws for undeclared
-  capabilities are skipped with a `:skip` report, never silently passed.
+  Argument map:
+    :make-port    — zero-arg factory returning a fresh observations port
+                    (preferred: each law runs against an isolated port).
+    :port         — a shared observations port map (used only when
+                    :make-port is absent).
+    :capabilities — a set of capability keywords declared by the adapter.
+
+  Returns a map of law-keyword -> outcome map. Every registered law is
+  present in the result:
+    {:outcome :pass}
+    {:outcome :fail :detail \"...\"}
+    {:outcome :skip :capability :kw}   ; required capability not declared
 
   Supported capabilities:
     :schema-validation — adapter validates records against schemas
     :idempotency      — adapter enforces request-ID idempotency
-    :export-import    — adapter supports export-all/import-all"
-  [{:keys [port capabilities]}]
-  (let [caps (or capabilities #{})]
-    ;; These laws apply to every adapter (no special capability needed)
-    (law-valid-write-accepted port)
-    (law-export-import-round-trip port)
+    :export-import    — adapter supports export-all/import-all round-trip
 
-    ;; Schema validation laws
-    (if (:schema-validation caps)
-      (do
-        (law-invalid-write-rejected port)
-        (law-rejection-leaves-state-unchanged port))
-      (testing "LAW: invalid write rejected [SKIPPED: :schema-validation not declared]"
-        (is true "skipped")))
+  This function emits no clojure.test assertions; callers inspect the
+  returned data. Skip and pass are distinguishable outcomes."
+  [{:keys [capabilities] :as args}]
+  (let [caps (or capabilities #{})
+        provider (resolve-port-provider args)]
+    (into {}
+          (for [{:keys [law capability run]} law-registry]
+            [law
+             (if (and capability (not (contains? caps capability)))
+               {:outcome :skip :capability capability}
+               (run (provider)))]))))
 
-    ;; Idempotency laws
-    (if (:idempotency caps)
-      (do
-        (law-idempotent-replay-stable port)
-        (law-changed-content-replay-conflicts port))
-      (testing "LAW: idempotent replay [SKIPPED: :idempotency not declared]"
-        (is true "skipped")))))
+(defn failed-laws
+  "Return the set of law keywords whose outcome is :fail."
+  [outcomes]
+  (into #{} (keep (fn [[law {:keys [outcome]}]]
+                    (when (= :fail outcome) law))
+                  outcomes)))
+
+(defn skipped-laws
+  "Return the set of law keywords whose outcome is :skip."
+  [outcomes]
+  (into #{} (keep (fn [[law {:keys [outcome]}]]
+                    (when (= :skip outcome) law))
+                  outcomes)))

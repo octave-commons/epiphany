@@ -30,8 +30,34 @@
 ;; ---------------------------------------------------------------------------
 ;; Adapter resolution
 
+(defn resolve-raw-adapters
+  "Per-profile raw adapter map, BEFORE the validation wrapper is
+  applied. Kept separate from `resolve-adapters` so the validation
+  wrapping is profile-agnostic and cannot be forgotten on any one
+  branch (see ENG-017B).
+
+   :local     returns in-memory adapters (requires :common-git-dir-fn).
+   :services  throws UNAVAILABLE — no adapter may silently substitute."
+  [{:keys [profile common-git-dir-fn]}]
+  (case profile
+    :local
+    (in-memory/make {:common-git-dir-fn common-git-dir-fn})
+
+    :services
+    (throw (ex-info (str "Profile :services is not yet available. "
+                         "Start local services and use US-000C / ENG-001A adapters.")
+                    {:code :unavailable
+                     :profile :services
+                     :hint "MongoDB/S3 adapters arrive with ENG-001A. Use :local for direct-mode testing."}))))
+
 (defn resolve-adapters
   "Resolve a complete port map for the given profile.
+
+   Every profile's observations port is wrapped by the ENG-017B
+   validation gateway. The wrapping is applied here — outside the
+   per-profile branch in `resolve-raw-adapters` — so NO profile
+   (:local, :services, or any future one) can compose an unvalidated
+   observations port.
 
    :local
      Returns in-memory adapters. Requires :common-git-dir-fn in opts
@@ -45,19 +71,10 @@
    Options:
      :profile            keyword — :local or :services
      :common-git-dir-fn  (fn [path] -> string) — required for :local"
-  [{:keys [profile common-git-dir-fn]}]
+  [{:keys [profile] :as opts}]
   (validate-profile! profile)
-  (case profile
-    :local
-    (let [adapters (in-memory/make {:common-git-dir-fn common-git-dir-fn})]
-      (update adapters :observations validation/validating-observations-port))
-
-    :services
-    (throw (ex-info (str "Profile :services is not yet available. "
-                         "Start local services and use US-000C / ENG-001A adapters.")
-                    {:code :unavailable
-                     :profile :services
-                     :hint "MongoDB/S3 adapters arrive with ENG-001A. Use :local for direct-mode testing."}))))
+  (update (resolve-raw-adapters opts)
+          :observations validation/validating-observations-port))
 
 ;; ---------------------------------------------------------------------------
 ;; Diagnostics

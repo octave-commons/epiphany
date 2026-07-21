@@ -1,28 +1,52 @@
 (ns epiphany.law-suite.observations-test
-  "Run the observation-port law suite against:
+  "Drive the observation-port law suite against:
     1. The ENG-017C in-memory reference adapter (must pass all laws)
-    2. A deliberately permissive fixture adapter (must fail rejection laws)"
+    2. A deliberately permissive fixture adapter (must FAIL the schema
+       rejection laws) — proving the harness itself has teeth.
+
+  Both tests run the *same* shared harness (`laws/observations-laws`)
+  and assert on the normalized per-law outcome data it returns. The
+  negative test therefore proves that a silently-weakened harness that
+  passed permissive adapters would be caught here."
   (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.law-suite.observations-laws :as laws]))
 
+(defn- make-reference-port
+  "Factory for the ENG-017C in-memory reference observations port."
+  []
+  (:observations (in-memory/make {:common-git-dir-fn (fn [p] (str p "/.git"))})))
+
 ;; ---------------------------------------------------------------------------
-;; Reference adapter (ENG-017C in-memory)
+;; Reference adapter (ENG-017C in-memory) — must pass every declared law.
 
 (deftest reference-adapter-passes-all-laws
   (testing "ENG-017C in-memory adapter passes the full law suite"
-    (let [adapters (in-memory/make {:common-git-dir-fn (fn [p] (str p "/.git"))})
-          port (:observations adapters)]
-      (laws/observations-laws
-       {:port port
-        :capabilities #{:schema-validation :idempotency :export-import}}))))
+    (let [outcomes (laws/observations-laws
+                    {:make-port make-reference-port
+                     :capabilities #{:schema-validation :idempotency :export-import}})]
+      (is (empty? (laws/failed-laws outcomes))
+          (str "no law may fail for the reference adapter; failures: "
+               (pr-str (select-keys outcomes (laws/failed-laws outcomes)))))
+      (is (empty? (laws/skipped-laws outcomes))
+          "with every capability declared, no law may be skipped")
+      (testing "every registered law is present and passing"
+        (doseq [law [:valid-write-accepted
+                     :invalid-write-rejected
+                     :rejection-leaves-state-unchanged
+                     :idempotent-replay-stable
+                     :changed-content-replay-conflicts
+                     :export-import-round-trip]]
+          (is (= :pass (:outcome (get outcomes law)))
+              (str "law " law " must pass")))))))
 
 ;; ---------------------------------------------------------------------------
-;; Permissive fixture adapter (bare swap!, like pre-ENG-017C)
+;; Permissive fixture adapter (bare swap!, like pre-ENG-017C).
 
 (defn- make-permissive-adapter
   "An adapter that accepts any map without validation — the false-green
-  oracle that ENG-017C was designed to retire."
+  oracle that ENG-017C was designed to retire. It CLAIMS the schema
+  capability but does not actually enforce it."
   []
   (let [by-request-id (atom {})]
     {:find-by-request-id (fn [rid] (get @by-request-id rid))
@@ -42,16 +66,36 @@
      :import-all (fn [_] nil)}))
 
 (deftest permissive-adapter-fails-schema-laws
-  (testing "A permissive adapter must fail the schema-validation laws"
-    (let [port (make-permissive-adapter)]
-      ;; The permissive adapter accepts invalid records — so the
-      ;; "invalid write rejected" law must NOT pass.
-      ;; We test this by checking that the invalid record is accepted
-      ;; (which means the law would fail if run against this adapter).
-      (let [invalid {:observation/request-id #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"
-                     :resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"}]
-        (is (nil? ((:record-repository-location! port) invalid))
-            "Permissive adapter must accept invalid records (proving it fails the law)")
-        (is (some? ((:find-by-request-id port)
-                    #uuid "ffffffff-ffff-ffff-ffff-ffffffffffff"))
-            "Invalid record must be stored (proving permissive adapter has no validation)")))))
+  (testing "the shared harness genuinely FAILS a permissive adapter"
+    ;; Declare :schema-validation so the rejection laws actually RUN
+    ;; against the permissive adapter. Because it does no validation,
+    ;; those laws must report :fail — that is the proof the harness has
+    ;; teeth. We assert on the returned outcome data, so a real law
+    ;; failure here does NOT fail this test suite.
+    (let [outcomes (laws/observations-laws
+                    {:make-port make-permissive-adapter
+                     :capabilities #{:schema-validation}})
+          failed (laws/failed-laws outcomes)]
+      (is (contains? failed :invalid-write-rejected)
+          "permissive adapter accepts invalid records, so the rejection law must FAIL")
+      (is (contains? failed :rejection-leaves-state-unchanged)
+          "permissive adapter stores rejected writes, so the state-unchanged law must FAIL")
+      (testing "the failing laws carry an explanatory :detail"
+        (is (string? (:detail (get outcomes :invalid-write-rejected))))
+        (is (string? (:detail (get outcomes :rejection-leaves-state-unchanged)))))))
+  (testing "undeclared capabilities yield a distinguishable :skip, not a silent pass"
+    ;; No :export-import / :idempotency declared → those laws must be
+    ;; reported :skip (distinguishable from :pass) so ENG-017E can rely
+    ;; on the skip-vs-pass distinction.
+    (let [outcomes (laws/observations-laws
+                    {:make-port make-permissive-adapter
+                     :capabilities #{:schema-validation}})
+          skipped (laws/skipped-laws outcomes)]
+      (is (contains? skipped :export-import-round-trip)
+          "export/import round-trip is GATED on :export-import; undeclared => :skip")
+      (is (contains? skipped :idempotent-replay-stable))
+      (is (contains? skipped :changed-content-replay-conflicts))
+      (is (= :skip (:outcome (get outcomes :export-import-round-trip)))
+          "skip must be a :skip outcome, never a passing (is true)")
+      (is (not= :pass (:outcome (get outcomes :export-import-round-trip)))
+          "a skipped law must NOT be reported as :pass"))))

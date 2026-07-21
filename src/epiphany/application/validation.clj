@@ -47,15 +47,34 @@
       (apply f args))))
 
 (defn validating-observations-port
-  "Wrap an observations port so every write operation validates its
-  input against the ENG-017A registry before delegating.
+  "Wrap an observations port so every registered write operation
+  validates its input against the ENG-017A registry before delegating.
 
-  Read operations pass through unchanged."
+  The set of wrapped operations is driven by
+  `operations/registered-operations` (the registry data itself), never
+  a parallel hand-maintained list. Read operations pass through
+  unchanged.
+
+  Fails EAGERLY at composition time: if the port declares a
+  write-shaped operation (see `operations/write-operation?`) with no
+  registry entry, this throws `:unregistered-write-operation` here —
+  not lazily on first call — so an unregistered durable write can never
+  be composed into a running port."
   [port]
-  (reduce-kv
-   (fn [m op f]
-     (if (contains? operations/port-write-operations op)
-       (assoc m op (wrap-write op f))
-       (assoc m op f)))
-   {}
-   port))
+  (let [registered   (operations/registered-operations)
+        unregistered (into #{}
+                           (comp (filter operations/write-operation?)
+                                 (remove registered))
+                           (keys port))]
+    (when (seq unregistered)
+      (throw (ex-info (str "Unregistered write operation(s) at composition: "
+                           unregistered)
+                      {:code :unregistered-write-operation
+                       :operations unregistered})))
+    (reduce-kv
+     (fn [m op f]
+       (if (contains? registered op)
+         (assoc m op (wrap-write op f))
+         (assoc m op f)))
+     {}
+     port)))
