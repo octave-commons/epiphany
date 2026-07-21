@@ -3,13 +3,14 @@ labels: ["quality", "cli", "infra", "tooling", "regression", "phase-1"]
 parent: "eng-017g-normalize-cli-and-http-command-contracts"
 phase: "1"
 type: "chore"
-write-id: "1784662732758-0.swfq0jreeq87mfgmok"
+write-id: "1784664781563-0.iat2u0h5smjbjed4o3"
 points: "1"
 verification: ["unit-test"]
 risk: "low"
 title: "ENG-017M: Fix broken bin/ep launcher (infinite self-exec, never runs clojure)"
 priority: "P0"
-status: "review"
+status: "done"
+id: "a1146c30-11d6-43e0-bb2a-7d5bf5cdfac8"
 uuid: "a1146c30-11d6-43e0-bb2a-7d5bf5cdfac8"
 created_at: "2026-07-21T19:05:57.758Z"
 ---
@@ -76,4 +77,8 @@ the whole CLI review lane.
 
 ---
 IMPLEMENTED 2026-07-21 (board triage, same session it was filed): launcher fixed. bin/epiphany now resolves the repo root from its own location, cd's there, and `exec clojure -M:run "$@"` — it no longer exec's itself. Note: the `--` from the documented `clojure -M:run -- --help` form must NOT be forwarded by the launcher — tools.cli/clojure.main treat `--` as end-of-options, which turned `--help` into a positional "Unknown command"; dropping it fixes global flags while commands (which come first) are unaffected. Verified through the shipped binary: `bin/ep --help` → usage, exit 0 (was rc=124 hang); `bin/ep` (no args) → usage, exit 0; `bin/ep show AGENTS.md@HEAD` → real blob + OID, exit 0; `bin/ep show <missing>` → UNAVAILABLE, exit 1 — reproducing the ENG-004A/B/D acceptance evidence through bin/ep for the first time. Guard added: test/epiphany/infra/launcher_test.clj (static, no JVM boot) asserts the launcher invokes clojure via -M:run and does not exec itself — 1 test / 4 assertions green — so regression 0a99597 cannot silently return. Uncommitted in working tree. Recommend review; this is a P0 unblocker for the whole CLI review lane.
+
+REVIEW 2026-07-21 (independent, of commit 11a5541): APPROVE. Verified independently, distinct from the implementation comment. (1) bin/epiphany invokes `exec clojure -M:run "$@"` from the resolved repo root and does not exec itself; bin/ep symlink inherits it. (2) End-to-end through the shipped binary: `bin/ep --help` → usage banner, rc=0 (was rc=124 hang); `bin/ep show AGENTS.md@HEAD` → real 6215-byte blob + OID, rc=0; `bin/ep show NO_SUCH_FILE.md@HEAD` → UNAVAILABLE, rc=1 — reproduces the ENG-004A/B/D acceptance evidence through the actual executable. (3) Guard test test/epiphany/infra/launcher_test.clj genuinely catches the 0a99597 regression (asserts clojure + -M:run present, not self-exec); focused run 1 test, 4 assertions, 0 failures. (4) git show --stat 11a5541: only bin/epiphany (+8/-2) + launcher_test.clj (new), no main.clj/subcommand changes.
+
+Evidence: clojure -M:unit-test — 641 tests, 1648 assertions, 0 failures.
 ---

@@ -5,13 +5,13 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001703"]
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784661392386-0.hj7ur5jxwon49hbtyrj"
+write-id: "1784664470428-0.h7169383ydrg8ngg3gg"
 points: "5"
 verification: ["unit-test"]
 risk: "medium"
 title: "ENG-017D: Establish reusable observation adapter contract laws"
 priority: "P0"
-status: "review"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001704"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -109,4 +109,6 @@ REVIEW 2026-07-13: request-changes. Ran clojure -M:unit-test -- 554 tests, 1421 
 REVIEW-FAIL 2026-07-13: negative fixture test (permissive-adapter-fails-schema-laws) never actually exercises the shared harness against a bad adapter. It constructs a permissive adapter and manually checks it accepts invalid records — but doesn't run observations-laws against it. Can't catch a weakened harness that silently passes permissive adapters. --tasks-dir docs/kanban
 
 FIX 2026-07-21 (board triage): both 2026-07-13 REVIEW-FAIL bullets closed. (1) Negative fixture now has teeth: observations-laws refactored to a PURE function returning normalized per-law outcome data (law-keyword → {:outcome :pass|:fail|:skip}), emitting no clojure.test assertions. permissive-adapter-fails-schema-laws now INVOKES laws/observations-laws against the permissive adapter and asserts :invalid-write-rejected and :rejection-leaves-state-unchanged are both in (failed-laws outcomes) — a silently-weakened harness that passed permissive adapters would now flip this red. reference-adapter-passes-all-laws stays green ((empty? (failed-laws …)), no skips). Data-parameterized shape preserved ({:make-port|:port :capabilities}); :make-port now draws a fresh port per law to prevent cross-law contamination. (2) Skip vs pass distinguishable + export/import gated: capability requirement is declarative data per law; an undeclared-capability law reports {:outcome :skip}, never the old passing (is true); :export-import-round-trip runs only when :export-import is declared. Locks the contract ENG-017E depends on. Evidence: clojure -M:unit-test → 612/1558/0; focused observations-test 2 tests/17 assertions green. Diff scoped to the 2 law-suite test files. Uncommitted. Moving in_progress→review.
+
+REVIEW 2026-07-21 (independent adversarial re-review of fix 6a3debe): APPROVE. Defect genuinely closed, every claim verified at file:line. (1) observations-laws is a pure data-returning runner (observations_laws.clj:199-230), no clojure.test in the ns; failed-laws/skipped-laws helpers correct. (2) permissive-adapter-fails-schema-laws (observations_test.clj:75-85) actually invokes the harness against the permissive adapter and asserts :invalid-write-rejected + :rejection-leaves-state-unchanged are in the failed set — old manual shortcut gone. (3) TEETH PROVEN EMPIRICALLY: reviewer temporarily rewrote law-invalid-write-rejected to unconditionally pass → focused suite went RED at permissive-adapter-fails-schema-laws → reverted clean. A silently-weakened harness is now caught. (4) reference-adapter-passes-all-laws asserts empty failed+skipped, all :pass. (5) :export-import capability-gated (observations_laws.clj:183) and undeclared-capability laws report a distinct :skip, never a passing is-true. Suite: 637 tests / 1638 assertions / 0 failures. Follow-up (NOT a 017D defect): the harness fixtures only repository-location observations — the other write ops (revision-at-path, ingestion-run, checkpoint, section-extraction, lineage-candidate) are not yet driven by any law. 017D's scope is the reusable harness + reference-adapter proof, which it delivers; generalizing the law set to every observation kind is downstream (ENG-017E/017I territory) — worth its own card so partial coverage isn't mistaken for full port-contract coverage. Recommend advancing; final done disposition/authority per docs/process/review-and-acceptance.md.
 ---
