@@ -218,3 +218,52 @@
       (is (every? #(= :provisional (:lineage-candidate/disposition %)) (rest tagged)))
       (is (= 2 (count (candidates/surfaced-candidates sample ds))))
       (is (empty? (candidates/established-candidates sample ds))))))
+
+(deftest disposition-reorders-out-of-order-input-test
+  (testing "the newest terminal by timestamp wins even when input is not chronological"
+    (let [c     (first sample)
+          newer (assoc (decision cid-1 :rejected :reason "final")
+                       :review-decision/decided-at now)
+          older (assoc (decision cid-1 :accepted)
+                       :review-decision/decided-at t-minus-2h)]
+      ;; input deliberately newest-first, so sort-by must actually reorder
+      (is (= :rejected (candidates/disposition c [newer older])))
+      (is (= :rejected (candidates/disposition c [older newer]))))))
+
+(deftest disposition-tie-breaks-on-log-order-test
+  (testing "equal decided-at ties break on decision-log order — the later-recorded wins"
+    (let [c  (first sample)
+          d1 (assoc (decision cid-1 :accepted)
+                    :review-decision/decided-at now)
+          d2 (assoc (decision cid-1 :rejected :reason "same instant")
+                    :review-decision/decided-at now)]
+      ;; stable sort keeps input order for equal keys; `last` takes the later-listed
+      (is (= :rejected (candidates/disposition c [d1 d2])))
+      (is (= :accepted (candidates/disposition c [d2 d1]))))))
+
+(deftest disposition-neutral-relabel-and-deferred-test
+  (testing "relabel and deferred are neutral — never settle, never unsettle"
+    (let [c        (first sample)
+          accepted (assoc (decision cid-1 :accepted)
+                          :review-decision/decided-at t-minus-2h)
+          relabel  (assoc (decision cid-1 :relabel :relabel-to :refines)
+                          :review-decision/decided-at now)
+          deferred (assoc (decision cid-1 :deferred)
+                          :review-decision/decided-at now)]
+      ;; a neutral decision alone leaves the candidate provisional
+      (is (= :provisional (candidates/disposition c [relabel])))
+      (is (= :provisional (candidates/disposition c [deferred])))
+      ;; a later neutral decision does not unsettle a prior terminal disposition
+      (is (= :accepted (candidates/disposition c [accepted relabel])))
+      (is (= :accepted (candidates/disposition c [accepted deferred]))))))
+
+;; ---------------------------------------------------------------------------
+;; Vocabulary drift guard: the law enum must equal the shared relation vocab
+
+(deftest law-enum-matches-relation-vocabulary-test
+  (testing "the law lineage-candidate/relation enum equals candidates/relation-types"
+    (let [enum-form (get registry/schemas "lineage-candidate/relation")]
+      (is (= :enum (first enum-form))
+          "expected an [:enum ...] schema body for lineage-candidate/relation")
+      (is (= candidates/relation-types (set (rest enum-form)))
+          "law enum drifted from candidates/relation-types (= lineage/relation-types); an 8th relation would be silently rejected by the schema"))))

@@ -199,6 +199,10 @@
   :provisional. Returns one of :provisional / :accepted / :rejected /
   :do-not-suggest.
 
+  Tiebreak: for decisions with an equal :review-decision/decided-at, the
+  stable sort preserves the decisions-list order, so the one appearing
+  later in the (append-only) decision log wins.
+
   Neutral decisions (relabel / deferred / annotated) never change the
   disposition — a candidate is promoted out of PROVISIONAL only by an
   explicit accept/reject/do-not-suggest event (epistemic ladder)."
