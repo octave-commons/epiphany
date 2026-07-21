@@ -1,16 +1,17 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001402"
-title: "ENG-004B: Compare two historical expressions (`ep diff`)"
-status: "review"
+category: "stories"
+labels: ["phase-1", "comparison", "diff", "evidence"]
+dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001401"]
+phase: "1"
 type: "story"
+write-id: "1784661367879-0.j2hbh2tgtgrb193bw7x"
+points: "3"
+title: "ENG-004B: Compare two historical expressions (`ep diff`)"
 priority: "P1"
-phase: 1
+status: "in_progress"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001402"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
 design: "docs/kanban/epics/epic-04-temporal-idea-lineage.md"
-points: 3
-labels: ["phase-1", "comparison", "diff", "evidence"]
-category: "stories"
-dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001401"]
 ---
 
 # ENG-004B: Compare two historical expressions (`ep diff`)
@@ -34,4 +35,9 @@ REVIEW 2026-07-13: request-changes. Independently re-verified: src/epiphany/infr
 REVIEW-FAIL 2026-07-13: same gap as ENG-004A — domain logic is tested but 'ep diff' doesn't exist in the CLI dispatch table. Nothing wires it. --tasks-dir docs/kanban
 
 FIX 2026-07-13: ep diff now exists for real. Wired in main.clj (run-diff) on top of the existing tested domain/diff.clj (compare-evidence), using the same real Git-backed evidence port as ep show. Verified against this repo: 'ep diff AGENTS.md@HEAD~3 AGENTS.md@HEAD' produces a real unified-style diff plus a separate, clearly-labeled Continuity/Summary block ('Continuity (not part of the diff): ...') so continuity signals are visible but never folded into the diff lines themselves, per AC. New test diff-compares-real-revisions-in-this-repo asserts both the diff markers and the continuity/summary block are present. Full suite: 568 tests, 1456 assertions, 0 failures. NOT fully done against the AC: 'a comparison can seed a candidate relation or review decision' is still unreachable -- there is no candidate/review-decision store to seed into (see ENG-005A finding below). Moving to review, not done. --tasks-dir docs/kanban
+
+REVIEW 2026-07-21 (independent adversarial, board triage): REQUEST-CHANGES. AC1-3 MET and solid: both sides carry exact source metadata with full commit OIDs (main.clj:629-631, diff.clj:45-128); continuity is a distinct :diff/continuity key never folded into :diff/lines and rendered as a separately-labeled block (diff.clj:187-192, main.clj:633-635); reproducible from resolved OIDs via --format edn. Suite green (612/1558/0); diff-compares-real-revisions-in-this-repo passes.
+- AC4 "seed a candidate relation or review decision": UNMET — run-diff only reads/prints; nothing wires it to the (now-existing) decision port or any candidate store. The FIX comment's deferral reason ("no store to seed into") has EXPIRED for decisions (ENG-005A landed), but no candidate store exists. → DESCOPED to new card ENG-005G (durable lineage-candidate store); this card's AC4 is amended to defer the seed-a-candidate capability there.
+- Surfaced here, now fixed separately: the bin/ep launcher was a broken infinite self-exec (regression 0a99597) — the recorded acceptance evidence was non-reproducible through the shipped binary. Fixed under ENG-017M; `bin/ep diff …` now runs.
+Moving review→in_progress for the AC4 amendment; with AC4 descoped and the launcher fixed, remaining scope is small and it should re-enter review quickly.
 ---

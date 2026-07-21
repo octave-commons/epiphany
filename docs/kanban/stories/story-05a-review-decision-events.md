@@ -4,11 +4,11 @@ labels: ["phase-1", "review", "events", "provenance"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001403"]
 phase: "1"
 type: "story"
-write-id: "1784570727853-0.el3rcjgh4j2x6dn1xu"
+write-id: "1784661368151-0.zdpeuxjq9w98xgr3c0m"
 points: "3"
 title: "ENG-005A: Record review decisions as append-only events"
 priority: "P1"
-status: "review"
+status: "in_progress"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001501"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000005"
 design: "docs/kanban/epics/epic-05-redundancy-tension-review.md"
@@ -35,4 +35,10 @@ IMPLEMENTED 2026-07-20: the durable review-decision port now exists — the root
 AC status: (a) append-only, never rewrites candidate/Git evidence — met; (b) rejected/do-not-suggest retained + suppressed flag persisted — met (domain visible-decisions/rejected-candidates operate over the durable list); (c) request-ids, retries don't duplicate — met, test review-decision-idempotent-by-request-id; (d) queryable by candidate/relation-type/time — met, list ops + domain by-decision-type/by-time-range, test review-decisions-queryable-by-type-and-time.
 
 Evidence: clojure -M:unit-test — 608 tests, 1540 assertions, 0 failures (was 600/1513; +8 tests). New tests: 4 in in_memory_test.clj (record+list, idempotency, invalid-rejected, export/import round-trip) + 3 in review_test.clj (schema-valid wrapping across all 6 decision types, request-id-as-idempotency-key, provenance-required). Not committed — left in the working tree; 017G work is also uncommitted in parallel. This is implementation evidence only; independent review + the review->done gate still apply (note: bin/kanban-done-gate is currently broken — it shells to the stale eta-mu CLI and errors 'unknown task', so the mechanical floor must be run manually or fixed first). Moving to review.
+
+REVIEW 2026-07-21 (independent adversarial, board triage): REQUEST-CHANGES, narrow. The durable review-decision port is genuinely solid — AC1 append-only (in_memory.clj:144-151, export byte-identical after rejected write), AC2 rejected/do-not-suggest retained + suppressed honored (review.clj:119-137), AC3 idempotent by request-id (in_memory.clj:145-151 + Mongo unique index mongo.clj:95-98, dup-key 11000 caught), AC5 closed schema + auto-wrap at the validation gateway (operations.clj:50-53,120 → application/validation.clj:55-60). 608/1540/0 confirmed, all 7 named tests present.
+- AC4 "queryable by RELATION TYPE": NOT MET. The card conflates decision type with relation type. The record stores :review-decision/decision (accepted/rejected/…), and by-decision-type filters on THAT — not relation type. Relation type (:lineage-candidate/relation etc.) lives on the candidate, and candidate persistence was never built. The cited test review-decisions-queryable-by-type-and-time exercises decision-type + time only; the AC-(d) evidence line is mislabeled. → DESCOPED to ENG-005G (candidate store makes relation-type queryable). This card's AC4 is amended to "queryable by candidate, DECISION type, and time" — which IS met — and relation-type querying is deferred to ENG-005G.
+- CORRECTION to this card's IMPLEMENTED comment: bin/kanban-done-gate is NOT broken. It parses cards directly from disk (post-Rheos-cutover, no eta-mu dependency), runs clean, and correctly BLOCKS this card only for lacking an explicit approve/accepted review disposition. The mechanical floor works.
+- Non-blocking: same-request-id/different-content replay is silently swallowed as nil (differs from record-repository-location!'s :idempotency-conflict); in-memory check-then-swap is non-atomic (test-only adapter; Mongo unique index is the real guard). Worth a one-line doc note.
+Moving review→in_progress for the AC amendment; delivered scope is complete + green and should re-enter review promptly. Mongo path remains integration-untestable here (accepted risk, needs clojure -M:integration-test).
 ---

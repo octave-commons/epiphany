@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001702"
-title: "ENG-017B: Enforce schemas through validating observation ports"
-status: "in_progress"
-type: "story"
-priority: "P0"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 3
-labels: ["quality", "schemas", "ports", "validation", "phase-1"]
 category: "stories"
+labels: ["quality", "schemas", "ports", "validation", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001701"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784661384514-0.qugizgd4xhnctkzitj"
+points: "3"
 verification: ["unit-test"]
 risk: "low"
+title: "ENG-017B: Enforce schemas through validating observation ports"
+priority: "P0"
+status: "review"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001702"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017B: Enforce schemas through validating observation ports
@@ -111,4 +112,6 @@ REVIEW 2026-07-13: Implementation complete. Verification evidence: (1) all regis
 REVIEW 2026-07-13: request-changes. Ran clojure -M:unit-test: 554 tests, 1421 assertions, 0 failures -- rejection-before-delegation, valid-passthrough, and content-exclusion are genuinely proven by tests. However two acceptance-criteria gaps remain: port-write-operations (law/operations.clj:109) is a hand-typed literal set, not actually derived from the registry/port schema despite its docstring, contradicting the 'driven by registry data, not a hand-maintained list' requirement; and unregistered-operation failure happens lazily on first call inside the wrapped closure, not at validating-observations-port construction/wrap time as the Invariants section requires -- no test covers wrap-time failure either. Also the verification table's claimed 'profile composition test' doesn't exist (profile_test.clj is unmodified in this diff). Please derive the write-op set from operations/registered-operations, add an eager wrap-time check for unregistered ops with a test, and add/point to the profile-level test before marking done. --tasks-dir docs/kanban
 
 REVIEW-FAIL 2026-07-13: (1) unregistered-op set in port-write-operations is hand-typed, not derived from the registry — can drift. (2) Failure surfaces lazily on first call, not at wrap time — composition root doesn't fail-fast. (3) AC claims a test for 'wrap time rejection of unregistered ops' but the test doesn't exist. --tasks-dir docs/kanban
+
+FIX 2026-07-21 (board triage): all three 2026-07-13 REVIEW-FAIL bullets closed. (1) Wrapped-set-from-registry: validating-observations-port now drives wrapping from operations/registered-operations (registry data), not the old hand-typed set — new test all-wrapped-ops-are-registry-driven. (2) Eager-not-lazy: unregistered write-shaped ops are now computed from the port keys at composition and throw :unregistered-write-operation EAGERLY at wrap time, not on first call — new test unregistered-write-op-fails-eagerly-at-wrap-time asserts the throw on the wrap call itself. (3) Profile composition for BOTH profiles: infra/profile.clj refactored — extracted resolve-raw-adapters (per-profile; :services still throws UNAVAILABLE, contract preserved) and moved validation wrapping to a profile-agnostic position in resolve-adapters, so no profile branch can compose an unwrapped port — new tests local-profile-composes-validating-observations-wrapper + services-profile-composes-validating-observations-wrapper. Caveat: the :services composition test stubs resolve-raw-adapters via with-redefs (no live :services adapter exists yet — it correctly throws UNAVAILABLE); it proves the wrapping code path is profile-agnostic, not a live service. Evidence: 612/1558/0. Depends on the ENG-017A derivation fix (same session). Uncommitted. Moving in_progress→review.
 ---

@@ -5,7 +5,7 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001702", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784568573871-0.mrkwpbkiifk3gv2xpzj"
+write-id: "1784660320740-0.01nx8cc0ekwiz0r0adtl"
 points: "5"
 verification: ["unit-test"]
 risk: "medium"
@@ -139,4 +139,8 @@ Remaining scope, deliberately not attempted this pass:
 - `infra.main` shelling out to the real `git` binary via `clojure.java.shell/sh` for `--path-format=absolute --git-common-dir` (`run-register`, `run-serve`) rather than going through JGit — noticed while writing the parity test's `shell-git-resolve` helper (mirrors the same pattern). This looks like it conflicts with ADR-000/CLAUDE.md's "Git is read-only, never shelled out to" principle, but is out of scope for this card and not something to fix as a drive-by; flagging for its own card.
 
 Suite: `clojure -M:unit-test` → 600 tests, 1513 assertions, 0 failures. `clojure -M:lint`, `:boundary-check`, `:interop-inventory` all clean.
+
+SPLIT 2026-07-21 (board triage): per breakdown rule 7 and the implementer's own 2026-07-20 recommendation, this card is split. The boundary-hardening + observed-parity slice that LANDED (2026-07-20, suite green 600→608 tests) stays here: `:limit` bounded validation shared by CLI+HTTP, `wrap-exceptions` internal-error leak fix, and CLI/HTTP outcome-category parity regression tests for register/search (test/epiphany/parity/cli_http_test.clj). That slice is reviewable as this card's deliverable.
+
+Carved OUT to follow-up ENG-017G2 (Shared CLI/HTTP command-vocabulary decoder seam): the actual decode-cli/decode-http/execute/encode-cli/encode-http shared command-vocabulary seam from this card's Scope section (today CLI and HTTP each independently parse + build adapters + call the same app/domain fns — parity is observed and regression-tested, NOT guaranteed by construction), plus parity tests for the remaining commands (status, review-decisions). Also noted for their own cards (not this one): register-handler's own catch echoing raw ExceptionInfo messages when register! gains a non-input failure mode; and infra.main shelling out to the real `git` binary via clojure.java.shell/sh (run-register/run-serve) which conflicts with ADR-000's "Git is read-only, never shelled out to". No status change made by this triage; recommend this card proceed to independent review of the landed slice.
 ---

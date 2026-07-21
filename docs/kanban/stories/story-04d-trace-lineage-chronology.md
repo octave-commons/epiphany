@@ -1,16 +1,17 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001404"
-title: "ENG-004D: Trace a lineage chronology (`ep trace`)"
-status: "review"
+category: "stories"
+labels: ["phase-1", "timeline", "lineage", "evidence"]
+dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001403"]
+phase: "1"
 type: "story"
+write-id: "1784661368014-0.dbqa50abazki5fcis0s"
+points: "4"
+title: "ENG-004D: Trace a lineage chronology (`ep trace`)"
 priority: "P1"
-phase: 1
+status: "in_progress"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001404"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
 design: "docs/kanban/epics/epic-04-temporal-idea-lineage.md"
-points: 4
-labels: ["phase-1", "timeline", "lineage", "evidence"]
-category: "stories"
-dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001403"]
 ---
 
 # ENG-004D: Trace a lineage chronology (`ep trace`)
@@ -32,4 +33,10 @@ REVIEW 2026-07-13: request-changes. Independently re-verified: `ep trace` does n
 REVIEW-FAIL 2026-07-13: same gap — 'ep trace' doesn't exist in CLI. Domain logic is solid but unwired. --tasks-dir docs/kanban
 
 FIX 2026-07-13: ep trace now exists for real. Wired in main.clj (run-trace) on top of the existing tested domain/lineage-trace.clj (trace-lineage), walking real Git history (epiphany.infra.git/reachable-commits + commit-tree-entries) for the given path to build chronological :observed edges -- no fabricated data. Both filter flags from the AC are wired: --observed-only and --provisional include|exclude. Verified against this repo: 'ep trace AGENTS.md' returns 15 real nodes / 14 real :observed edges across this file's actual commit history; an untracked path correctly errors with exit 1. New tests: trace-requires-path, trace-shows-help, trace-walks-real-history-in-this-repo, trace-observed-only-flag-is-accepted, trace-reports-error-for-untracked-path. Full suite: 568 tests, 1456 assertions, 0 failures. NOT fully done against the AC: cross-file candidate edges (accepted/provisional/rejected statuses) never appear because there is no candidate store wired to the CLI (candidates is always [] here) -- domain support for those statuses exists in lineage-trace.clj but nothing populates it yet. Also 'every node resolves to the evidence reader' is only true by construction (a node's path@commit-oid is a valid ep show expression) -- there's no automatic link. Moving to review, not done, until candidate wiring exists or this scope is explicitly split out. --tasks-dir docs/kanban
+
+REVIEW 2026-07-21 (independent adversarial, board triage): REQUEST-CHANGES. `ep trace` genuinely exists, wired, tested, green (612/1558/0; all 5 named CLI trace tests + 11 domain tests pass) — the prior "F, does not exist" grade is stale. Findings:
+- AC2 filters: --observed-only correct (main.clj:647,730 → lineage_trace.clj:115-118). But --provisional exclude is MIS-IMPLEMENTED (undisclosed bug): filter-by-status :exclude branch removes :rejected edges, not :provisional (lineage_trace.clj:119-123) — there is no way to exclude provisional while keeping observed+accepted. Inert at the CLI today (no non-observed edges), which is why no test caught it. Within-scope fix.
+- AC3 "every node resolves to the evidence reader": only true "by construction" (path@oid is a valid ep show target); heading-path hardcoded [] (main.clj:672); no emitted ep-show expression/link. Within-scope: emit the exact section expression per node.
+- AC1/AC4 full breadth (accepted/provisional/rejected cross-file edges): candidates hardcoded [] (main.clj:729); find-cross-edges called with {} decisions (lineage_trace.clj:175). Requires the unbuilt lineage-candidate store → DESCOPED to ENG-005G. Correction to a prior note: ENG-005A built the review-DECISION store, not a candidate store, so trace still had no candidate source even after it landed.
+Moving review→in_progress. Within-scope before re-review: fix the --provisional exclude semantics + emit explicit ep show node references. Candidate breadth deferred to ENG-005G.
 ---
