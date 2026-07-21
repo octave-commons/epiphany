@@ -53,6 +53,11 @@
     :version 1
     :persistence :append-only}
 
+   :record-lineage-candidate!
+   {:input-schema "observation/lineage-candidate-v1"
+    :version 1
+    :persistence :append-only}
+
    ;; Bulk import — payload references the same per-collection schemas;
    ;; enforcement is ENG-017F scope but the mapping lives here.
    :import-all

@@ -30,6 +30,12 @@
   :dot-calls 0,
   :static-calls 0,
   :type-hints 0},
+ epiphany.domain.candidates
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 4,
+  :static-calls 0,
+  :type-hints 0},
  epiphany.domain.concept
  {:quadrant :domain,
   :imports #{},

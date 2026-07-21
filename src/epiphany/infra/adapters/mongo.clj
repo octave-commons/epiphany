@@ -96,6 +96,13 @@
                   (-> (IndexOptions.)
                       (.unique true)
                       (.name "request_id_unique_v1"))))
+  (when-let [^MongoCollection lc-coll (:lineage-candidate-collection conn)]
+    ;; Same idempotency guarantee for lineage candidates.
+    (.createIndex lc-coll
+                  (Indexes/ascending (into-array String ["request_id"]))
+                  (-> (IndexOptions.)
+                      (.unique true)
+                      (.name "request_id_unique_v1"))))
   (let [collection (:repository-location-collection conn)
         index-versions (:index-versions-collection conn)
         current-doc (-> (.find index-versions)
@@ -147,9 +154,11 @@
          sect-coll (.getCollection db (str prefix "section-extraction-v1"))
          rev-coll (.getCollection db (str prefix "revision-at-path-v1"))
          rd-coll (.getCollection db (str prefix "review-decision-v1"))
+         lc-coll (.getCollection db (str prefix "lineage-candidate-v1"))
          idx-coll (.getCollection db (str prefix "_index-versions"))]
       (ensure-indexes! {:repository-location-collection loc-coll
                         :review-decision-collection rd-coll
+                        :lineage-candidate-collection lc-coll
                         :index-versions-collection idx-coll})
       {:client client
        :database db
@@ -160,6 +169,7 @@
        :section-extraction-collection sect-coll
        :revision-at-path-collection rev-coll
        :review-decision-collection rd-coll
+       :lineage-candidate-collection lc-coll
        :index-versions-collection idx-coll})))
 
 (defn disconnect!
@@ -176,6 +186,7 @@
            ^MongoCollection section-extraction-collection
            ^MongoCollection revision-at-path-collection
            ^MongoCollection review-decision-collection
+           ^MongoCollection lineage-candidate-collection
            ^MongoCollection index-versions-collection]}]
   (.drop repository-location-collection)
   (.drop ingestion-run-collection)
@@ -183,6 +194,7 @@
   (.drop section-extraction-collection)
   (.drop revision-at-path-collection)
   (when review-decision-collection (.drop review-decision-collection))
+  (when lineage-candidate-collection (.drop lineage-candidate-collection))
   (.drop index-versions-collection))
 
 ;; ---------------------------------------------------------------------------
@@ -455,6 +467,64 @@
     (.containsKey doc "suppressed") (assoc :review-decision/suppressed (.getBoolean doc "suppressed"))))
 
 ;; ---------------------------------------------------------------------------
+;; Lineage-candidate document conversion
+
+(defn- span->doc
+  "Convert a lineage-candidate span to a MongoDB sub-document."
+  [span]
+  (doto (Document.)
+    (.put "path_raw" (:span/path-raw span))
+    (.put "heading_path" (mapv str (:span/heading-path span)))
+    (.put "commit_oid" (:span/commit-oid span))))
+
+(defn- doc->span
+  "Convert a MongoDB sub-document back to a lineage-candidate span."
+  [^Document doc]
+  {:span/path-raw (.getString doc "path_raw")
+   :span/heading-path (vec (.getList doc "heading_path"))
+   :span/commit-oid (.getString doc "commit_oid")})
+
+(defn- lineage-candidate->doc
+  "Convert a lineage-candidate observation to a MongoDB Document."
+  [observation]
+  (doto (Document.)
+    (.put "_id" (str (:observation/id observation)))
+    (.put "observation_type" (subs (str (:observation/type observation)) 1))
+    (.put "request_id" (str (:observation/request-id observation)))
+    (.put "observation_id" (str (:observation/id observation)))
+    (.put "observed_at" (:observation/observed-at observation))
+    (.put "adapter_version" (:observation/adapter-version observation))
+    (.put "schema_version" (long (:observation/schema-version observation)))
+    (.put "resource_id" (str (:resource-id observation)))
+    (.put "candidate_id" (str (:lineage-candidate/id observation)))
+    (.put "relation" (name (:lineage-candidate/relation observation)))
+    (.put "generator_version" (:lineage-candidate/generator-version observation))
+    (.put "confidence" (double (:lineage-candidate/confidence observation)))
+    (.put "source" (span->doc (:lineage-candidate/source observation)))
+    (.put "target" (span->doc (:lineage-candidate/target observation)))
+    (.put "tier" (name (:lineage-candidate/tier observation)))
+    (.put "generated_at" (:lineage-candidate/generated-at observation))))
+
+(defn doc->lineage-candidate
+  "Convert a MongoDB Document back to a lineage-candidate observation."
+  [^Document doc]
+  {:observation/type             (keyword (.getString doc "observation_type"))
+   :observation/request-id       (java.util.UUID/fromString (.getString doc "request_id"))
+   :observation/id               (java.util.UUID/fromString (.getString doc "observation_id"))
+   :observation/observed-at      (.getDate doc "observed_at")
+   :observation/adapter-version  (.getString doc "adapter_version")
+   :observation/schema-version   (.getLong doc "schema_version")
+   :resource-id                  (java.util.UUID/fromString (.getString doc "resource_id"))
+   :lineage-candidate/id         (java.util.UUID/fromString (.getString doc "candidate_id"))
+   :lineage-candidate/relation   (keyword (.getString doc "relation"))
+   :lineage-candidate/generator-version (.getString doc "generator_version")
+   :lineage-candidate/confidence (.getDouble doc "confidence")
+   :lineage-candidate/source     (doc->span (.get doc "source"))
+   :lineage-candidate/target     (doc->span (.get doc "target"))
+   :lineage-candidate/tier       (keyword (.getString doc "tier"))
+   :lineage-candidate/generated-at (.getDate doc "generated_at")})
+
+;; ---------------------------------------------------------------------------
 ;; Adapter implementation
 
 (defn- doc->observation-equal?
@@ -541,6 +611,18 @@
                 nil
                 (throw e))))))
 
+      :record-lineage-candidate!
+      (fn [observation]
+        (let [^MongoCollection coll (:lineage-candidate-collection conn)]
+          (try
+            (.insertOne coll (lineage-candidate->doc observation))
+            nil
+            (catch MongoWriteException e
+              ;; Duplicate request_id — idempotent replay, not an error.
+              (if (= 11000 (.getCode e))
+                nil
+                (throw e))))))
+
       :list-ingestion-runs
      (fn [resource-id]
        (let [^MongoCollection coll (:ingestion-run-collection conn)
@@ -589,6 +671,22 @@
                       (.into (java.util.ArrayList.)))]
          (mapv doc->review-decision docs)))
 
+      :list-lineage-candidates
+     (fn [resource-id]
+       (let [^MongoCollection coll (:lineage-candidate-collection conn)
+             docs (-> (.find coll)
+                      (.filter (Document. "resource_id" (str resource-id)))
+                      (.into (java.util.ArrayList.)))]
+         (mapv doc->lineage-candidate docs)))
+
+      :find-lineage-candidate-by-id
+     (fn [candidate-id]
+       (let [^MongoCollection coll (:lineage-candidate-collection conn)
+             doc (-> (.find coll)
+                     (.filter (Document. "candidate_id" (str candidate-id)))
+                     (.first))]
+         (when doc (doc->lineage-candidate doc))))
+
       :export-all
      (fn []
        {"repository-location" (mapv doc->observation
@@ -608,7 +706,10 @@
                                            (.find ^MongoCollection (:revision-at-path-collection conn))))
         "review-decision"     (mapv doc->review-decision
                                     (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:review-decision-collection conn))))})
+                                           (.find ^MongoCollection (:review-decision-collection conn))))
+        "lineage-candidate"   (mapv doc->lineage-candidate
+                                    (.into (java.util.ArrayList.)
+                                           (.find ^MongoCollection (:lineage-candidate-collection conn))))})
 
       :import-all
      (fn [data]
@@ -620,6 +721,7 @@
                                        "section-extraction"  (:section-extraction-collection conn)
                                        "revision-at-path"    (:revision-at-path-collection conn)
                                        "review-decision"     (:review-decision-collection conn)
+                                       "lineage-candidate"   (:lineage-candidate-collection conn)
                                        (throw (ex-info (str "Unknown collection: " coll-name)
                                                        {:collection coll-name})))]
            (doseq [doc docs]
@@ -629,7 +731,8 @@
                                         "projection-checkpoint" (checkpoint->doc doc)
                                         "section-extraction"  (section-extraction->doc doc)
                                         "revision-at-path"    (revision-at-path->doc doc)
-                                        "review-decision"     (review-decision->doc doc))]
+                                        "review-decision"     (review-decision->doc doc)
+                                        "lineage-candidate"   (lineage-candidate->doc doc))]
                (try
                  (.insertOne coll bson-doc)
                  (catch MongoWriteException _e

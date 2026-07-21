@@ -112,7 +112,9 @@
         section-extractions (atom [])
         revision-at-paths (atom [])
         review-decisions (atom [])
-        review-decision-index (atom {})]
+        review-decision-index (atom {})
+        lineage-candidates (atom [])
+        lineage-candidate-index (atom {})]
     {:find-by-request-id (fn [request-id]
                            (get @by-request-id request-id))
      :record-repository-location! (fn [observation]
@@ -149,6 +151,18 @@
                                         (swap! review-decision-index assoc rid observation)
                                         (swap! review-decisions conj observation)
                                         nil))))
+     ;; Append-only, idempotent by request-id: a retry carrying a
+     ;; request-id already recorded returns nil without appending a
+     ;; second candidate. Candidates persist at the PROVISIONAL tier;
+     ;; disposition is derived downstream by joining review decisions.
+     :record-lineage-candidate! (fn [observation]
+                                  (let [rid (:observation/request-id observation)]
+                                    (if (contains? @lineage-candidate-index rid)
+                                      nil
+                                      (do (validate-write! :record-lineage-candidate! observation)
+                                          (swap! lineage-candidate-index assoc rid observation)
+                                          (swap! lineage-candidates conj observation)
+                                          nil))))
      :list-ingestion-runs (fn [resource-id]
                             (filterv #(= resource-id (:resource-id %))
                                      @ingestion-runs))
@@ -172,13 +186,22 @@
                                            (filterv #(= candidate-id
                                                         (:review-decision/candidate-id %))
                                                     @review-decisions))
+     :list-lineage-candidates (fn [resource-id]
+                                (filterv #(= resource-id (:resource-id %))
+                                         @lineage-candidates))
+     :find-lineage-candidate-by-id (fn [candidate-id]
+                                     (first
+                                      (filterv #(= candidate-id
+                                                   (:lineage-candidate/id %))
+                                               @lineage-candidates)))
       :export-all (fn []
                     {"repository-location" (vals @by-request-id)
                      "ingestion-run"       @ingestion-runs
                      "projection-checkpoint" @checkpoints
                      "section-extraction"  @section-extractions
                      "revision-at-path"    @revision-at-paths
-                     "review-decision"     @review-decisions})
+                     "review-decision"     @review-decisions
+                     "lineage-candidate"   @lineage-candidates})
       :import-all (fn [data]
                     (doseq [[coll-name docs] data]
                       (case coll-name
@@ -211,6 +234,13 @@
                               (validate-write! :record-review-decision! doc)
                               (swap! review-decision-index assoc rid doc)
                               (swap! review-decisions conj doc))))
+                        "lineage-candidate"
+                        (doseq [doc docs]
+                          (let [rid (:observation/request-id doc)]
+                            (when (and rid (not (contains? @lineage-candidate-index rid)))
+                              (validate-write! :record-lineage-candidate! doc)
+                              (swap! lineage-candidate-index assoc rid doc)
+                              (swap! lineage-candidates conj doc))))
                         nil)))}))
 
 ;; ---------------------------------------------------------------------------
