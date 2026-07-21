@@ -113,7 +113,7 @@
   [ports {:keys [path heading commit-oid]}]
   (let [git-fn (get-in ports [:git :read-blob])
         tree-fn (get-in ports [:git :commit-tree-entries])
-        commit-fn (get-in ports [:git :reachable-commits])]
+        commit-fn (get-in ports [:git :read-commit])]
     (if-not git-fn
       {:evidence/path path
        :evidence/heading-path heading
@@ -127,6 +127,17 @@
                             :failure/message "Commit OID required for historical evidence"}
          :evidence/unavailable true}
         (try
+          ;; Commit metadata (author/committer identity+time, parent OIDs) is
+          ;; display-only provenance -- its absence never blocks retrieving
+          ;; the source span itself, so a missing/failing :read-commit port
+          ;; degrades this to nil rather than UNAVAILABLE.
+          (let [commit-result (when commit-fn (commit-fn nil commit-oid))
+                commit (:commit commit-result)
+                commit-info (when commit
+                             {:commit/author (:commit/author commit)
+                              :commit/committer (:commit/committer commit)
+                              :commit/message-text (:commit/message-text commit)})
+                parent-oids (:commit/parent-oids commit)]
           ;; Get tree entries to find the blob OID for this path
           (let [tree-result (when tree-fn
                               (tree-fn nil commit-oid))
@@ -161,6 +172,8 @@
                        :evidence/start-line (:start-line section)
                        :evidence/end-line (:end-line section)
                        :evidence/blob-size (:blob/size blob)
+                       :evidence/commit-info commit-info
+                       :evidence/parent-oids parent-oids
                        :evidence/failure nil
                        :evidence/unavailable false}
 
@@ -173,6 +186,8 @@
                        :evidence/start-line 1
                        :evidence/end-line (inc (count (str/split-lines content)))
                        :evidence/blob-size (:blob/size blob)
+                       :evidence/commit-info commit-info
+                       :evidence/parent-oids parent-oids
                        :evidence/failure nil
                        :evidence/unavailable false}
 
@@ -185,9 +200,11 @@
                        :evidence/start-line 1
                        :evidence/end-line (inc (count (str/split-lines content)))
                        :evidence/blob-size (:blob/size blob)
+                       :evidence/commit-info commit-info
+                       :evidence/parent-oids parent-oids
                        :evidence/failure {:failure/reason "heading-not-found"
                                           :failure/message (str "Heading not found: " (str/join " > " heading))}
-                       :evidence/unavailable false}))))))
+                       :evidence/unavailable false})))))))
           (catch Exception e
             {:evidence/path path
              :evidence/commit-oid commit-oid
@@ -199,6 +216,13 @@
 ;; ---------------------------------------------------------------------------
 ;; Formatting
 
+(defn- format-person
+  "Format a `:person/*` map (name, email, timestamp) for display."
+  [person]
+  (when person
+    (str (:person/name person) " <" (:person/email person) "> @ "
+         (:person/timestamp person))))
+
 (defn format-evidence-text
   "Format evidence as human-readable text with provenance."
   [evidence]
@@ -206,7 +230,7 @@
     (str "UNAVAILABLE: " (get-in evidence [:evidence/failure :failure/message]))
     (let [{:keys [evidence/path evidence/commit-oid evidence/heading-path
                   evidence/source evidence/start-line evidence/end-line
-                  evidence/blob-size]} evidence]
+                  evidence/blob-size evidence/commit-info evidence/parent-oids]} evidence]
       (str "--- Source: " path
            (when (seq heading-path)
              (str " # " (str/join " > " heading-path)))
@@ -214,6 +238,11 @@
            "\nLines " start-line "-" (dec end-line)
            (when blob-size
              (str " (" blob-size " bytes)"))
+           (when commit-info
+             (str "\nAuthor:    " (format-person (:commit/author commit-info))
+                  "\nCommitter: " (format-person (:commit/committer commit-info))))
+           (when (seq parent-oids)
+             (str "\nParent(s): " (str/join ", " parent-oids)))
            "\n"
            source))))
 

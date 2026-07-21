@@ -529,7 +529,8 @@
   [repository-path]
   {:read-blob (fn [_ oid] (git/read-blob repository-path oid))
    :commit-tree-entries (fn [_ commit-oid] (git/commit-tree-entries repository-path commit-oid))
-   :reachable-commits (fn [_ refs] (git/reachable-commits repository-path refs))})
+   :reachable-commits (fn [_ refs] (git/reachable-commits repository-path refs))
+   :read-commit (fn [_ commit-oid] (git/read-commit repository-path commit-oid))})
 
 (defn- resolve-evidence-request
   "Parse a section expression and resolve its commit-oid (ref/short-oid/HEAD)

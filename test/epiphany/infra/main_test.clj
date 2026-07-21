@@ -166,6 +166,14 @@
       (is (string/includes? out "--- Source: AGENTS.md"))
       (is (string/includes? out "Epiphany")))))
 
+(deftest show-surfaces-commit-author-committer-and-parent
+  (testing "show against a real commit surfaces author/committer identity and parent OID(s), per AC1/AC3"
+    (let [{:keys [exit out]} (main/run ["show" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "Author:"))
+      (is (string/includes? out "Committer:"))
+      (is (string/includes? out "Parent(s):")))))
+
 (deftest show-reports-unavailable-for-missing-path
   (let [{:keys [exit out]} (main/run ["show" "no/such/path.md@HEAD"])]
     (is (= 1 exit))
