@@ -49,3 +49,33 @@ jobs:
         run: clojure -M:boundary-check
       - name: Interop ratchet (reports/interop.edn baseline)
         run: clojure -M:interop-inventory
+
+  coverage:
+    runs-on: ubuntu-latest
+    # ENG-017L: coverage is REPORTED, not gated. This job is non-blocking
+    # (continue-on-error) so a coverage regression is visible via the uploaded
+    # artifact rather than failing the build, until the baseline is reviewed.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: "1.12.2.1565"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+          key: deps-${{ hashFiles('deps.edn') }}
+      - name: Coverage report (cloverage; excludes epiphany.integration.*)
+        run: clojure -M:coverage
+      - name: Publish coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: target/coverage/
