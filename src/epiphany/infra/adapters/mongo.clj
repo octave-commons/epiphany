@@ -736,4 +736,7 @@
                (try
                  (.insertOne coll bson-doc)
                  (catch MongoWriteException _e
-                   nil)))))))}))
+                   nil)))))))
+
+      :clear-all!
+     (fn [] (clean-test-db! conn))}))

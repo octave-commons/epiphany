@@ -60,6 +60,9 @@
 ;;   - :list-review-decisions-by-candidate — list decisions targeting one candidate
 ;;   - :list-lineage-candidates — list all lineage candidates for a resource
 ;;   - :find-lineage-candidate-by-id — one candidate by :lineage-candidate/id
+;;   - :export-all / :import-all — full-store backup/restore (epiphany.domain.backup)
+;;   - :clear-all! — drop all observation data; used by restore drills to
+;;     simulate cache/index/store loss before restoring from a backup
 ;;
 ;; Candidate queries by relation type, generator version, confidence band,
 ;; and time are pure domain filters over :list-lineage-candidates output
@@ -86,7 +89,8 @@
    [:list-lineage-candidates     :any]
    [:find-lineage-candidate-by-id :any]
    [:export-all                  :any]
-   [:import-all                  :any]])
+   [:import-all                  :any]
+   [:clear-all!                  :any]])
 
 ;; ---------------------------------------------------------------------------
 ;; Index port

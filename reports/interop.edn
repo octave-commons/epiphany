@@ -15,9 +15,9 @@
  epiphany.domain.backup
  {:quadrant :domain,
   :imports #{},
-  :dot-calls 3,
+  :dot-calls 4,
   :static-calls 0,
-  :type-hints 0},
+  :type-hints 1},
  epiphany.domain.benchmark
  {:quadrant :domain,
   :imports #{},
@@ -207,9 +207,9 @@
     com.mongodb.client.MongoDatabase
     com.mongodb.client.model.IndexOptions
     com.mongodb.client.MongoCollection},
-  :dot-calls 238,
-  :static-calls 4,
-  :type-hints 32},
+  :dot-calls 340,
+  :static-calls 6,
+  :type-hints 47},
  epiphany.infra.adapters.ollama
  {:quadrant :infra,
   :imports
@@ -240,13 +240,13 @@
  epiphany.infra.http
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 16,
+  :dot-calls 15,
   :static-calls 0,
-  :type-hints 0},
+  :type-hints 1},
  epiphany.infra.main
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 19,
+  :dot-calls 20,
   :static-calls 6,
   :type-hints 2},
  epiphany.infra.profile

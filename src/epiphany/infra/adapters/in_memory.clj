@@ -241,7 +241,18 @@
                               (validate-write! :record-lineage-candidate! doc)
                               (swap! lineage-candidate-index assoc rid doc)
                               (swap! lineage-candidates conj doc))))
-                        nil)))}))
+                        nil)))
+      :clear-all! (fn []
+                    (reset! by-request-id {})
+                    (reset! ingestion-runs [])
+                    (reset! checkpoints [])
+                    (reset! section-extractions [])
+                    (reset! revision-at-paths [])
+                    (reset! review-decisions [])
+                    (reset! review-decision-index {})
+                    (reset! lineage-candidates [])
+                    (reset! lineage-candidate-index {})
+                    nil)}))
 
 ;; ---------------------------------------------------------------------------
 ;; Index adapter
