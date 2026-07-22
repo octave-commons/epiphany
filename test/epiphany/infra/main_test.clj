@@ -245,3 +245,42 @@
   (let [{:keys [exit out]} (main/run ["trace" "no/such/path.md"])]
     (is (= 1 exit))
     (is (string/includes? out "no revisions found"))))
+
+;; ---------------------------------------------------------------------------
+;; Inbox subcommand
+
+(deftest inbox-shows-help
+  (let [{:keys [exit out]} (main/run ["inbox" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep inbox"))))
+
+(deftest inbox-empty-store-reports-no-candidates
+  (let [{:keys [exit out]} (main/run ["inbox"])]
+    (is (zero? exit))
+    (is (string/includes? out "No unreviewed candidates."))))
+
+(deftest inbox-decide-shows-help
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep inbox decide"))))
+
+(deftest inbox-decide-requires-candidate-id-and-decision
+  (let [{:keys [exit out]} (main/run ["inbox" "decide"])]
+    (is (= 1 exit))
+    (is (string/includes? out "candidate id and decision required"))))
+
+(deftest inbox-decide-rejects-invalid-decision-type
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "not-a-real-decision"])]
+    (is (= 1 exit))
+    (is (string/includes? out "decision must be one of"))))
+
+(deftest inbox-decide-rejects-invalid-candidate-id
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" "not-a-uuid" "accepted"])]
+    (is (= 1 exit))
+    (is (string/includes? out "invalid candidate id"))))
+
+(deftest inbox-decide-records-a-real-decision
+  (testing "a valid decide call durably records through the observations port and confirms it"
+    (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "rejected"])]
+      (is (zero? exit))
+      (is (string/includes? out "Recorded rejected for candidate")))))

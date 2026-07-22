@@ -17,7 +17,9 @@
             [epiphany.domain.evidence :as evidence]
             [epiphany.domain.diff :as diff]
             [epiphany.domain.lineage-trace :as lineage-trace]
-            [epiphany.domain.candidates :as candidates])
+            [epiphany.domain.candidates :as candidates]
+            [epiphany.domain.inbox :as inbox]
+            [epiphany.domain.review :as review])
   (:gen-class))
 
 (def version "0.1.0")
@@ -808,6 +810,173 @@
         (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
+;; Inbox subcommand
+
+(defn- split-csv [s] (when (seq s) (remove empty? (string/split s #","))))
+
+(defn- parse-relation-list [s]
+  (some->> (split-csv s) (mapv keyword)))
+
+(defn- parse-uuid-list [s]
+  (some->> (split-csv s) (mapv #(java.util.UUID/fromString %))))
+
+(defn- parse-confidence-band [s]
+  (when (seq s)
+    (let [[low high] (string/split s #",")]
+      [(when (seq low) (Double/parseDouble low))
+       (when (seq high) (Double/parseDouble high))])))
+
+(defn- parse-instant [s]
+  (when (seq s) (java.util.Date/from (java.time.Instant/parse s))))
+
+(def inbox-options
+  [repo-option
+   [nil "--also-repo PATHS" "Additional repository paths (comma-separated) whose candidates join this repo's family view"]
+   [nil "--relation RELATIONS" "Comma-separated relation types to include"]
+   [nil "--confidence-band LOW,HIGH" "Confidence range, e.g. 0.7,1.0"]
+   [nil "--generator VERSIONS" "Comma-separated generator versions to include"]
+   [nil "--after INSTANT" "ISO-8601 instant; only candidates generated at/after this time"]
+   [nil "--before INSTANT" "ISO-8601 instant; only candidates generated before this time"]
+   [nil "--repository-family UUIDS" "Comma-separated resource-id UUIDs narrowing a merged multi-repo view"]
+   [nil "--limit N" "Max items" :default 50 :parse-fn #(Integer/parseInt %)]
+   [nil "--sort SORT" "confidence (default) or evidence"
+    :default :confidence
+    :parse-fn keyword
+    :validate [#{:confidence :evidence} "Must be confidence or evidence"]]
+   [nil "--include-suppressed" "Also show rejected/do-not-suggest candidates"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-f" "--format FORMAT" "Output format: text or edn"
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn} "Must be text or edn"]]
+   ["-h" "--help" "Show inbox help and exit."]])
+
+(def inbox-decide-options
+  [repo-option
+   [nil "--reason TEXT" "Human-readable reason for the decision"]
+   [nil "--relabel-to RELATION" "New relation type (for relabel decisions)"
+    :parse-fn keyword]
+   [nil "--annotation TEXT" "Free-text annotation (for annotated decisions)"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-h" "--help" "Show inbox decide help and exit."]])
+
+(defn- resource-ids-for-repos [repo-paths]
+  (mapv #(:resource-id (repository-identity/resolve-repository %)) repo-paths))
+
+(defn- fetch-candidates-and-decisions [resource-ids profile]
+  (with-observations-adapter profile
+    (fn [obs-adapter]
+      (let [list-candidates (:list-lineage-candidates obs-adapter)
+            list-decisions (:list-review-decisions obs-adapter)]
+        {:candidates (vec (mapcat list-candidates resource-ids))
+         :decisions (vec (mapcat list-decisions resource-ids))}))))
+
+(defn- format-inbox-item-text [idx item]
+  (let [c (:inbox/candidate item)]
+    (str "  " idx ". " (:lineage-candidate/id c)
+         " [" (name (:lineage-candidate/relation c)) ", "
+         (name (:inbox/decision-status item)) ", confidence="
+         (:lineage-candidate/confidence c) "]"
+         "\n     " (:inbox/evidence-summary item)
+         "\n     source: " (get-in c [:lineage-candidate/source :span/path-raw]
+                                    (get-in c [:lineage-candidate/source :section/path-raw]))
+         " -> target: " (get-in c [:lineage-candidate/target :span/path-raw]
+                                 (get-in c [:lineage-candidate/target :section/path-raw])))))
+
+(defn- format-inbox-text [items]
+  (if (empty? items)
+    "No unreviewed candidates."
+    (str (count items) " item(s):\n\n"
+         (string/join "\n\n" (map-indexed format-inbox-item-text items)))))
+
+(defn- run-inbox-list
+  [args]
+  (let [{:keys [options errors summary]} (cli/parse-opts args inbox-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep inbox [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep inbox [options]\n\n" summary)}
+
+      :else
+      (try
+        (let [repo-paths (cons (:repo options) (split-csv (:also-repo options)))
+              resource-ids (resource-ids-for-repos repo-paths)
+              {:keys [candidates decisions]} (fetch-candidates-and-decisions resource-ids (:profile options))
+              filters (cond-> {}
+                        (:relation options) (assoc :relation-types (parse-relation-list (:relation options)))
+                        (:confidence-band options) (assoc :confidence-band (parse-confidence-band (:confidence-band options)))
+                        (:generator options) (assoc :generators (split-csv (:generator options)))
+                        (or (:after options) (:before options))
+                        (assoc :date-range [(parse-instant (:after options)) (parse-instant (:before options))])
+                        (:repository-family options) (assoc :repository-families (parse-uuid-list (:repository-family options))))
+              items (inbox/build-inbox candidates decisions filters
+                                       {:limit (:limit options)
+                                        :sort (:sort options)
+                                        :include-suppressed? (boolean (:include-suppressed options))})
+              output (case (:format options)
+                       :edn (pr-str items)
+                       (format-inbox-text items))]
+          {:exit 0 :out output})
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+(defn- run-inbox-decide
+  [args]
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args inbox-decide-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep inbox decide <candidate-id> <decision> [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep inbox decide <candidate-id> <decision> [options]\n\n" summary)}
+
+      (not= 2 (count arguments))
+      {:exit 1 :out "Error: candidate id and decision required.\nUsage: ep inbox decide <candidate-id> <decision> [options]"}
+
+      (not (contains? review/review-decision-types (keyword (second arguments))))
+      {:exit 1 :out (str "Error: decision must be one of "
+                         (string/join ", " (map name review/review-decision-types)))}
+
+      :else
+      (let [[candidate-id-str decision-str] arguments]
+        (try
+          (let [candidate-id (java.util.UUID/fromString candidate-id-str)
+                decision-type (keyword decision-str)
+                {:keys [resource-id]} (repository-identity/resolve-repository (:repo options))
+                decision (review/make-decision candidate-id decision-type
+                                               :reason (:reason options)
+                                               :relabel-to (:relabel-to options)
+                                               :annotation (:annotation options))
+                observation (review/decision->observation
+                             decision {:resource-id resource-id :adapter-version "0.1.0"})]
+            (with-observations-adapter (:profile options)
+              (fn [obs-adapter] ((:record-review-decision! obs-adapter) observation)))
+            {:exit 0 :out (str "Recorded " decision-str " for candidate " candidate-id-str ".")})
+          (catch IllegalArgumentException _e
+            {:exit 1 :out (str "Error: invalid candidate id " (pr-str candidate-id-str))})
+          (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+          (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))}))))))
+
+(defn- run-inbox
+  "Execute the inbox subcommand. `ep inbox [options]` lists the review
+   queue; `ep inbox decide <candidate-id> <decision> [options]` records a
+   decision in one action, per the AC's keyboard-efficient-triage bullet."
+  [args]
+  (if (= "decide" (first args))
+    (run-inbox-decide (rest args))
+    (run-inbox-list args)))
+
+;; ---------------------------------------------------------------------------
 ;; Top-level dispatch
 
 (defn- usage [options-summary]
@@ -825,6 +994,7 @@
     "  show        Open exact historical evidence for a section expression"
     "  diff        Compare two historical section expressions"
     "  trace       Trace a section's Git-history lineage chronology"
+    "  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision"
     "  serve       Start the workbench HTTP server"
     ""
     "Global Options:"
@@ -868,6 +1038,7 @@
           "show"     (run-show cmd-args)
           "diff"     (run-diff cmd-args)
           "trace"    (run-trace cmd-args)
+          "inbox"    (run-inbox cmd-args)
           "serve"    (run-serve cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))
