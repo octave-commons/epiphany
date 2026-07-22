@@ -153,6 +153,7 @@
   (let [adapters (test-adapters)
         obs (:observations adapters)
         backup-file (str test-dir "/wrong-format-backup.edn")]
+    (io/make-parents (io/file backup-file))
     (spit backup-file (pr-str {:manifest {:format :some-other-format :version 1} :data {}}))
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unsupported backup format"
                           (backup/import-from-file obs backup-file)))))
@@ -161,6 +162,7 @@
   (let [adapters (test-adapters)
         obs (:observations adapters)
         backup-file (str test-dir "/wrong-version-backup.edn")]
+    (io/make-parents (io/file backup-file))
     (spit backup-file (pr-str {:manifest {:format :epiphany-backup-v1 :version 99} :data {}}))
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Unsupported backup manifest version"
                           (backup/import-from-file obs backup-file)))))

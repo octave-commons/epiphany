@@ -13,6 +13,7 @@
             [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
             [epiphany.domain.status :as status]
+            [epiphany.domain.review :as review]
             [epiphany.infra.profile :as profile]
             [epiphany.infra.workbench :as workbench]))
 
@@ -289,29 +290,56 @@
               (response/status 200)))))))
 
 (defn review-decisions-handler
-  "Handle review decision creation."
+  "Handle POST /api/v1/review-decisions: creates a review-decision command
+   resource against a real, existing lineage candidate -- never a mutable
+   update of the candidate itself (ADR/CLAUDE.md epistemic ladder: a
+   decision is a durable event, not an edit). Durably records through the
+   observations port's :record-review-decision!, the same op `ep inbox
+   decide` uses -- so an HTTP-recorded decision and a CLI-recorded one are
+   indistinguishable in the store."
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          decision (:decision body)
-          candidate-id (:candidate-id body)
+          decision-str (:decision body)
+          candidate-id-str (:candidate-id body)
           rationale (:rationale body)]
       (cond
-        (str/blank? decision)
+        (str/blank? decision-str)
         (bad-request-problem "Decision is required")
 
-        (str/blank? candidate-id)
+        (str/blank? candidate-id-str)
         (bad-request-problem "Candidate ID is required")
 
+        (not (contains? review/review-decision-types (keyword decision-str)))
+        (bad-request-problem (str "Decision must be one of "
+                                  (str/join ", " (map name review/review-decision-types))))
+
         :else
-        (let [result {:id (java.util.UUID/randomUUID)
-                      :decision decision
-                      :candidate-id candidate-id
-                      :rationale rationale
-                      :created-at (java.util.Date.)}]
-          (-> (response/response (serialize result :json))
-              (response/content-type "application/json")
-              (response/status 201)))))))
+        (let [candidate-id (try (java.util.UUID/fromString candidate-id-str)
+                                 (catch Exception _ nil))]
+          (if-not candidate-id
+            (bad-request-problem "Candidate ID must be a UUID")
+            (let [find-candidate (get-in adapters [:observations :find-lineage-candidate-by-id])
+                  candidate (when find-candidate (find-candidate candidate-id))]
+              (if-not candidate
+                (problem-response 404 "Not Found"
+                                  (str "No lineage candidate found for id " candidate-id-str))
+                (let [decision (review/make-decision candidate-id (keyword decision-str)
+                                                     :reason rationale)
+                      record-observation (review/decision->observation
+                                          decision {:resource-id (:resource-id candidate)
+                                                    :adapter-version "0.1.0"})
+                      record! (get-in adapters [:observations :record-review-decision!])]
+                  (record! record-observation)
+                  (-> (response/response
+                       (serialize {:id (:review-decision/id decision)
+                                   :decision decision-str
+                                   :candidate-id candidate-id-str
+                                   :rationale rationale
+                                   :created-at (:review-decision/decided-at decision)}
+                                  :json))
+                      (response/content-type "application/json")
+                      (response/status 201)))))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Router
