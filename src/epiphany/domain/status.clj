@@ -207,7 +207,7 @@
 
    Parameters:
      adapters — map of adapter keywords to adapter instances
-       {:repo-metadata adapter
+       {:repository-metadata adapter
         :git adapter
         :observations adapter
         :index adapter}
@@ -219,7 +219,7 @@
       :summary {:ok int :error int :unavailable int :unknown int}}"
   [adapters resource-id]
   (let [stages (vec
-                 [(query-registration-status (:repo-metadata adapters))
+                 [(query-registration-status (:repository-metadata adapters))
                   (query-discovery-status (:git adapters) resource-id)
                   (query-extraction-status (:observations adapters) resource-id)
                   (query-indexing-status (:index adapters) resource-id)

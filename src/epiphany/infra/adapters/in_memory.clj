@@ -39,7 +39,8 @@
               (get @store common-git-dir))
      :write (fn [common-git-dir resource-id]
               (swap! store assoc common-git-dir {:resource-id resource-id})
-              nil)}))
+              nil)
+     :list-repositories (fn [] (vals @store))}))
 
 ;; ---------------------------------------------------------------------------
 ;; Contract enforcement helpers (ENG-017C)

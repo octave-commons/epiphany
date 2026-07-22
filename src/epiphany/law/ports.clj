@@ -38,7 +38,8 @@
   "Schema for the :repository-metadata port group."
   [:map {:closed true}
    [:read  :any]
-   [:write :any]])
+   [:write :any]
+   [:list-repositories :any]])
 
 ;; ---------------------------------------------------------------------------
 ;; Observations port

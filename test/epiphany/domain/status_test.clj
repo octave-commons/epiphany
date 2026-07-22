@@ -210,7 +210,7 @@
 
 (deftest query-status-aggregates-all-stages
   (testing "query-status returns all stages with summary"
-    (let [adapters {:repo-metadata (mock-repo-metadata-adapter [{:id :a}])
+    (let [adapters {:repository-metadata (mock-repo-metadata-adapter [{:id :a}])
                     :git (mock-git-adapter ["refs/heads/main"])
                     :observations (mock-obs-adapter [{:checkpoint/projection-name "extraction"
                                                       :checkpoint/status :completed
@@ -232,7 +232,7 @@
 
 (deftest query-status-handles-mixed-states
   (testing "query-status handles mix of ok and unavailable"
-    (let [adapters {:repo-metadata unavailable-repo-metadata
+    (let [adapters {:repository-metadata unavailable-repo-metadata
                     :git (mock-git-adapter [])
                     :observations (mock-obs-adapter [])
                     :index unavailable-index}
@@ -241,7 +241,7 @@
 
 (deftest query-status-stages-vector
   (testing "query-status returns stages as vector"
-    (let [adapters {:repo-metadata (mock-repo-metadata-adapter [])
+    (let [adapters {:repository-metadata (mock-repo-metadata-adapter [])
                     :git (mock-git-adapter [])
                     :observations (mock-obs-adapter [])
                     :index (mock-index-adapter {})}

@@ -1,7 +1,10 @@
 (ns epiphany.infra.workbench-test
   (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.workbench :as wb]
-            [epiphany.infra.http :as http]))
+            [epiphany.infra.http :as http]
+            [epiphany.infra.adapters.in-memory :as in-memory]
+            [epiphany.domain.candidates :as candidates]
+            [epiphany.domain.review :as review]))
 
 ;; ---------------------------------------------------------------------------
 ;; Mock adapters
@@ -16,6 +19,27 @@
            :knn-search (constantly [])
            :index-stats (constantly {:document-count 0})}
    :embeddings {:embed-query (constantly [0.1 0.2 0.3])}})
+
+;; ---------------------------------------------------------------------------
+;; Real in-memory adapters, for genuine round-trip tests over the inbox and
+;; health panel (candidates/decisions/status queries, not hand-rolled mocks).
+
+(defn- real-adapters []
+  (in-memory/make {:common-git-dir-fn (fn [path] (str path "/.git"))}))
+
+(defn- seed-candidate! [obs resource-id relation]
+  (let [candidate (candidates/make-candidate
+                   relation
+                   (candidates/make-span {:path-raw "a.md" :heading-path ["Intro"]
+                                          :commit-oid "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+                   (candidates/make-span {:path-raw "b.md" :heading-path ["Intro"]
+                                          :commit-oid "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})
+                   :confidence 0.9
+                   :generator-version "test-v1")
+        observation (candidates/candidate->observation
+                     candidate {:resource-id resource-id :adapter-version "0.1.0"})]
+    ((:record-lineage-candidate! obs) observation)
+    (:lineage-candidate/id candidate)))
 
 ;; ---------------------------------------------------------------------------
 ;; search-page-handler tests
@@ -83,13 +107,34 @@
       (is (.contains (:body resp) "doc.md")))))
 
 (deftest evidence-htmx-handler-shows-evidence-text
-  (testing "Evidence handler shows evidence text"
+  (testing "Evidence handler retrieves real Git blob content, never fabricated text"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :get
+                     :uri "/htmx/evidence?path=AGENTS.md&ref=HEAD"
+                     :query-params {}
+                     :headers {}})]
+      (is (= 200 (:status resp)))
+      (is (.contains (:body resp) "Epiphany")))))
+
+(deftest evidence-htmx-handler-requires-a-ref
+  (testing "A path with no ref is an empty drawer, not fabricated text"
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :get
                      :uri "/htmx/evidence?path=test.md"
-                     :query-params {"path" "test.md"}
+                     :query-params {}
                      :headers {}})]
-      (is (.contains (:body resp) "Evidence for: test.md")))))
+      (is (= 200 (:status resp)))
+      (is (not (.contains (:body resp) "Evidence for"))))))
+
+(deftest evidence-htmx-handler-reports-unavailable-for-missing-path
+  (testing "A nonexistent path reports UNAVAILABLE, never invented content"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :get
+                     :uri "/htmx/evidence?path=no/such/path.md&ref=HEAD"
+                     :query-params {}
+                     :headers {}})]
+      (is (= 200 (:status resp)))
+      (is (.contains (:body resp) "UNAVAILABLE")))))
 
 ;; ---------------------------------------------------------------------------
 ;; evidence-empty-handler tests
@@ -170,15 +215,26 @@
       (is (.contains (:body resp) "Health")))))
 
 (deftest timeline-htmx-handler-returns-fragment
-  (testing "HTMX timeline returns HTML fragment"
+  (testing "HTMX timeline traces real Git history for a tracked path in this repo"
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/htmx/timeline"
-                     :body-params {:path "doc.md"}
+                     :body-params {:path "AGENTS.md"}
                      :headers {}})]
       (is (= 200 (:status resp)))
       (is (.contains (:body resp) "timeline-graph"))
-      (is (.contains (:body resp) "doc.md")))))
+      (is (.contains (:body resp) "AGENTS.md"))
+      (is (.contains (:body resp) "edge-observed")))))
+
+(deftest timeline-htmx-handler-reports-no-history-for-untracked-path
+  (testing "An untracked path reports no history explicitly, never a fabricated node"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/htmx/timeline"
+                     :body-params {:path "no/such/path.md"}
+                     :headers {}})]
+      (is (= 200 (:status resp)))
+      (is (.contains (:body resp) "No Git history found")))))
 
 (deftest timeline-htmx-handler-empty-path
   (testing "HTMX timeline with empty path shows placeholder"
@@ -219,7 +275,7 @@
       (is (.contains (:body resp) "inbox-list")))))
 
 (deftest inbox-decide-htmx-handler-returns-fragment
-  (testing "HTMX inbox decision returns updated list"
+  (testing "HTMX inbox decision with an invalid candidate id/decision reports an explicit error, not a crash"
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/htmx/inbox/decide"
@@ -227,6 +283,41 @@
                      :headers {}})]
       (is (= 200 (:status resp)))
       (is (.contains (:body resp) "inbox-list")))))
+
+(deftest inbox-htmx-handler-real-round-trip
+  (testing "the inbox lists a real durable candidate and honors suppression, via HTTP"
+    (let [adapters (real-adapters)
+          obs (:observations adapters)
+          resource-id (random-uuid)
+          _ (seed-candidate! obs resource-id :continues)
+          app (http/make-router adapters)
+          resp (app {:request-method :post
+                     :uri "/htmx/inbox"
+                     :body-params {:resource-id (str resource-id) :relation "" :min-confidence "0" :sort "confidence"}
+                     :headers {}})]
+      (is (= 200 (:status resp)))
+      (is (.contains (:body resp) "1 candidates"))
+      (is (.contains (:body resp) "continues")))))
+
+(deftest inbox-decide-htmx-handler-real-round-trip
+  (testing "a real decision durably suppresses the candidate from the inbox afterward"
+    (let [adapters (real-adapters)
+          obs (:observations adapters)
+          resource-id (random-uuid)
+          candidate-id (seed-candidate! obs resource-id :continues)
+          app (http/make-router adapters)
+          decide-resp (app {:request-method :post
+                            :uri "/htmx/inbox/decide"
+                            :body-params {:candidate-id (str candidate-id) :decision "rejected" :reason "not related"}
+                            :headers {}})
+          list-resp (app {:request-method :post
+                          :uri "/htmx/inbox"
+                          :body-params {:resource-id (str resource-id)}
+                          :headers {}})]
+      (is (= 200 (:status decide-resp)))
+      (is (.contains (:body decide-resp) "No candidates to review."))
+      (is (.contains (:body list-resp) "No candidates to review."))
+      (is (= 1 (count ((:list-review-decisions obs) resource-id)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; health-page-handler tests
@@ -246,11 +337,26 @@
       (is (.contains (:body resp) "health-summary")))))
 
 (deftest health-htmx-handler-returns-fragment
-  (testing "HTMX health refresh returns HTML fragment"
+  (testing "HTMX health refresh with no resource-id is an explicit empty state"
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/htmx/health"
                      :body-params {}
                      :headers {}})]
       (is (= 200 (:status resp)))
-      (is (.contains (:body resp) "health-stages")))))
+      (is (.contains (:body resp) "health-stages"))
+      (is (.contains (:body resp) "Register a repository first")))))
+
+(deftest health-htmx-handler-real-round-trip
+  (testing "the health panel queries real registration/extraction status for a resource-id"
+    (let [adapters (real-adapters)
+          resource-id (random-uuid)
+          _ ((get-in adapters [:repository-metadata :write]) "/repo/.git" resource-id)
+          app (http/make-router adapters)
+          resp (app {:request-method :post
+                     :uri "/htmx/health"
+                     :body-params {:resource-id (str resource-id)}
+                     :headers {}})]
+      (is (= 200 (:status resp)))
+      (is (.contains (:body resp) "registration"))
+      (is (.contains (:body resp) "registered")))))

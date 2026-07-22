@@ -10,8 +10,10 @@
             [epiphany.domain.inbox :as inbox]
             [epiphany.domain.lineage :as lineage]
             [epiphany.domain.lineage-trace :as lineage-trace]
+            [epiphany.domain.evidence :as evidence]
             [epiphany.domain.review :as review]
-            [epiphany.domain.status :as status]))
+            [epiphany.domain.status :as status]
+            [epiphany.infra.git :as git]))
 
 ;; ---------------------------------------------------------------------------
 ;; HTML helpers
@@ -236,14 +238,54 @@
                     (catch Exception _ []))]
       (fragment-response (search-results results)))))
 
+(defn- make-repo-git-port
+  "Build a :git port backed by real Git object access for `repository-path`.
+   Matches the (fn [_ arg] ...) port-fn shape epiphany.domain.evidence
+   expects (mirrors infra.main's make-evidence-git-port)."
+  [repository-path]
+  {:read-blob (fn [_ oid] (git/read-blob repository-path oid))
+   :commit-tree-entries (fn [_ commit-oid] (git/commit-tree-entries repository-path commit-oid))})
+
+(defn- resolve-commit-oid
+  "Resolve a ref, short OID, or HEAD-relative expression to a full commit
+   OID (mirrors infra.main's resolve-commit-oid -- evidence/retrieve-
+   evidence needs the full OID, not a ref name, to look up tree entries)."
+  [repository-path expr]
+  (let [{:keys [exit out err]}
+        (clojure.java.shell/sh "git" "-C" repository-path "rev-parse" "--verify"
+                               (str expr "^{commit}"))]
+    (if (zero? exit)
+      (str/trim out)
+      (throw (ex-info (str "Could not resolve commit: " expr)
+                      {:repository-path repository-path
+                       :git-error (str/trim err)})))))
+
 (defn evidence-htmx-handler
-  "Handle HTMX evidence request (returns HTML fragment)."
+  "Handle HTMX evidence request (returns HTML fragment) -- retrieves the
+   real Git blob content for `path`@`ref` (never fabricated text). `repo`
+   defaults to \".\"; the workbench has no per-request repository-scoping
+   concept yet (a broader gap this handler alone doesn't close -- disclosed,
+   not silently worked around)."
   [_adapters]
   (fn [request]
     (let [params (:query-params request)
           path (:path params)
-          text (str "Evidence for: " path)]
-      (fragment-response (evidence-drawer-content path text)))))
+          ref (:ref params)
+          repo (or (not-empty (:repo params)) ".")]
+      (if (or (str/blank? path) (str/blank? ref))
+        (fragment-response (evidence-drawer-empty))
+        (let [result (try
+                       (let [commit-oid (resolve-commit-oid repo ref)]
+                         (evidence/retrieve-evidence
+                          {:git (make-repo-git-port repo)}
+                          {:path path :heading [] :commit-oid commit-oid}))
+                       (catch Exception e
+                         {:evidence/unavailable true
+                          :evidence/failure {:failure/message (.getMessage e)}}))
+              text (if (:evidence/unavailable result)
+                     (str "UNAVAILABLE: " (get-in result [:evidence/failure :failure/message]))
+                     (:evidence/source result))]
+          (fragment-response (evidence-drawer-content path text)))))))
 
 (defn evidence-empty-handler
   "Handle empty evidence drawer request."
@@ -280,12 +322,21 @@
      [:span.edge-status (name (:edge/status edge))]]))
 
 (defn- timeline-node
-  "Render a single timeline node."
-  [node idx]
+  "Render a single timeline node. Sections in a real trace (see
+   epiphany.domain.lineage-trace) carry plain (non-namespaced)
+   :path-raw/:heading-path/:commit-oid keys, matching `ep trace`'s CLI
+   output -- not the :section/* namespaced keys this render function
+   originally assumed and was never exercised against real trace data.
+
+   Parameter order (idx, node) matches map-indexed's callback contract --
+   the previous (node, idx) order meant a real map-indexed call would have
+   silently swapped them (never caught, since nothing ever called this
+   with real data)."
+  [idx node]
   (let [section (:node/section node)
-        path (:section/path-raw section)
-        heading (str/join " > " (:section/heading-path section))
-        commit-oid (:section/commit-oid section)
+        path (:path-raw section)
+        heading (str/join " > " (:heading-path section))
+        commit-oid (:commit-oid section)
         short-oid (when commit-oid (subs commit-oid 0 (min 8 (count commit-oid))))]
     [:div.timeline-node
      [:div.node-marker (str idx)]
@@ -304,6 +355,15 @@
          :hx-trigger "click"}
         "View Evidence"]]]]))
 
+(defn- timeline-graph
+  "Render a timeline graph from nodes and edges. Edges are visually
+   distinguished by status via edge-status-classes."
+  [nodes edges]
+  [:div.timeline-graph
+   (doall (map-indexed timeline-node nodes))
+   (when (seq edges)
+     [:div.timeline-edges (doall (map timeline-edge edges))])])
+
 (defn- timeline-page
   "Render the timeline page."
   [& {:keys [source-path edges nodes] :or {source-path "" edges [] nodes []}}]
@@ -316,24 +376,13 @@
              :hx-swap "innerHTML"}
       [:div.search-input-row
        [:input {:type "text" :name "path" :placeholder "Section path..." :value source-path}]
+       [:input {:type "text" :name "repo" :placeholder "Repository path (default .)" :value ""}]
        [:button {:type "submit"} "Trace"]]]]
     [:div#timeline-content.timeline-content
      (if (seq nodes)
-       [:div.timeline-graph
-        (interleave
-         (map-indexed timeline-node nodes)
-         (map timeline-edge edges))]
+       (timeline-graph nodes edges)
        [:div.results-empty [:p "No timeline data. Enter a section path to trace its lineage."]])]
     [:div#evidence-drawer.evidence-drawer]]))
-
-(defn- timeline-graph
-  "Render a timeline graph from nodes and edges."
-  [nodes edges]
-  [:div.timeline-graph
-   (doall
-    (interleave
-     (map-indexed timeline-node nodes)
-     (map timeline-edge edges)))])
 
 (defn timeline-page-handler
   "Handle the timeline page."
@@ -341,23 +390,53 @@
   (fn [_request]
     (html-response (timeline-page))))
 
+(defn- path-revisions
+  "Walk commit history reachable from `refs` in `repository-path`,
+   returning every revision of `path` as a section map (plain
+   :path-raw/:heading-path/:commit-oid/:timestamp keys), chronologically
+   sorted. Mirrors infra.main's CLI `path-revisions` -- the workbench has
+   no observations-port-backed candidate store for cross-file lineage
+   edges yet, so like `ep trace`, only Git-history revisions of the exact
+   path are traced (an honest, disclosed scope, not a silent gap)."
+  [repository-path refs path]
+  (let [{:keys [commits]} (git/reachable-commits repository-path refs)
+        revisions (keep (fn [c]
+                          (let [{:keys [entries]} (git/commit-tree-entries repository-path (:commit/oid c))
+                                entry (first (filter #(= path (:git/path %)) entries))]
+                            (when entry
+                              {:path-raw path
+                               :heading-path []
+                               :commit-oid (:commit/oid c)
+                               :blob-oid (:git/blob-oid entry)
+                               :timestamp (get-in c [:commit/author :person/timestamp])})))
+                        commits)]
+    (sort-by (fn [s] (.getTime ^java.util.Date (or (:timestamp s) (java.util.Date. 0))))
+             revisions)))
+
 (defn timeline-htmx-handler
-  "Handle HTMX timeline request (returns HTML fragment)."
+  "Handle HTMX timeline request (returns HTML fragment). Traces real Git
+   history for `path` in `repo` (default \".\") -- never fabricated data.
+   An unreadable repo or a path with no history reports an explicit empty/
+   unavailable state, distinct from a real (possibly single-node) trace."
   [_adapters]
   (fn [request]
     (let [body (:body-params request)
-          path (:path body)]
+          path (:path body)
+          repo (or (not-empty (:repo body)) ".")]
       (if (str/blank? path)
         (fragment-response [:div.results-empty [:p "Enter a section path to trace its lineage."]])
-        ;; With real data, we'd query lineage here. For now return placeholder.
-        (fragment-response
-         [:div.timeline-graph
-          [:div.timeline-node
-           [:div.node-marker "0"]
-           [:div.node-content
-            [:div.node-path (html-escape path)]
-            [:div.node-meta
-             [:span.node-commit "No lineage data yet"]]]]])))))
+        (try
+          (let [revisions (path-revisions repo ["HEAD"] path)]
+            (if (empty? revisions)
+              (fragment-response [:div.results-empty
+                                   [:p (str "No Git history found for "
+                                            (html-escape path) " in " (html-escape repo))]])
+              (let [source (last revisions)
+                    history (butlast revisions)
+                    trace (lineage-trace/trace-lineage source history [])]
+                (fragment-response (timeline-graph (:trace/nodes trace) (:trace/edges trace))))))
+          (catch Exception e
+            (fragment-response [:div.results-empty [:p (str "UNAVAILABLE: " (.getMessage e))]])))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Inbox view
@@ -370,6 +449,8 @@
            :hx-target "#inbox-list"
            :hx-swap "innerHTML"}
     [:div.search-controls
+     [:label "Resource ID:"
+      [:input {:type "text" :name "resource-id" :placeholder "Registered repository's resource-id"}]]
      [:label "Relation:"
       [:select {:name "relation"}
        [:option {:value ""} "All"]
@@ -384,7 +465,10 @@
      [:button {:type "submit"} "Filter"]]]])
 
 (defn- inbox-item
-  "Render a single inbox item."
+  "Render a single inbox item. A durable candidate's source/target spans
+   carry :span/path-raw + :span/heading-path (epiphany.domain.candidates/
+   make-span) -- not the :section/* keys this originally assumed, never
+   exercised against a real candidate record."
   [item]
   (let [candidate (:inbox/candidate item)
         source (:lineage-candidate/source candidate)
@@ -397,13 +481,13 @@
      [:div.inbox-item-header
       [:span.inbox-relation (name relation)]
       [:span.inbox-confidence (format "%.2f" confidence)]
-      (epistemic-badge (or (:lineage-candidate/status candidate) :provisional))]
+      (epistemic-badge (:inbox/decision-status item))]
      [:div.inbox-item-paths
-      [:span.inbox-source (html-escape (str (:section/path-raw source) " > "
-                                           (str/join " > " (:section/heading-path source))))]
+      [:span.inbox-source (html-escape (str (:span/path-raw source) " > "
+                                           (str/join " > " (:span/heading-path source))))]
       [:span.inbox-arrow " → "]
-      [:span.inbox-target (html-escape (str (:section/path-raw target) " > "
-                                           (str/join " > " (:section/heading-path target))))]]
+      [:span.inbox-target (html-escape (str (:span/path-raw target) " > "
+                                           (str/join " > " (:span/heading-path target))))]]
      [:div.inbox-item-summary (html-escape summary)]
      [:div.inbox-item-actions
       [:button.inbox-btn.accept-btn
@@ -444,36 +528,85 @@
   (fn [_request]
     (html-response (inbox-page))))
 
+(defn- parse-resource-id [s]
+  (when-not (str/blank? s)
+    (try (java.util.UUID/fromString s) (catch Exception _ nil))))
+
 (defn inbox-htmx-handler
-  "Handle HTMX inbox list request (returns HTML fragment)."
-  [_adapters]
+  "Handle HTMX inbox list request (returns HTML fragment) -- queries the
+   real durable candidate (ENG-005G) and decision (ENG-005A) stores for
+   :resource-id, the same domain/inbox/build-inbox `ep inbox` uses. No
+   resource-id (blank or malformed) is an explicit empty state, distinct
+   from \"queried and found nothing\"."
+  [adapters]
   (fn [request]
     (let [body (:body-params request)
-          relation (:relation body)
+          resource-id (parse-resource-id (:resource-id body))
+          relation (not-empty (:relation body))
           min-conf (when-let [mc (:min-confidence body)]
-                     (try (Double/parseDouble mc) (catch Exception _ 0.0)))
-          sort-by (or (:sort body) "confidence")
-          ;; With real data we'd query candidates/decisions. For now return placeholder.
-          items []]
-      (fragment-response (inbox-list items)))))
+                     (try (Double/parseDouble mc) (catch Exception _ nil)))
+          sort-key (if (= "evidence" (:sort body)) :evidence :confidence)]
+      (if-not resource-id
+        (fragment-response [:div#inbox-list.results-empty
+                             [:p "Enter a registered repository's resource-id to review its candidates."]])
+        (let [list-candidates (get-in adapters [:observations :list-lineage-candidates])
+              list-decisions (get-in adapters [:observations :list-review-decisions])
+              candidates (if list-candidates (list-candidates resource-id) [])
+              decisions (if list-decisions (list-decisions resource-id) [])
+              filters (cond-> {}
+                        relation (assoc :relation-types [(keyword relation)])
+                        (and min-conf (pos? min-conf)) (assoc :confidence-band [min-conf nil]))
+              items (inbox/build-inbox candidates decisions filters {:sort sort-key})]
+          (fragment-response (inbox-list items)))))))
 
 (defn inbox-decide-htmx-handler
-  "Handle HTMX inbox decision request (returns updated inbox list)."
-  [_adapters]
+  "Handle HTMX inbox decision request (returns the updated inbox list).
+   Durably records through :record-review-decision! -- the same op `ep
+   inbox decide` and POST /api/v1/review-decisions use -- resolving the
+   candidate's :resource-id by looking it up, so an HTMX decision, a CLI
+   decision, and an HTTP API decision are indistinguishable in the store."
+  [adapters]
   (fn [request]
     (let [body (:body-params request)
-          candidate-id (:candidate-id body)
-          decision (:decision body)]
-      ;; With real data we'd record the decision via review/make-decision.
-      ;; For now return the (empty) inbox list.
-      (fragment-response (inbox-list [])))))
+          candidate-id (try (java.util.UUID/fromString (:candidate-id body))
+                             (catch Exception _ nil))
+          decision-str (:decision body)
+          decision-type (when decision-str (keyword decision-str))]
+      (if (or (nil? candidate-id) (not (contains? review/review-decision-types decision-type)))
+        (fragment-response [:div#inbox-list.results-empty
+                             [:p "Invalid candidate id or decision type."]])
+        (let [find-candidate (get-in adapters [:observations :find-lineage-candidate-by-id])
+              candidate (when find-candidate (find-candidate candidate-id))]
+          (if-not candidate
+            (fragment-response [:div#inbox-list.results-empty
+                                 [:p "No candidate found for that id."]])
+            (let [resource-id (:resource-id candidate)
+                  decision (review/make-decision candidate-id decision-type
+                                                 :reason (:reason body))
+                  observation (review/decision->observation
+                               decision {:resource-id resource-id :adapter-version "0.1.0"})
+                  record! (get-in adapters [:observations :record-review-decision!])
+                  list-candidates (get-in adapters [:observations :list-lineage-candidates])
+                  list-decisions (get-in adapters [:observations :list-review-decisions])]
+              (when record! (record! observation))
+              (let [candidates (if list-candidates (list-candidates resource-id) [])
+                    decisions (if list-decisions (list-decisions resource-id) [])
+                    items (inbox/build-inbox candidates decisions)]
+                (fragment-response (inbox-list items))))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Health panel view
 
 (defn- stage-card
-  "Render a single stage status card."
-  [{:keys [stage/name stage/status stage/counts stage/failures stage/lag]}]
+  "Render a single stage status card.
+
+   Binds :stage/name to the local `stage-name` (not `name`) -- the
+   previous (name name) shadowed clojure.core/name with the local
+   binding, invoking the keyword value as a function and always
+   rendering nil. Never caught before because nothing ever fed this a
+   real stage map until this pass wired the health panel to
+   domain/status/query-status."
+  [{stage-name :stage/name :keys [stage/status stage/counts stage/failures stage/lag]}]
   (let [status-cls (case status
                      :ok "stage-ok"
                      :error "stage-error"
@@ -482,7 +615,7 @@
                      "stage-unknown")]
     [:div.stage-card {:class status-cls}
      [:div.stage-header
-      [:h3 (name name)]
+      [:h3 (name stage-name)]
       [:span.stage-status (name status)]]
      (when (seq counts)
        [:div.stage-counts
@@ -499,37 +632,61 @@
            (when-let [ctx (:failure/context f)]
              [:span.failure-context " (" ctx ")"])])])]))
 
+(defn- health-form
+  "Render the resource-id input driving the health refresh, mirroring
+   `ep status --resource-id`."
+  [resource-id]
+  [:form.health-form {:hx-post "/htmx/health"
+                      :hx-target "#health-content"
+                      :hx-swap "innerHTML"}
+   [:input {:type "text" :name "resource-id" :placeholder "Registered repository's resource-id"
+            :value (or resource-id "")}]
+   [:button {:type "submit"} "Refresh"]])
+
+(defn- health-stages-view
+  [stages]
+  [:div.health-stages
+   (if (seq stages)
+     (doall (map stage-card stages))
+     [:div.results-empty [:p "No status data available. Register a repository first."]])])
+
 (defn- health-page
   "Render the health panel page."
-  [& {:keys [stages summary] :or {stages [] summary {}}}]
+  [& {:keys [resource-id stages summary] :or {stages [] summary {}}}]
   (layout "Epiphany — Corpus Health"
    [:div.health-page
     [:h2 "Corpus Health"]
+    (health-form resource-id)
     [:div.health-summary
      (for [[k v] summary]
        [:span.summary-item [:strong (name k)] ": " (str v)])]
-    [:div.health-stages
-     (if (seq stages)
-       (doall (map stage-card stages))
-       [:div.results-empty [:p "No status data available. Register a repository first."]])]]))
+    [:div#health-content
+     (health-stages-view stages)]]))
+
+(defn- query-health-status
+  "Query real cross-stage status for `resource-id` via domain/status --
+   the same query the AC calls for (\"from the same status queries as `ep
+   status`\"). nil resource-id (no repository selected yet) is an explicit
+   empty state, never a fabricated or silently-empty result."
+  [adapters resource-id]
+  (when resource-id
+    (status/query-status adapters resource-id)))
 
 (defn health-page-handler
   "Handle the health panel page."
   [adapters]
-  (fn [_request]
-    (let [;; With real data we'd query all repositories and aggregate status.
-          stages []
-          summary {}]
-      (html-response (health-page :stages stages :summary summary)))))
+  (fn [request]
+    (let [resource-id (parse-resource-id (get-in request [:query-params :resource-id]))
+          result (query-health-status adapters resource-id)]
+      (html-response (health-page :resource-id (:resource-id result)
+                                  :stages (:stages result)
+                                  :summary (:summary result))))))
 
 (defn health-htmx-handler
   "Handle HTMX health refresh request."
   [adapters]
-  (fn [_request]
-    (let [stages []
-          summary {}]
-      (fragment-response
-       [:div.health-stages
-        (if (seq stages)
-          (doall (map stage-card stages))
-          [:div.results-empty [:p "No status data available."]])]))))
+  (fn [request]
+    (let [body (:body-params request)
+          resource-id (parse-resource-id (:resource-id body))
+          result (query-health-status adapters resource-id)]
+      (fragment-response (health-stages-view (:stages result))))))

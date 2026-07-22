@@ -125,7 +125,8 @@
                   (try
                     (let [adapters {:git {:common-git-directory git-resolve}
                                    :repository-metadata {:read (fn [_] nil)
-                                                        :write (fn [_ _id] nil)}
+                                                        :write (fn [_ _id] nil)
+                                                        :list-repositories (fn [] [])}
                                    :observations obs-adapter}]
                       (registration/register! adapters
                                               (cond-> {:repository-path repository-path}
@@ -469,7 +470,8 @@
                                obs-adapter (mongo/make-observations-adapter conn)]
                            {:git {:common-git-directory git-resolve}
                             :repository-metadata {:read (fn [_] nil)
-                                                  :write (fn [_ _id] nil)}
+                                                  :write (fn [_ _id] nil)
+                                                  :list-repositories (fn [] [])}
                             :observations obs-adapter}))]
           (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))

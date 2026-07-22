@@ -241,7 +241,7 @@
  {:quadrant :infra,
   :imports #{},
   :dot-calls 15,
-  :static-calls 0,
+  :static-calls 1,
   :type-hints 1},
  epiphany.infra.main
  {:quadrant :infra,
@@ -276,7 +276,7 @@
  epiphany.infra.workbench
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 0,
+  :dot-calls 3,
   :static-calls 2,
   :type-hints 0},
  epiphany.law.git
