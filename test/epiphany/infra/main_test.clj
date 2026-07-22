@@ -1,7 +1,9 @@
 (ns epiphany.infra.main-test
   (:require [clojure.string :as string]
+            [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing]]
-            [epiphany.infra.main :as main]))
+            [epiphany.infra.main :as main]
+            [epiphany.domain.export :as export]))
 
 (deftest help-identifies-the-canonical-executable
   (testing "--help succeeds and names both epiphany and its ep alias"
@@ -284,3 +286,30 @@
     (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "rejected"])]
       (is (zero? exit))
       (is (string/includes? out "Recorded rejected for candidate")))))
+
+;; ---------------------------------------------------------------------------
+;; Export subcommand
+
+(deftest export-shows-help
+  (let [{:keys [exit out]} (main/run ["export" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep export"))))
+
+(deftest export-produces-a-real-packet-with-content-hash
+  (testing "markdown export of an empty store still produces a real, tamper-evident packet"
+    (let [{:keys [exit out]} (main/run ["export"])]
+      (is (zero? exit))
+      (is (string/includes? out "# Evidence Packet"))
+      (is (string/includes? out "Content-hash:")))))
+
+(deftest export-edn-format-round-trips-through-content-hash-check
+  (testing "the EDN packet's content-hash is independently verifiable"
+    (let [{:keys [exit out]} (main/run ["export" "--format" "edn"])
+          packet (edn/read-string out)]
+      (is (zero? exit))
+      (is (export/content-hash-valid? packet)))))
+
+(deftest export-rejects-invalid-format
+  (let [{:keys [exit out]} (main/run ["export" "--format" "yaml"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be markdown, edn, or json"))))

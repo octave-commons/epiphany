@@ -63,9 +63,9 @@
  epiphany.domain.export
  {:quadrant :domain,
   :imports #{},
-  :dot-calls 0,
+  :dot-calls 3,
   :static-calls 0,
-  :type-hints 0},
+  :type-hints 1},
  epiphany.domain.extraction-projection
  {:quadrant :domain,
   :imports #{},
@@ -234,9 +234,9 @@
     org.eclipse.jgit.revwalk.RevCommit
     org.eclipse.jgit.lib.FileMode
     org.eclipse.jgit.errors.MissingObjectException},
-  :dot-calls 55,
-  :static-calls 3,
-  :type-hints 13},
+  :dot-calls 59,
+  :static-calls 4,
+  :type-hints 14},
  epiphany.infra.http
  {:quadrant :infra,
   :imports #{},
@@ -246,8 +246,8 @@
  epiphany.infra.main
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 20,
-  :static-calls 6,
+  :dot-calls 23,
+  :static-calls 10,
   :type-hints 2},
  epiphany.infra.profile
  {:quadrant :infra,

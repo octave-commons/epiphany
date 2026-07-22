@@ -228,6 +228,79 @@
           packet
           decisions))
 
+;; ---------------------------------------------------------------------------
+;; Population from the real durable stores (ENG-005A/005G)
+;;
+;; populate-from-lineage/populate-from-decisions above predate the durable
+;; candidate (ENG-005G) and review-decision (ENG-005A) stores and were
+;; written against a speculative :lineage/*/:review/* shape no producer
+;; ever emitted. These two functions are the seam actually wired to `ep
+;; export`, consuming the real :lineage-candidate/*/:review-decision/*
+;; records those stores hold.
+
+(defn populate-from-lineage-candidates
+  "Populate packet from durable lineage-candidate records (the real
+   ENG-005G shape -- :lineage-candidate/source and :target are :span/*
+   maps, not the earlier speculative :lineage/* shape).
+
+   Parameters:
+     packet — packet map
+     candidates — seq of durable lineage-candidate records
+
+   Returns updated packet."
+  [packet candidates]
+  (reduce (fn [pkt c]
+            (let [source (make-evidence-ref
+                          {:path-raw (get-in c [:lineage-candidate/source :span/path-raw])
+                           :heading-path (get-in c [:lineage-candidate/source :span/heading-path])})
+                  target (make-evidence-ref
+                          {:path-raw (get-in c [:lineage-candidate/target :span/path-raw])
+                           :heading-path (get-in c [:lineage-candidate/target :span/heading-path])})]
+              (add-inferred-candidate
+               pkt
+               (make-claim :inferred
+                           (format "%s candidate: %s -> %s"
+                                   (name (:lineage-candidate/relation c))
+                                   (get-in c [:lineage-candidate/source :span/path-raw])
+                                   (get-in c [:lineage-candidate/target :span/path-raw]))
+                           source
+                           :confidence (:lineage-candidate/confidence c 0.0)
+                           :identifiers {:lineage-candidate/id (:lineage-candidate/id c)
+                                         :lineage-candidate/relation (:lineage-candidate/relation c)
+                                         :lineage-candidate/generator-version (:lineage-candidate/generator-version c)
+                                         :target target}))))
+          packet
+          candidates))
+
+(defn populate-from-review-decisions
+  "Populate packet from durable review-decision records (the real
+   ENG-005A shape -- :review-decision/*, not the earlier speculative
+   :review/* shape). Only :accepted decisions become accepted
+   interpretations; rejected/relabel/deferred/annotated/do-not-suggest
+   never appear as an accepted claim, per the epistemic ladder --
+   a rejected candidate stays auditable, never established.
+
+   Parameters:
+     packet — packet map
+     decisions — seq of durable review-decision records
+
+   Returns updated packet."
+  [packet decisions]
+  (reduce (fn [pkt d]
+            (if (= :accepted (:review-decision/decision d))
+              (add-accepted-interpretation
+               pkt
+               (make-claim :accepted
+                           (or (:review-decision/reason d) "Accepted decision")
+                           (make-no-source "Review decision recorded without a direct evidence excerpt")
+                           :rationale (or (:review-decision/reason d) "")
+                           :identifiers {:review-decision/id (:review-decision/id d)
+                                         :review-decision/candidate-id (:review-decision/candidate-id d)
+                                         :review-decision/decided-at (:review-decision/decided-at d)}))
+              pkt))
+          packet
+          decisions))
+
 (defn populate-from-concepts
   "Populate packet from concepts and research questions.
 
@@ -297,6 +370,42 @@
                                        :gap/suggested-action (:gap/suggested-action g)})))
           packet
           gaps))
+
+;; ---------------------------------------------------------------------------
+;; Tamper evidence
+;;
+;; A packet previously carried only a random :packet/id, :packet/created-at,
+;; and a generator-version string -- no way to detect a claim silently
+;; edited after export (the 2026-07-13 review's flagged gap).
+
+(defn- sha256-base64
+  [^String s]
+  (let [digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
+                        (.getBytes s "UTF-8"))]
+    (.encodeToString (java.util.Base64/getEncoder) digest)))
+
+(def ^:private claim-section-keys
+  [:packet/observed-facts :packet/inferred-candidates
+   :packet/accepted-interpretations :packet/open-questions])
+
+(defn add-content-hash
+  "Compute and attach a SHA-256 :packet/content-hash over the packet's
+   claim sections. Call this LAST, after all population and before
+   serializing -- the hash covers only the claims (not :packet/id or
+   :packet/created-at, which are provenance metadata that would make two
+   exports of the identical claims at different times spuriously differ)."
+  [packet]
+  (assoc packet :packet/content-hash
+         (sha256-base64 (pr-str (select-keys packet claim-section-keys)))))
+
+(defn content-hash-valid?
+  "True when a packet's :packet/content-hash matches its actual claims --
+   false if either was edited independently after export, or if no hash
+   was ever attached (nil never silently 'passes')."
+  [packet]
+  (and (some? (:packet/content-hash packet))
+       (= (:packet/content-hash packet)
+          (sha256-base64 (pr-str (select-keys packet claim-section-keys))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Serialization
@@ -369,5 +478,8 @@
     (str "# " (:packet/label packet) "\n\n"
          "**Resource:** " (:packet/resource-id packet) "\n"
          "**Created:** " (:packet/created-at packet) "\n"
-         "**Generator:** " (:packet/generator-version packet) "\n\n"
+         "**Generator:** " (:packet/generator-version packet) "\n"
+         (when (:packet/content-hash packet)
+           (str "**Content-hash:** " (:packet/content-hash packet) "\n"))
+         "\n"
          (str/join "\n\n" sections))))

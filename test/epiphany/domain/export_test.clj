@@ -192,6 +192,86 @@
       (is (= [] (:packet/accepted-interpretations pkt2))))))
 
 ;; ---------------------------------------------------------------------------
+;; populate-from-lineage-candidates tests (real ENG-005G durable shape)
+
+(deftest populate-from-lineage-candidates-adds-inferred
+  (testing "populates from the real durable candidate shape, not the speculative one"
+    (let [pkt (export/make-packet)
+          candidates [{:lineage-candidate/id #uuid "00000000-0000-0000-0000-000000000001"
+                       :lineage-candidate/relation :continues
+                       :lineage-candidate/confidence 0.8
+                       :lineage-candidate/generator-version "test-gen-v1"
+                       :lineage-candidate/source {:span/path-raw "a.md" :span/heading-path ["Intro"]}
+                       :lineage-candidate/target {:span/path-raw "b.md" :span/heading-path ["Intro"]}}]
+          pkt2 (export/populate-from-lineage-candidates pkt candidates)
+          claim (first (:packet/inferred-candidates pkt2))]
+      (is (= 1 (count (:packet/inferred-candidates pkt2))))
+      (is (= :inferred (:claim/type claim)))
+      (is (= 0.8 (:claim/confidence claim)))
+      (is (= "a.md" (:evidence/path-raw (:claim/source claim))))
+      (is (= #uuid "00000000-0000-0000-0000-000000000001"
+             (:lineage-candidate/id (:claim/identifiers claim)))))))
+
+(deftest populate-from-lineage-candidates-empty
+  (let [pkt (export/make-packet)
+        pkt2 (export/populate-from-lineage-candidates pkt [])]
+    (is (= [] (:packet/inferred-candidates pkt2)))))
+
+;; ---------------------------------------------------------------------------
+;; populate-from-review-decisions tests (real ENG-005A durable shape)
+
+(deftest populate-from-review-decisions-adds-accepted
+  (testing "populates accepted interpretations from the real durable decision shape"
+    (let [pkt (export/make-packet)
+          decisions [{:review-decision/id #uuid "00000000-0000-0000-0000-000000000002"
+                      :review-decision/candidate-id #uuid "00000000-0000-0000-0000-000000000001"
+                      :review-decision/decision :accepted
+                      :review-decision/reason "good claim"
+                      :review-decision/decided-at (java.util.Date.)}]
+          pkt2 (export/populate-from-review-decisions pkt decisions)]
+      (is (= 1 (count (:packet/accepted-interpretations pkt2))))
+      (is (= "good claim" (:claim/statement (first (:packet/accepted-interpretations pkt2))))))))
+
+(deftest populate-from-review-decisions-ignores-non-accepted
+  (testing "rejected/relabel/deferred/annotated/do-not-suggest never become accepted claims"
+    (let [pkt (export/make-packet)
+          decisions [{:review-decision/decision :rejected :review-decision/candidate-id (random-uuid)}
+                     {:review-decision/decision :relabel :review-decision/candidate-id (random-uuid)}
+                     {:review-decision/decision :deferred :review-decision/candidate-id (random-uuid)}
+                     {:review-decision/decision :annotated :review-decision/candidate-id (random-uuid)}
+                     {:review-decision/decision :do-not-suggest :review-decision/candidate-id (random-uuid)}]
+          pkt2 (export/populate-from-review-decisions pkt decisions)]
+      (is (= [] (:packet/accepted-interpretations pkt2))))))
+
+;; ---------------------------------------------------------------------------
+;; content-hash (tamper evidence)
+
+(deftest add-content-hash-attaches-a-hash
+  (let [pkt (export/add-content-hash (export/make-packet))]
+    (is (string? (:packet/content-hash pkt)))
+    (is (export/content-hash-valid? pkt))))
+
+(deftest content-hash-detects-tampering
+  (testing "editing a claim after export invalidates the hash"
+    (let [pkt (-> (export/make-packet)
+                  (export/add-observed-fact (export/make-claim :observed "original" (export/make-no-source "n/a")))
+                  (export/add-content-hash))
+          tampered (assoc-in pkt [:packet/observed-facts 0 :claim/statement] "silently edited")]
+      (is (export/content-hash-valid? pkt))
+      (is (not (export/content-hash-valid? tampered))))))
+
+(deftest content-hash-valid-false-when-absent
+  (is (not (export/content-hash-valid? (export/make-packet)))))
+
+(deftest content-hash-unaffected-by-provenance-metadata
+  (testing "two packets with identical claims but different :packet/id/created-at hash the same"
+    (let [claim (export/make-claim :observed "same claim" (export/make-no-source "n/a"))
+          pkt-a (export/add-content-hash (export/add-observed-fact (export/make-packet) claim))
+          pkt-b (export/add-content-hash (export/add-observed-fact (export/make-packet) claim))]
+      (is (not= (:packet/id pkt-a) (:packet/id pkt-b)))
+      (is (= (:packet/content-hash pkt-a) (:packet/content-hash pkt-b))))))
+
+;; ---------------------------------------------------------------------------
 ;; populate-from-concepts tests
 
 (deftest populate-from-concepts-adds-both

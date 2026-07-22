@@ -19,7 +19,8 @@
             [epiphany.domain.lineage-trace :as lineage-trace]
             [epiphany.domain.candidates :as candidates]
             [epiphany.domain.inbox :as inbox]
-            [epiphany.domain.review :as review])
+            [epiphany.domain.review :as review]
+            [epiphany.domain.export :as export])
   (:gen-class))
 
 (def version "0.1.0")
@@ -977,6 +978,58 @@
     (run-inbox-list args)))
 
 ;; ---------------------------------------------------------------------------
+;; Export subcommand
+
+(def export-options
+  [repo-option
+   [nil "--also-repo PATHS" "Additional repository paths (comma-separated) to include candidates/decisions from"]
+   [nil "--label TEXT" "Human-readable packet label" :default "Evidence Packet"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-f" "--format FORMAT" "Output format: markdown, edn, or json"
+    :default :markdown
+    :parse-fn keyword
+    :validate [#{:markdown :edn :json} "Must be markdown, edn, or json"]]
+   [nil "--out FILE" "Write the packet to FILE instead of stdout"]
+   ["-h" "--help" "Show export help and exit."]])
+
+(defn- run-export
+  "Execute the export subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary]} (cli/parse-opts args export-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep export [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep export [options]\n\n" summary)}
+
+      :else
+      (try
+        (let [repo-paths (cons (:repo options) (split-csv (:also-repo options)))
+              resource-ids (resource-ids-for-repos repo-paths)
+              {:keys [candidates decisions]} (fetch-candidates-and-decisions resource-ids (:profile options))
+              packet (-> (export/make-packet :resource-id (first resource-ids)
+                                             :label (:label options)
+                                             :generator-version "ep-export-v1")
+                         (export/populate-from-lineage-candidates candidates)
+                         (export/populate-from-review-decisions decisions)
+                         (export/add-content-hash))
+              output (case (:format options)
+                       :edn (export/packet->edn packet)
+                       :json (export/packet->json packet)
+                       (export/packet->markdown packet))]
+          (if (:out options)
+            (do (spit (:out options) output)
+                {:exit 0 :out (str "Wrote " (:out options) ".")})
+            {:exit 0 :out output}))
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+;; ---------------------------------------------------------------------------
 ;; Top-level dispatch
 
 (defn- usage [options-summary]
@@ -995,6 +1048,7 @@
     "  diff        Compare two historical section expressions"
     "  trace       Trace a section's Git-history lineage chronology"
     "  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision"
+    "  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions"
     "  serve       Start the workbench HTTP server"
     ""
     "Global Options:"
@@ -1039,6 +1093,7 @@
           "diff"     (run-diff cmd-args)
           "trace"    (run-trace cmd-args)
           "inbox"    (run-inbox cmd-args)
+          "export"   (run-export cmd-args)
           "serve"    (run-serve cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))
