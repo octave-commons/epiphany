@@ -11,9 +11,16 @@
             [epiphany.infra.git :as git]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
+            [epiphany.infra.adapters.lucene :as lucene]
+            [epiphany.infra.adapters.ollama :as ollama]
             [epiphany.infra.repository-identity :as repository-identity]
+            [epiphany.infra.repository-metadata-file :as repository-metadata-file]
             [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
+            [epiphany.domain.ingestion :as ingestion]
+            [epiphany.domain.extraction-projection :as extraction]
+            [epiphany.domain.revision-at-path :as revision-at-path]
+            [epiphany.domain.markdown-selection :as markdown-selection]
             [epiphany.domain.evidence :as evidence]
             [epiphany.domain.diff :as diff]
             [epiphany.domain.lineage-trace :as lineage-trace]
@@ -248,14 +255,35 @@
               {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
 ;; ---------------------------------------------------------------------------
+;; Shared Git evidence helpers (show / diff / trace / ingest / search)
+
+(defn- resolve-common-git-dir
+  "Resolve a repository path's common Git directory via `git rev-parse`."
+  [repository-path]
+  (let [{:keys [exit out err]}
+        (shell/sh "git" "-C" repository-path "rev-parse"
+                  "--path-format=absolute" "--git-common-dir")]
+    (if (zero? exit)
+      (string/trim out)
+      (throw (ex-info (str "Not a Git repository: " repository-path)
+                      {:repository-path repository-path
+                       :git-error (string/trim err)})))))
+
+;; ---------------------------------------------------------------------------
 ;; Search subcommand
+
+(def default-index-dir
+  "Default on-disk Lucene index directory for the local corpus.
+   The index is a rebuildable projection (ADR-000); it never lives inside
+   a repository's Git dir (ADR-001)."
+  (str (System/getProperty "user.home") "/.epiphany/index"))
 
 (def search-options
   [["-m" "--mode MODE" "Search mode: lexical, semantic, hybrid"
-    :id :mode
-    :default :hybrid
-    :parse-fn keyword
-    :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
+     :id :mode
+     :default :hybrid
+     :parse-fn keyword
+     :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
    ["-l" "--limit N" "Max results"
     :id :limit
     :default 20
@@ -274,12 +302,15 @@
    [nil "--embedding-version VER" "Embedding model version for semantic search"
     :id :embedding-version
     :parse-fn #(Integer/parseInt %)]
-   ["-v" "--verbose" "Show diagnostics (profile, versions)"
-    :id :verbose]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
-    :id :profile
-    :default :local
-    :parse-fn keyword]
+    ["-v" "--verbose" "Show diagnostics (profile, versions)"
+     :id :verbose]
+    [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
+     :id :index-dir
+     :default default-index-dir]
+    ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+     :id :profile
+     :default :local
+     :parse-fn keyword]
    ["-h" "--help" "Show search help and exit."
     :id :help]])
 
@@ -337,17 +368,33 @@
     (:embedding-version opts)
     (assoc :embedding-version (:embedding-version opts))))
 
-(defn- make-search-adapters
-  "Create in-memory adapters for search (no persistence needed)."
-  [profile]
-  (case profile
-    :local
-    (in-memory/make {:common-git-dir-fn (constantly "/tmp")})
+(defn- ollama-reachable?
+  "TCP probe for the local Ollama service (explicit, never silent)."
+  []
+  (try
+    (with-open [sock (java.net.Socket.)]
+      (.connect sock (java.net.InetSocketAddress. "127.0.0.1" 11434) 2000)
+      true)
+    (catch Exception _ false)))
 
-    :services
-    (throw (ex-info "Search --profile :services requires running services."
+(defn- make-durable-index-ports
+  "Construct the :index (on-disk Lucene) and :embeddings (Ollama HTTP)
+   ports shared by search, ingest, and serve. The Lucene index is
+   local-first and durable; Ollama is only contacted by semantic/hybrid
+   queries and explicit --embed ingestion."
+  [index-dir]
+  {:index      (lucene/make-index-adapter
+                {:index-dir (java.nio.file.Paths/get index-dir (into-array String []))})
+   :embeddings (ollama/make-embeddings-adapter {})})
+
+(defn- require-ollama!
+  "Throw UNAVAILABLE when a semantic/hybrid operation needs Ollama and the
+   local service is unreachable. Never falls back to another mode."
+  [operation]
+  (when-not (ollama-reachable?)
+    (throw (ex-info (str operation " requires the local Ollama service.")
                     {:code :unavailable
-                     :hint "Start MongoDB and Ollama with: docker compose up -d"}))))
+                     :hint "Start Ollama on localhost:11434, or use --mode lexical."}))))
 
 (defn- run-search
   "Execute the search subcommand. Returns {:exit int, :out string}."
@@ -374,8 +421,10 @@
       (let [query (string/join " " arguments)
             request (build-search-request query options)]
         (try
-          (let [adapters (make-search-adapters profile)
-                results (hs/search adapters request)
+          (when (#{:semantic :hybrid} (:mode options))
+            (require-ollama! "Semantic/hybrid search"))
+          (let [ports (make-durable-index-ports (:index-dir options))
+                results (hs/search ports request)
                 fmt (:format options)
                 output (case fmt
                          :edn  (format-results-edn results)
@@ -393,6 +442,185 @@
                            (str "\n  Hint: " (:hint data))))}))
           (catch Exception e
             {:exit 1 :out (str "Error: " (.getMessage e))}))))))
+
+;; ---------------------------------------------------------------------------
+;; Ingest subcommand
+
+(def ingest-options
+  [["-p" "--profile PROFILE" "Profile for durable observations: :local (in-memory, one-shot) or :services (MongoDB, incremental)"
+    :id :profile
+    :default :services
+    :parse-fn keyword]
+   [nil "--refs REFS" "Comma-separated Git refs to ingest"
+    :id :refs
+    :default "HEAD"]
+   [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
+    :id :index-dir
+    :default default-index-dir]
+   [nil "--embed" "Also embed extracted sections via Ollama and index KNN vectors"
+    :id :embed
+    :default false]
+   ["-h" "--help" "Show ingest help and exit."
+    :id :help]])
+
+(defn- make-ingest-adapters
+  "Build the registration/observation adapter map for `profile`, plus the
+   durable index ports. For :services the repository-metadata port is the
+   real Git-local repository.edn file (ADR-001), so resource-ids are stable
+   across runs. Hands the map to `f`, cleaning up any Mongo connection."
+  [profile index-dir f]
+  (let [index-ports (make-durable-index-ports index-dir)]
+    (case profile
+      :local
+      (f (merge (in-memory/make {:common-git-dir-fn resolve-common-git-dir})
+                index-ports))
+
+      :services
+      (let [conn (try
+                   (mongo/connect!)
+                   (catch Exception e
+                     (throw (ex-info
+                             (str "Cannot connect to MongoDB: " (.getMessage e))
+                             {:code :unavailable
+                              :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+        (try
+          (f (merge {:git {:common-git-directory resolve-common-git-dir}
+                     :repository-metadata {:read repository-metadata-file/read!
+                                           :write repository-metadata-file/write!
+                                           :list-repositories (fn [] [])}
+                     :observations (mongo/make-observations-adapter conn)}
+                    index-ports))
+          (finally
+            (mongo/disconnect! conn)))))))
+
+(defn- project-revision-at-path!
+  "Project revision-at-path observations for every commit reachable from
+   `refs`, skipping identities already recorded for `resource-id`.
+   Returns the count of newly recorded observations."
+  [observations repository-path resource-id refs]
+  (let [existing (into #{}
+                       (map revision-at-path/observation-id-key)
+                       ((:list-revision-at-path-by-resource observations) resource-id))
+        {:keys [commits]} (git/reachable-commits repository-path refs)
+        new-observations
+        (into []
+              (comp
+               (mapcat
+                (fn [commit]
+                  (let [commit-oid (:commit/oid commit)
+                        entries (markdown-selection/select-markdown
+                                 commit-oid
+                                 (:entries (git/commit-tree-entries repository-path commit-oid)))
+                        parent-oid (first (:commit/parent-oids commit))
+                        parent-entries (when parent-oid
+                                         (:entries (git/commit-tree-entries repository-path parent-oid)))]
+                    (revision-at-path/revisions-for-commit
+                     entries
+                     {:resource-id resource-id
+                      :tree-oid (:commit/tree-oid commit)
+                      :parent-commit-oid parent-oid
+                      :parent-entries parent-entries
+                      :observed-at (java.util.Date.)}))))
+               (remove #(contains? existing (revision-at-path/observation-id-key %))))
+              commits)]
+    (doseq [observation new-observations]
+      ((:record-revision-at-path! observations) observation))
+    (count new-observations)))
+
+(defn- embed-extractions!
+  "Embed every recorded section extraction for `resource-id` via the
+   :embeddings port and index the resulting vectors. Returns the count of
+   embedding records indexed."
+  [adapters resource-id]
+  (let [observations (:observations adapters)
+        revisions ((:list-revision-at-path-by-resource observations) resource-id)
+        extractions (into []
+                          (mapcat #((:list-section-extractions-by-revision observations)
+                                    (:revision-at-path/id %)))
+                          revisions)
+        embeddings ((:embed-sections! (:embeddings adapters)) extractions)]
+    ((:index-embeddings! (:index adapters)) embeddings)
+    (count embeddings)))
+
+(defn- run-ingest
+  "Execute the ingest subcommand: register, walk commits, project
+   revision-at-path observations, extract sections into the durable Lucene
+   index, and optionally embed them. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]}
+        (cli/parse-opts args ingest-options)
+        profile (:profile options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep ingest [options] <path>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep ingest [options] <path>\n\n" summary)}
+
+      (empty? arguments)
+      {:exit 1 :out "Error: repository path required.\nUsage: ep ingest [options] <path>"}
+
+      (not (profile/valid-profile? profile))
+      {:exit 1 :out (str "Error: invalid profile " (pr-str profile)
+                         ". Valid: " (pr-str profile/valid-profiles))}
+
+      :else
+      (try
+        (let [repository-path (first arguments)
+              _ (resolve-common-git-dir repository-path)
+              _ (when (:embed options)
+                  (require-ollama! "Embedding ingestion"))]
+          (make-ingest-adapters
+           profile (:index-dir options)
+           (fn [adapters]
+             (let [{:keys [resource-id]}
+                   (registration/register! adapters {:repository-path repository-path})
+                   observations (:observations adapters)
+                   refs (string/split (:refs options) #",")
+                   run-record (ingestion/run-ingestion
+                               {:git {:reachable-commits
+                                      (fn [path refs'] (git/reachable-commits path refs'))}
+                                :observations observations}
+                               {:resource-id resource-id
+                                :repository-path repository-path
+                                :selected-refs refs})
+                   revision-count (project-revision-at-path!
+                                   observations repository-path resource-id refs)
+                   projection (extraction/run-extraction-projection
+                               {:git {:read-blob (fn [_ oid] (git/read-blob repository-path oid))}
+                                :observations observations
+                                :index (:index adapters)}
+                               {:resource-id resource-id
+                                :ingestion-run-id (:observation/id run-record)
+                                :repository-path repository-path})
+                   embedded (when (:embed options)
+                              (embed-extractions! adapters resource-id))]
+               {:exit 0
+                :out (string/join
+                      \newline
+                      (cond-> [(str "Ingested: " repository-path)
+                               (str "  Resource ID:         " resource-id)
+                               (str "  Commits traversed:   " (:ingestion/commit-count run-record))
+                               (str "  Revisions observed:  " revision-count)
+                               (str "  Revisions scanned:   " (:projection/revisions-scanned projection))
+                               (str "  Sections extracted:  " (:projection/sections-extracted projection))
+                               (str "  Extraction failures: " (count (:projection/failures projection)))
+                               (str "  Index dir:           " (:index-dir options))]
+                        embedded
+                        (conj (str "  Embeddings indexed:  " embedded))))}))))
+        (catch clojure.lang.ExceptionInfo e
+          (let [data (ex-data e)]
+            {:exit 1
+             :out (str "Error: " (.getMessage e)
+                       (when (:git-error data)
+                         (str "\n  Git error: " (:git-error data)))
+                       (when (:code data)
+                         (str "\n  Code: " (name (:code data))))
+                       (when (:hint data)
+                         (str "\n  Hint: " (:hint data))))}))
+        (catch Exception e
+          {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Serve subcommand
@@ -433,19 +661,20 @@
       (try
         (let [adapters (case profile
                          :local
-                         (in-memory/make {:common-git-dir-fn
-                                          (fn [path]
-                                            (let [{:keys [exit out err]}
-                                                  (clojure.java.shell/sh
-                                                   "git" "-C" path "rev-parse"
-                                                   "--path-format=absolute"
-                                                   "--git-common-dir")]
-                                              (if (zero? exit)
-                                                (string/trim out)
-                                                (throw (ex-info
-                                                        (str "Not a Git repository: " path)
-                                                        {:repository-path path
-                                                         :git-error (string/trim err)})))))})
+                         (merge (in-memory/make {:common-git-dir-fn
+                                                 (fn [path]
+                                                   (let [{:keys [exit out err]}
+                                                         (clojure.java.shell/sh
+                                                          "git" "-C" path "rev-parse"
+                                                          "--path-format=absolute"
+                                                          "--git-common-dir")]
+                                                     (if (zero? exit)
+                                                       (string/trim out)
+                                                       (throw (ex-info
+                                                               (str "Not a Git repository: " path)
+                                                               {:repository-path path
+                                                                :git-error (string/trim err)})))))})
+                                (make-durable-index-ports default-index-dir))
 
                          :services
                          (let [conn (try
@@ -468,21 +697,19 @@
                                                          {:repository-path path
                                                           :git-error (string/trim err)})))))
                                obs-adapter (mongo/make-observations-adapter conn)]
-                           {:git {:common-git-directory git-resolve}
-                            :repository-metadata {:read (fn [_] nil)
-                                                  :write (fn [_ _id] nil)
-                                                  :list-repositories (fn [] [])}
-                            :observations obs-adapter}))]
-          (println (str "Epiphany workbench starting on http://localhost:" port))
+                           (merge {:git {:common-git-directory git-resolve}
+                                   :repository-metadata {:read (fn [_] nil)
+                                                         :write (fn [_ _id] nil)
+                                                         :list-repositories (fn [] [])}
+                                   :observations obs-adapter}
+                                  (make-durable-index-ports default-index-dir))))]
+           (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))
           (http/start-server! adapters port)
           ;; Block until interrupted
           (.addShutdownHook (Runtime/getRuntime)
                             (Thread. (fn []
-                                       (println "\nShutting down...")
-                                       (when (= :services profile)
-                                         ;; TODO: disconnect mongo
-                                         ))))
+                                       (println "\nShutting down..."))))
           (.join (Thread/currentThread))
           {:exit 0 :out ""})
 
@@ -499,18 +726,6 @@
 
 ;; ---------------------------------------------------------------------------
 ;; Shared Git evidence helpers (show / diff / trace)
-
-(defn- resolve-common-git-dir
-  "Resolve a repository path's common Git directory via `git rev-parse`."
-  [repository-path]
-  (let [{:keys [exit out err]}
-        (shell/sh "git" "-C" repository-path "rev-parse"
-                  "--path-format=absolute" "--git-common-dir")]
-    (if (zero? exit)
-      (string/trim out)
-      (throw (ex-info (str "Not a Git repository: " repository-path)
-                      {:repository-path repository-path
-                       :git-error (string/trim err)})))))
 
 (defn- resolve-commit-oid
   "Resolve a ref, short OID, or HEAD-relative expression to a full commit OID."
@@ -1044,6 +1259,7 @@
     ""
     "Commands:"
     "  register    Register a local Git repository"
+    "  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene"
     "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
     "  show        Open exact historical evidence for a section expression"
@@ -1089,6 +1305,7 @@
             cmd-args (rest arguments)]
         (case command
           "register" (run-register cmd-args)
+          "ingest"   (run-ingest cmd-args)
           "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
           "show"     (run-show cmd-args)

@@ -63,7 +63,7 @@
       :extraction/error      — error map if extraction failed
       :extraction/revision-id — the revision-at-path ID (for logging)}"
   [ports {:keys [resource-id revision-at-path/id revision/commit-oid
-                 revision/path-raw revision/blob-oid] :as revision}]
+                 revision/path-raw revision/blob-oid] :as _revision}]
   (let [git-fn   (get-in ports [:git :read-blob])
         obs-fn   (:record-section-extraction! (:observations ports))
         idx-fn   (:index-sections! (:index ports))]
@@ -88,7 +88,7 @@
                                :resource-id resource-id)]
         (obs-fn observation)
         (when idx-fn
-          (idx-fn observation))
+          (idx-fn (assoc observation :extraction/content blob)))
         {:extraction/record     observation
          :extraction/error      nil
          :extraction/revision-id id})
@@ -124,7 +124,7 @@
       :projection/checkpoints-recorded int
       :projection/failures            [{:failure/reason string, :failure/message string}]
       :projection/completed           boolean}"
-  [ports {:keys [resource-id ingestion-run-id repository-path]}]
+  [ports {:keys [resource-id ingestion-run-id]}]
   (let [observations (:observations ports)
         ;; List all revisions for this resource
         all-revisions ((:list-revision-at-path-by-resource observations) resource-id)

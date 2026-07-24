@@ -21,11 +21,17 @@ clojure -M:run -- --help     # the epiphany executable (alias: ep)
 
 ```bash
 ep register <path>           # register a local Git repository
+ep ingest <path>             # observe revisions, extract sections, index into durable Lucene
+  --profile local|services       # observation store (default: services)
+  --refs <a,b>                   # refs to ingest (default: HEAD)
+  --index-dir <dir>              # Lucene index dir (default: ~/.epiphany/index)
+  --embed                        # also embed sections via Ollama (KNN vectors)
 ep search <query>            # search sections (lexical, semantic, or hybrid)
-  --mode lexical|semantic|hybrid   # retrieval mode (default: hybrid)
+  --mode lexical|semantic|hybrid   # retrieval mode (default: hybrid; semantic/hybrid need Ollama)
   --format text|edn|json           # output format (default: text)
   --limit N                        # max results (default: 20)
   --path-prefix <prefix>           # filter by path
+  --index-dir <dir>                # Lucene index dir (default: ~/.epiphany/index)
   --verbose                        # show profile and diagnostics
   --profile local|services         # adapter profile (default: local)
 ep status --resource-id <uuid>    # show ingestion run status

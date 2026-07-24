@@ -93,8 +93,11 @@
 
 (deftest search-valid-empty-index-parity
   (testing "a well-formed query against an empty index: both surfaces accept"
-    (is (= :accepted (cli-outcome (main/run ["search" "test"]))))
-    (is (= :accepted (http-outcome (http-search {:query "test" :mode :hybrid}))))))
+    (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                          "epiphany-parity-idx" (make-array java.nio.file.attribute.FileAttribute 0)))]
+      (is (= :accepted (cli-outcome (main/run ["search" "test" "--mode" "lexical"
+                                               "--index-dir" index-dir]))))
+      (is (= :accepted (http-outcome (http-search {:query "test" :mode :hybrid})))))))
 
 (deftest search-limit-out-of-bounds-parity
   (testing "limit beyond the shared upper bound: both surfaces reject"

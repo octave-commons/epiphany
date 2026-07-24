@@ -42,6 +42,18 @@
 ;; ---------------------------------------------------------------------------
 ;; Document construction — sections
 
+(defn- section-body-text
+  "Recover a section's body text by slicing the source content with the
+   section's recorded span offsets. Returns nil when the extraction record
+   carries no content (older callers) — the index then falls back to
+   heading-path + path only."
+  [extraction section]
+  (when-let [content (:extraction/content extraction)]
+    (let [start (:section/body-span-start-byte section)
+          end   (:section/body-span-end-byte section)]
+      (when (and start end (<= 0 start end (count content)))
+        (subs content start end)))))
+
 (defn- section->doc
   "Convert a section extraction record + section map into a Lucene Document."
   [extraction section]
@@ -71,7 +83,7 @@
     (.add doc (TextField. "body_text"
                           (str/join " " (concat (:section/heading-path section)
                                                 [(:extraction/path-raw extraction)]
-                                                (when-let [body (:section/body section)]
+                                                (when-let [body (section-body-text extraction section)]
                                                   [body])))
                           Field$Store/YES))
     doc))

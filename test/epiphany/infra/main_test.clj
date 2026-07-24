@@ -1,5 +1,7 @@
 (ns epiphany.infra.main-test
-  (:require [clojure.string :as string]
+  (:require [clojure.java.io]
+            [clojure.java.shell]
+            [clojure.string :as string]
             [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing]]
             [epiphany.infra.main :as main]
@@ -108,23 +110,35 @@
     (is (string/includes? out "--format"))))
 
 (deftest search-returns-zero-results-on-empty-index
-  (testing "search with in-memory adapters returns empty results"
-    (let [{:keys [exit out]} (main/run ["search" "architecture"])]
+  (testing "lexical search against a fresh durable index dir returns empty results"
+    (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                          "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+          {:keys [exit out]} (main/run ["search" "architecture" "--mode" "lexical"
+                                        "--index-dir" index-dir])]
       (is (zero? exit))
       (is (string/includes? out "0 results")))))
 
 (deftest search-text-format-default
-  (let [{:keys [exit out]} (main/run ["search" "test"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (string/includes? out "results"))))
 
 (deftest search-edn-format
-  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "edn"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "-f" "edn" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (or (= "()" out) (string/includes? out "[")))))
 
 (deftest search-json-format
-  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "json"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "-f" "json" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (= "[]" out))))
 
@@ -144,9 +158,89 @@
     (is (string/includes? out "invalid profile"))))
 
 (deftest search-verbose-mode
-  (let [{:keys [exit out]} (main/run ["search" "-v" "test"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "-v" "test" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (string/includes? out "Profile:"))))
+
+(deftest search-semantic-requires-ollama-or-fails-explicitly
+  (testing "semantic search never silently falls back to lexical"
+    (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                          "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+          {:keys [exit out]} (main/run ["search" "test" "--mode" "semantic"
+                                        "--index-dir" index-dir])]
+      ;; With Ollama up this succeeds; with Ollama down it must exit 1 with
+      ;; an explicit UNAVAILABLE-style error — never a silent mode change.
+      (if (zero? exit)
+        (is (string/includes? out "results"))
+        (do (is (= 1 exit))
+            (is (string/includes? out "Ollama")))))))
+
+;; ---------------------------------------------------------------------------
+;; Ingest subcommand
+
+(defn- sh!
+  [& command]
+  (let [{:keys [exit out err]} (apply clojure.java.shell/sh command)]
+    (when-not (zero? exit)
+      (throw (ex-info "Fixture command failed" {:command command :err err})))
+    out))
+
+(defn- temp-dir
+  [prefix]
+  (str (java.nio.file.Files/createTempDirectory
+        prefix (make-array java.nio.file.attribute.FileAttribute 0))))
+
+(defn- fixture-markdown-repo
+  "Create a temp Git repository containing one Markdown file with a unique
+   heading. Returns the repository path."
+  []
+  (let [repo (temp-dir "epiphany-ingest-test")]
+    (sh! "git" "init" repo)
+    (sh! "git" "-C" repo "config" "user.email" "test@example.invalid")
+    (sh! "git" "-C" repo "config" "user.name" "Epiphany Test")
+    (spit (clojure.java.io/file repo "notes.md")
+          "# Zqxwv Archaeology\n\nContinuity is not identity.\n")
+    (sh! "git" "-C" repo "add" "notes.md")
+    (sh! "git" "-C" repo "commit" "-m" "add notes")
+    repo))
+
+(deftest ingest-requires-path
+  (let [{:keys [exit out]} (main/run ["ingest"])]
+    (is (= 1 exit))
+    (is (string/includes? out "repository path required"))))
+
+(deftest ingest-shows-help
+  (let [{:keys [exit out]} (main/run ["ingest" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep ingest"))
+    (is (string/includes? out "--index-dir"))))
+
+(deftest ingest-rejects-invalid-profile
+  (let [{:keys [exit out]} (main/run ["ingest" "-p" "nope" "."])]
+    (is (= 1 exit))
+    (is (string/includes? out "invalid profile"))))
+
+(deftest ingest-fails-on-non-git-path
+  (let [{:keys [exit out]} (main/run ["ingest" (temp-dir "epiphany-not-git")
+                                      "-p" "local"
+                                      "--index-dir" (temp-dir "epiphany-idx")])]
+    (is (= 1 exit))
+    (is (string/includes? out "Not a Git repository"))))
+
+(deftest ingest-local-then-lexical-search-finds-section
+  (testing "ep ingest populates the durable Lucene index ep search reads"
+    (let [repo (fixture-markdown-repo)
+          index-dir (temp-dir "epiphany-idx")
+          ingest (main/run ["ingest" repo "-p" "local" "--index-dir" index-dir])]
+      (is (zero? (:exit ingest)) (:out ingest))
+      (is (string/includes? (:out ingest) "Sections extracted:"))
+      (let [{:keys [exit out]} (main/run ["search" "Zqxwv" "--mode" "lexical"
+                                          "--index-dir" index-dir])]
+        (is (zero? exit))
+        (is (string/includes? out "notes.md"))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Show subcommand

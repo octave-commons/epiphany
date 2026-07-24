@@ -51,6 +51,16 @@
         (is (seq results))
         (is (= "docs/architecture.md" (:result/path-raw (first results))))))))
 
+(deftest search-finds-body-content-test
+  (testing "lexical search matches section body text recovered from content spans"
+    (let [dir (temp-index-dir)
+          adapter (lucene/make-index-adapter {:index-dir dir})
+          source "# Notes\n\nContinuity is never identity.\n"
+          record (assoc (make-test-record source "docs/notes.md" "abc" "def")
+                        :extraction/content source)]
+      ((:index-sections! adapter) record)
+      (is (seq ((:search adapter) "identity"))))))
+
 (deftest search-no-results-test
   (testing "search returns empty vector for no matches"
     (let [dir (temp-index-dir)
