@@ -4,11 +4,11 @@ labels: ["phase-1", "comparison", "diff", "evidence"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001401"]
 phase: "1"
 type: "story"
-write-id: "1784661367879-0.j2hbh2tgtgrb193bw7x"
+write-id: "1784688873898-0.p9yicov3kyqaum9qvm"
 points: "3"
 title: "ENG-004B: Compare two historical expressions (`ep diff`)"
 priority: "P1"
-status: "in_progress"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001402"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000004"
 design: "docs/kanban/epics/epic-04-temporal-idea-lineage.md"
@@ -40,4 +40,16 @@ REVIEW 2026-07-21 (independent adversarial, board triage): REQUEST-CHANGES. AC1-
 - AC4 "seed a candidate relation or review decision": UNMET — run-diff only reads/prints; nothing wires it to the (now-existing) decision port or any candidate store. The FIX comment's deferral reason ("no store to seed into") has EXPIRED for decisions (ENG-005A landed), but no candidate store exists. → DESCOPED to new card ENG-005G (durable lineage-candidate store); this card's AC4 is amended to defer the seed-a-candidate capability there.
 - Surfaced here, now fixed separately: the bin/ep launcher was a broken infinite self-exec (regression 0a99597) — the recorded acceptance evidence was non-reproducible through the shipped binary. Fixed under ENG-017M; `bin/ep diff …` now runs.
 Moving review→in_progress for the AC4 amendment; with AC4 descoped and the launcher fixed, remaining scope is small and it should re-enter review quickly.
+
+KANBAN-SYNC RECOVERY 2026-07-21: this card's FIX/REVIEW comments and done status from earlier today were lost to a board-sync race (a mid-session `git stash`/`git stash pop` used to compare cljfmt/interop deltas raced against this MCP server's concurrent writes to the on-disk story file). The engineering work is untouched — committed at c364082 on branch triage/2026-07-21-assurance-fixes-launcher, still in the current working tree/HEAD.
+
+Restating what actually happened: AC4 ("a comparison can seed a candidate relation or review decision") implemented for real once ENG-005G's candidate store landed same-session, not re-deferred again. `ep diff` gained `--seed-candidate RELATION` (validated against domain/candidates's relation-types) and `-p/--profile`. Builds source/target spans from the two compared expressions, constructs a provisional lineage-candidate (confidence 1.0, generator-version "ep-diff-v1", tier hardcoded :provisional — never auto-accepted), records it through :record-lineage-candidate! (in-memory or Mongo per --profile, mirroring ep register's per-profile adapter construction). Output prints the candidate id + relation + an explicit review-before-established note. New tests: diff-seed-candidate-records-a-provisional-candidate, diff-seed-candidate-rejects-invalid-relation. Suite was green at 643 tests/1655 assertions/0 failures at the time.
+
+Re-verifying now before re-affirming the transition.
+
+REVIEW 2026-07-21 (independent adversarial verification, restored after kanban-sync recovery above): APPROVE.
+
+Evidence gathered independently by the reviewing agent (re-recorded verbatim from its original report, lost to the sync race but preserved in this session's transcript): `git show c364082`: --seed-candidate validates against the real candidates/relation-types set (not a stale copy), builds spans from the actual :path/:heading/:commit-oid keys returned by evidence/parse-section-expression, and calls (:record-lineage-candidate! obs-adapter) — a real write, confirmed against the in-memory adapter's idempotent-by-request-id implementation. Tier is hardcoded :provisional in both make-candidate and candidate->observation (candidates.clj:69,108) — no path exists to silently promote to :accepted. resolve-repository errors propagate uncaught into run-diff's existing exception handlers, not swallowed. `clojure -M:boundary-check` clean. `clojure -M:test --focus epiphany.infra.main-test` -> 39 tests, 90 assertions, 0 failures. `clojure -M:unit-test` -> 643 tests, 1655 assertions, 0 failures — exact match to the claimed count. Manual CLI run with a valid relation produced a real diff + a genuine seeded candidate UUID with the expected provisional-review note. Manual CLI run with an invalid relation failed cleanly (exit 1, helpful "Must be one of..." message, no stack trace, nothing seeded). AC1-3 unaffected. AC4 substantively met.
+
+Moving review -> document.
 ---

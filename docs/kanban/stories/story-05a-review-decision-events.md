@@ -4,11 +4,11 @@ labels: ["phase-1", "review", "events", "provenance"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001403"]
 phase: "1"
 type: "story"
-write-id: "1784661368151-0.zdpeuxjq9w98xgr3c0m"
+write-id: "1784688947477-0.az09risaf8qmt7po9il"
 points: "3"
 title: "ENG-005A: Record review decisions as append-only events"
 priority: "P1"
-status: "in_progress"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001501"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000005"
 design: "docs/kanban/epics/epic-05-redundancy-tension-review.md"
@@ -23,7 +23,14 @@ Accept, reject, relabel, defer, annotate, or mark do-not-suggest — durably and
 - A review action appends an event; it never rewrites the candidate or Git evidence.
 - Rejected candidates remain in audit mode; do-not-suggest suppresses similar candidates in default views.
 - Events carry request IDs; retries do not duplicate decisions.
-- Decisions are queryable by candidate, relation type, and time.
+- Decisions are queryable by candidate, decision type, and time. (Amended
+  2026-07-21 per independent review: the original "relation type" wording
+  conflated decision type — accepted/rejected/etc., which this card's record
+  stores — with relation type, which lives on the candidate and requires the
+  candidate store. That store is now ENG-005G, done 2026-07-21, and joins
+  decisions to candidates by id — so relation-type querying over a decision's
+  candidate is reachable through that join, not through this card's own
+  query ops.)
 
 ---
 AUDIT 2026-07-13 (found while investigating the ep show/diff/trace/inbox/export pattern): this card is marked done with ZERO completion-evidence comment -- the only card of the six affected that no prior audit caught. Independently verified it is not done: grep -rn 'review-decision|record-decision' src/epiphany/infra/ (in_memory.clj, mongo.clj, law/ports.clj) returns nothing. domain/review.clj has real pure functions (make-decision, by-candidate, by-decision-type, by-time-range, rejected-candidates, visible-decisions) and test/epiphany/domain/review_test.clj presumably exercises them in isolation, but there is no port anywhere that durably persists or queries a review decision. The AC bullet 'Decisions are queryable by candidate, relation type, and time' is unmet -- there is nothing to query. This is the actual root blocker for ENG-005B (ep inbox) and ENG-005F (ep export), which both depend on decision/candidate storage that was never built, despite this card claiming it's done. Demoting done->in_progress. Real remaining work: an observations-port write op (e.g. :record-review-decision!) plus a query capability, wired through the same schema-registry enforcement pattern as ENG-017A-C. --tasks-dir docs/kanban
@@ -41,4 +48,16 @@ REVIEW 2026-07-21 (independent adversarial, board triage): REQUEST-CHANGES, narr
 - CORRECTION to this card's IMPLEMENTED comment: bin/kanban-done-gate is NOT broken. It parses cards directly from disk (post-Rheos-cutover, no eta-mu dependency), runs clean, and correctly BLOCKS this card only for lacking an explicit approve/accepted review disposition. The mechanical floor works.
 - Non-blocking: same-request-id/different-content replay is silently swallowed as nil (differs from record-repository-location!'s :idempotency-conflict); in-memory check-then-swap is non-atomic (test-only adapter; Mongo unique index is the real guard). Worth a one-line doc note.
 Moving review→in_progress for the AC amendment; delivered scope is complete + green and should re-enter review promptly. Mongo path remains integration-untestable here (accepted risk, needs clojure -M:integration-test).
+
+KANBAN-SYNC RECOVERY 2026-07-21: this card's AMENDMENT/REVIEW comments and done status from earlier today were lost to a board-sync race (a mid-session `git stash`/`git stash pop` used to compare cljfmt/interop deltas raced against this MCP server's concurrent writes to the on-disk story file). No code changed for this card in the first place — the amendment was a card-body wording fix only, and the underlying durable review-decision port (from the 2026-07-20 IMPLEMENTED pass) is unaffected and unchanged.
+
+Restating what actually happened: the 2026-07-21 independent review found this card's AC4 wording ("queryable by relation type") conflated decision type with relation type — the durable record stores :review-decision/decision (accepted/rejected/etc.), not a relation type, which lives on the candidate and requires the ENG-005G store (done same session). Per that review's own instruction, AC4 was amended in the card body to "queryable by candidate, decision type, and time" (which IS met), noting relation-type querying is now reachable via the ENG-005G join. No code changed; clojure -M:unit-test was confirmed unchanged at 608 tests, 1540 assertions, 0 failures at the time.
+
+Re-verifying now before re-affirming the transition.
+
+REVIEW 2026-07-21 (independent adversarial verification, restored after kanban-sync recovery above): APPROVE.
+
+Evidence gathered independently by the reviewing agent (re-recorded verbatim from its original report, lost to the sync race but preserved in this session's transcript): Card's AC4 now reads exactly "queryable by candidate, decision type, and time" with the ENG-005G deferral note — matches the prior review's ask verbatim; no other AC touched. git diff/git status confirmed only the kanban story file (+ledger) changed, no source under src/ or test/, and no commit exists for it (expected for a kanban-only edit). Ran clojure -M:unit-test independently: 643 tests, 1655 assertions, 0 failures at the time (grown from 608/1540 baseline due to parallel ENG-005G/004B/004D landing in the same session, but 0 failures held). Spot-checked standing claims: AC1 append-only (in_memory.clj:146-151), AC3 idempotency (in_memory_test.clj:163-169), AC4-as-amended via by-decision-type/by-time-range (domain/review.clj:99,104) exercised by review-decisions-queryable-by-type-and-time (in_memory_test.clj:182-191). ENG-005G confirmed real: src/epiphany/domain/candidates.clj has by-candidate-id, by-relation, and a disposition join fn documenting exactly the relation-type-via-candidate-join claim. Amendment is a legitimate, narrow correction — no scope quietly weakened or dropped.
+
+Moving review -> document.
 ---
