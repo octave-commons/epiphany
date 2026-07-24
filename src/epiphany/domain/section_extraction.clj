@@ -8,7 +8,8 @@
   texts from root to this section, encoding the document hierarchy.
 
   No I/O. No Git. No storage. Pure data transformation."
-  (:require [epiphany.shape.markdown :as md]))
+  (:require [clojure.string :as string]
+            [epiphany.shape.markdown :as md]))
 
 (defn- heading-text
   "Extract a plain-text string from heading inlines."
@@ -16,7 +17,7 @@
   (->> inlines
        (map :inline/text)
        (apply str)
-       clojure.string/trim))
+       string/trim))
 
 (defn- make-section
   "Build a section map from a heading block, its body blocks, the
@@ -122,15 +123,15 @@
           with-paths)))
 
 (defn section-content-hash
-  "Compute a SHA-256 of the section body's raw content bytes."
+  "Compute a SHA-256 of the section body's raw content bytes.
+   Spans are UTF-8 byte offsets; slicing goes through
+   shape.markdown/slice (byte->char conversion) — raw subs throws
+   StringIndexOutOfBoundsException on non-ASCII documents."
   [blob section]
-  (let [body-span (:section/body-span section)
-        start (:span/start-byte body-span)
-        end   (:span/end-byte body-span)
-        raw   (subs blob start end)]
-    (let [digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
-                          (.getBytes raw "UTF-8"))]
-      (.encodeToString (java.util.Base64/getEncoder) digest))))
+  (let [raw (md/slice blob (:section/body-span section))
+        digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
+                        (.getBytes raw "UTF-8"))]
+    (.encodeToString (java.util.Base64/getEncoder) digest)))
 
 (defn make-extraction-record
   "Pure: construct an extraction observation map from extracted sections.

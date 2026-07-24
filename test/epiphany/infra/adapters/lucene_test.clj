@@ -61,6 +61,18 @@
       ((:index-sections! adapter) record)
       (is (seq ((:search adapter) "identity"))))))
 
+(deftest search-finds-non-ascii-body-content-test
+  (testing "body slicing is byte-offset correct: non-ASCII docs index full body text (blocker regression, ENG-003G review)"
+    (let [dir (temp-index-dir)
+          adapter (lucene/make-index-adapter {:index-dir dir})
+          source "# Café notes\n\nThe naïve zqxwvuniq body lives here.\n"
+          record (assoc (make-test-record source "docs/u.md" "abc" "def")
+                        :extraction/content source)]
+      ((:index-sections! adapter) record)
+      (is (seq ((:search adapter) "zqxwvuniq"))
+          "body text after non-ASCII characters must be indexed and searchable")
+      (is (seq ((:search adapter) "naïve"))))))
+
 (deftest search-no-results-test
   (testing "search returns empty vector for no matches"
     (let [dir (temp-index-dir)

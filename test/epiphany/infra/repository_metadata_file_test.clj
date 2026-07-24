@@ -6,6 +6,11 @@
 (defn- temporary-directory []
   (.toFile (java.nio.file.Files/createTempDirectory "epiphany-metadata-test" (make-array java.nio.file.attribute.FileAttribute 0))))
 
+(deftest read-returns-nil-when-metadata-file-absent
+  (let [common-git-dir (temporary-directory)]
+    (is (nil? (metadata-file/read! (.getPath common-git-dir)))
+        "a missing repository.edn means 'never registered', not an exception")))
+
 (deftest writes-minimal-metadata-beneath-common-git-directory
   (let [common-git-dir (temporary-directory)
         resource-id #uuid "7a6b0d26-1000-4000-8000-000000000001"

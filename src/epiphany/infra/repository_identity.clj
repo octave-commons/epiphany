@@ -30,17 +30,17 @@
                                             :git-error (:git-error (ex-data e))} e))))]
     (try
       (let [existing (metadata-file/read! common-git-dir)]
-        {:repository-path repository-path
-         :common-git-dir common-git-dir
-         :resource-id (:resource-id existing)
-         :created? false})
-      (catch java.io.FileNotFoundException _
-        (let [resource-id (random-uuid)]
-          (metadata-file/write! common-git-dir resource-id)
+        (if existing
           {:repository-path repository-path
            :common-git-dir common-git-dir
-           :resource-id resource-id
-           :created? true}))
+           :resource-id (:resource-id existing)
+           :created? false}
+          (let [resource-id (random-uuid)]
+            (metadata-file/write! common-git-dir resource-id)
+            {:repository-path repository-path
+             :common-git-dir common-git-dir
+             :resource-id resource-id
+             :created? true})))
       (catch clojure.lang.ExceptionInfo e
         (throw (ex-info "Unreadable repository metadata"
                         {:code :unreadable-git-metadata

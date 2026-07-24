@@ -72,7 +72,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -87,19 +88,20 @@
   "Convert a MongoDB Document back to a Clojure observation map.
    Preserves exact path strings."
   [^Document doc]
-  {:observation/type           (keyword (.getString doc "observation_type"))
-   :observation/request-id     (java.util.UUID/fromString (.getString doc "request_id"))
-   :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
-   :observation/observed-at    (.getDate doc "observed_at")
-   :observation/adapter-version (.getString doc "adapter_version")
-   :observation/schema-version (.getLong doc "schema_version")
-   :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
-   :repository/path            {:path/raw       (.getString doc "repository_path")
-                                 :path/source    (keyword (.getString doc "repository_path_source"))
-                                 :path/comparison :exact}
-   :repository/common-git-dir  {:path/raw       (.getString doc "common_git_dir")
-                                 :path/source    (keyword (.getString doc "common_git_dir_source"))
-                                 :path/comparison :exact}})
+  (cond-> {:observation/type           (keyword (.getString doc "observation_type"))
+           :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at    (.getDate doc "observed_at")
+           :observation/adapter-version (.getString doc "adapter_version")
+           :observation/schema-version (.getLong doc "schema_version")
+           :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
+           :repository/path            {:path/raw       (.getString doc "repository_path")
+                                        :path/source    (keyword (.getString doc "repository_path_source"))
+                                        :path/comparison :exact}
+           :repository/common-git-dir  {:path/raw       (.getString doc "common_git_dir")
+                                        :path/source    (keyword (.getString doc "common_git_dir_source"))
+                                        :path/comparison :exact}}
+    (.getString doc "request_id")
+    (assoc :observation/request-id (java.util.UUID/fromString (.getString doc "request_id")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Index management
@@ -233,7 +235,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -270,7 +273,7 @@
    :ingestion/repo-path        {:path/raw       (.getString doc "repo_path")
                                  :path/source    (keyword (.getString doc "repo_path_source"))
                                  :path/comparison :exact}
-   :ingestion/selected-refs    (.getList doc "selected_refs")
+   :ingestion/selected-refs    (vec (.get doc "selected_refs"))
    :ingestion/commit-count     (.getLong doc "commit_count")
    :ingestion/failure-count    (.getLong doc "failure_count")
    :ingestion/failures         (mapv (fn [^Document f]
@@ -283,7 +286,7 @@
                                          (assoc :failure/reason (.getString f "reason"))
                                          (.containsKey f "message")
                                          (assoc :failure/message (.getString f "message"))))
-                                     (.getList doc "failures"))})
+                                     (.get doc "failures"))})
 
 ;; ---------------------------------------------------------------------------
 ;; Projection checkpoint document conversion
@@ -294,7 +297,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -327,7 +331,7 @@
            :checkpoint/status           (keyword (.getString doc "status"))
            :checkpoint/processed-count  (.getLong doc "processed_count")}
     (.containsKey doc "last_processed_oid")
-    (assoc :checkpoint/last-processed-oid (java.util.UUID/fromString (.getString doc "last_processed_oid")))
+    (assoc :checkpoint/last-processed-oid (.getString doc "last_processed_oid"))
     (.containsKey doc "error_message")
     (assoc :checkpoint/error-message (.getString doc "error_message"))))
 
@@ -340,7 +344,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -385,7 +390,7 @@
    :extraction/section-count   (.getLong doc "section_count")
    :extraction/content-sha256  (.getString doc "content_sha256")
    :extraction/sections        (mapv (fn [^Document s]
-                                       {:section/heading-path            (vec (.getList s "heading_path"))
+                                       {:section/heading-path            (vec (.get s "heading_path"))
                                         :section/level                   (.getLong s "level")
                                         :section/ordinal                 (.getLong s "ordinal")
                                         :section/heading-span-start-byte (.getLong s "heading_span_start_byte")
@@ -394,7 +399,7 @@
                                         :section/body-span-end-byte      (.getLong s "body_span_end_byte")
                                         :section/body-span-start-line    (.getLong s "body_span_start_line")
                                         :section/body-span-end-line      (.getLong s "body_span_end_line")})
-                                     (.getList doc "sections"))})
+                                     (.get doc "sections"))})
 
 ;; ---------------------------------------------------------------------------
 ;; Revision-at-path document conversion
@@ -405,7 +410,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -455,7 +461,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -478,7 +485,6 @@
   "Convert a MongoDB Document back to a review-decision observation."
   [^Document doc]
   (cond-> {:observation/type             (keyword (.getString doc "observation_type"))
-           :observation/request-id       (java.util.UUID/fromString (.getString doc "request_id"))
            :observation/id               (java.util.UUID/fromString (.getString doc "observation_id"))
            :observation/observed-at      (.getDate doc "observed_at")
            :observation/adapter-version  (.getString doc "adapter_version")
@@ -488,6 +494,7 @@
            :review-decision/candidate-id (java.util.UUID/fromString (.getString doc "candidate_id"))
            :review-decision/decision     (keyword (.getString doc "decision"))
            :review-decision/decided-at   (.getDate doc "decided_at")}
+    (.getString doc "request_id") (assoc :observation/request-id (java.util.UUID/fromString (.getString doc "request_id")))
     (.containsKey doc "reason")     (assoc :review-decision/reason (.getString doc "reason"))
     (.containsKey doc "relabel_to") (assoc :review-decision/relabel-to (keyword (.getString doc "relabel_to")))
     (.containsKey doc "annotation") (assoc :review-decision/annotation (.getString doc "annotation"))
@@ -508,7 +515,7 @@
   "Convert a MongoDB sub-document back to a lineage-candidate span."
   [^Document doc]
   {:span/path-raw (.getString doc "path_raw")
-   :span/heading-path (vec (.getList doc "heading_path"))
+   :span/heading-path (vec (.get doc "heading_path"))
    :span/commit-oid (.getString doc "commit_oid")})
 
 (defn- lineage-candidate->doc
@@ -517,7 +524,8 @@
   (doto (Document.)
     (.put "_id" (str (:observation/id observation)))
     (.put "observation_type" (subs (str (:observation/type observation)) 1))
-    (.put "request_id" (str (:observation/request-id observation)))
+    (cond-> (:observation/request-id observation)
+      (.put "request_id" (str (:observation/request-id observation))))
     (.put "observation_id" (str (:observation/id observation)))
     (.put "observed_at" (:observation/observed-at observation))
     (.put "adapter_version" (:observation/adapter-version observation))
@@ -535,21 +543,22 @@
 (defn doc->lineage-candidate
   "Convert a MongoDB Document back to a lineage-candidate observation."
   [^Document doc]
-  {:observation/type             (keyword (.getString doc "observation_type"))
-   :observation/request-id       (java.util.UUID/fromString (.getString doc "request_id"))
-   :observation/id               (java.util.UUID/fromString (.getString doc "observation_id"))
-   :observation/observed-at      (.getDate doc "observed_at")
-   :observation/adapter-version  (.getString doc "adapter_version")
-   :observation/schema-version   (.getLong doc "schema_version")
-   :resource-id                  (java.util.UUID/fromString (.getString doc "resource_id"))
-   :lineage-candidate/id         (java.util.UUID/fromString (.getString doc "candidate_id"))
-   :lineage-candidate/relation   (keyword (.getString doc "relation"))
-   :lineage-candidate/generator-version (.getString doc "generator_version")
-   :lineage-candidate/confidence (.getDouble doc "confidence")
-   :lineage-candidate/source     (doc->span (.get doc "source"))
-   :lineage-candidate/target     (doc->span (.get doc "target"))
-   :lineage-candidate/tier       (keyword (.getString doc "tier"))
-   :lineage-candidate/generated-at (.getDate doc "generated_at")})
+  (cond-> {:observation/type             (keyword (.getString doc "observation_type"))
+           :observation/id               (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at      (.getDate doc "observed_at")
+           :observation/adapter-version  (.getString doc "adapter_version")
+           :observation/schema-version   (.getLong doc "schema_version")
+           :resource-id                  (java.util.UUID/fromString (.getString doc "resource_id"))
+           :lineage-candidate/id         (java.util.UUID/fromString (.getString doc "candidate_id"))
+           :lineage-candidate/relation   (keyword (.getString doc "relation"))
+           :lineage-candidate/generator-version (.getString doc "generator_version")
+           :lineage-candidate/confidence (.getDouble doc "confidence")
+           :lineage-candidate/source     (doc->span (.get doc "source"))
+           :lineage-candidate/target     (doc->span (.get doc "target"))
+           :lineage-candidate/tier       (keyword (.getString doc "tier"))
+           :lineage-candidate/generated-at (.getDate doc "generated_at")}
+    (.getString doc "request_id")
+    (assoc :observation/request-id (java.util.UUID/fromString (.getString doc "request_id")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Adapter implementation

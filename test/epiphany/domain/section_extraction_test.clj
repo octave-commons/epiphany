@@ -103,6 +103,21 @@
       (is (= [".ημ"] (:section/heading-path (first sections))))
       (is (= [".ημ" "Ελληνικά"] (:section/heading-path (second sections)))))))
 
+(deftest content-hash-tolerates-non-ascii-body-test
+  (testing "byte-offset spans slice non-ASCII bodies without throwing (blocker regression, ENG-003G review)"
+    (let [source "# Café notes\n\nThe naïve body lives here.\n"
+          doc (parse source)
+          sections (se/extract-sections doc)
+          record (se/make-extraction-record sections
+                                            #uuid "00000000-0000-0000-0000-000000000001"
+                                            "abc123" "docs/u.md" "def456" source "test-v1")]
+      (is (string? (:extraction/content-sha256 record)))
+      (is (= (se/section-content-hash source (first sections))
+             (se/section-content-hash source (first sections)))
+          "hash is deterministic")
+      (is (= (se/section-content-hash "# A\n\nplain body here..\n" (first (se/extract-sections (parse "# A\n\nplain body here..\n"))))
+             (se/section-content-hash "# A\n\nplain body here..\n" (first (se/extract-sections (parse "# A\n\nplain body here..\n")))))))))
+
 ;; ---------------------------------------------------------------------------
 ;; make-extraction-record
 

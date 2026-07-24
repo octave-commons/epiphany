@@ -242,6 +242,28 @@
         (is (zero? exit))
         (is (string/includes? out "notes.md"))))))
 
+(deftest ingest-non-ascii-body-is-fully-searchable
+  (testing "non-ASCII Markdown extracts and indexes end-to-end (blocker regression, ENG-003G review)"
+    (let [repo (temp-dir "epiphany-ingest-unicode")
+          index-dir (temp-dir "epiphany-idx")]
+      (sh! "git" "init" repo)
+      (sh! "git" "-C" repo "config" "user.email" "test@example.invalid")
+      (sh! "git" "-C" repo "config" "user.name" "Epiphany Test")
+      (spit (clojure.java.io/file repo "u.md")
+            "# Café notes\n\nThe naïve zqxwvuniq body lives here.\n")
+      (sh! "git" "-C" repo "add" "u.md")
+      (sh! "git" "-C" repo "commit" "-m" "add unicode notes")
+      (let [ingest (main/run ["ingest" repo "-p" "local" "--index-dir" index-dir])]
+        (is (zero? (:exit ingest)) (:out ingest))
+        (is (string/includes? (:out ingest) "Sections extracted:  1")
+            (str "non-ASCII documents must not silently fail extraction: " (:out ingest)))
+        (is (string/includes? (:out ingest) "Extraction failures: 0")))
+      (let [{:keys [exit out]} (main/run ["search" "zqxwvuniq" "--mode" "lexical"
+                                          "--index-dir" index-dir])]
+        (is (zero? exit))
+        (is (string/includes? out "u.md")
+            "body text after non-ASCII characters must be searchable")))))
+
 ;; ---------------------------------------------------------------------------
 ;; Show subcommand
 

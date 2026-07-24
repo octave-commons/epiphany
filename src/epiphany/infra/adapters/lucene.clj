@@ -20,14 +20,15 @@
   Uses StandardAnalyzer for text analysis — sufficient for English
   prose and code comments. Unicode paths are stored verbatim."
   (:require [clojure.edn :as edn]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [epiphany.shape.markdown :as md])
   (:import [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.document Document Field$Store TextField StringField
                                        KnnFloatVectorField]
            [org.apache.lucene.index IndexWriter IndexWriterConfig IndexWriterConfig$OpenMode
                                     DirectoryReader Term VectorSimilarityFunction]
            [org.apache.lucene.queryparser.classic QueryParser]
-           [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery BooleanQuery
+           [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery
                                       BooleanQuery$Builder BooleanClause$Occur]
            [org.apache.lucene.store FSDirectory]
            [java.nio.file Files Path]))
@@ -44,15 +45,17 @@
 
 (defn- section-body-text
   "Recover a section's body text by slicing the source content with the
-   section's recorded span offsets. Returns nil when the extraction record
-   carries no content (older callers) — the index then falls back to
-   heading-path + path only."
+   section's recorded span. Spans are UTF-8 BYTE offsets; slicing goes
+   through shape.markdown/slice, which converts to char offsets — raw
+   subs would corrupt or drop non-ASCII content. Returns nil when the
+   extraction record carries no content (older callers) — the index then
+   falls back to heading-path + path only."
   [extraction section]
   (when-let [content (:extraction/content extraction)]
     (let [start (:section/body-span-start-byte section)
           end   (:section/body-span-end-byte section)]
-      (when (and start end (<= 0 start end (count content)))
-        (subs content start end)))))
+      (when (and start end)
+        (md/slice content {:span/start-byte start :span/end-byte end})))))
 
 (defn- section->doc
   "Convert a section extraction record + section map into a Lucene Document."
