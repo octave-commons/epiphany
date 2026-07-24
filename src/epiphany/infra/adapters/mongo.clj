@@ -13,26 +13,53 @@
   Integration tests use an isolated database (\"epiphany-test\") and clean
   only collections they own."
 
-  (:require [epiphany.law.registry :as registry])
+  (:require [epiphany.law.operations :as operations]
+            [epiphany.law.registry :as registry])
    (:import [com.mongodb.client MongoClients MongoDatabase MongoCollection]
-           [com.mongodb.client.model IndexOptions Indexes]
-           [com.mongodb MongoWriteException]
-           [org.bson Document]
-           [java.util Date]))
+            [com.mongodb.client.model IndexOptions Indexes]
+            [com.mongodb MongoException MongoWriteException]
+            [org.bson Document]
+            [java.util Date]))
 
 ;; ---------------------------------------------------------------------------
-;; Schema validation
+;; Schema validation (ENG-017E: registry-driven, every write op)
+;;
+;; Every durable write validates against the schema registered for its
+;; operation in law/operations — including the registry version check —
+;; BEFORE any document encoding. Rejection throws ExceptionInfo with the
+;; shared :schema-validation-failed category; driver exceptions are
+;; normalized into shared categories and never escape raw.
 
-(def ^:private validate-location-observation
-  (registry/validator "observation/repository-location-v1"))
-
-(defn- validate! [observation]
-  (when-not (validate-location-observation observation)
-    (let [explanation (registry/explain "observation/repository-location-v1" observation)]
-      (throw (ex-info "Invalid repository-location observation"
+(defn- validate-write!
+  "Validate `observation` against the schema registered for `op`.
+   Throws ExceptionInfo {:code :schema-validation-failed} (or
+   :schema-version-mismatch / :unregistered-write-operation) on violation."
+  [op observation]
+  (let [entry (operations/schema-for-operation op)]
+    (when (:code entry)
+      (throw (ex-info (str "Unregistered write operation: " op)
+                      {:code :unregistered-write-operation
+                       :operation op})))
+    (when-let [explanation (registry/explain (:input-schema entry) observation)]
+      (throw (ex-info (str "Schema validation failed for " op)
                       {:code :schema-validation-failed
-                       :explanation explanation
-                       :observation observation})))))
+                       :operation op
+                       :schema/name (:input-schema entry)
+                       :explanation (mapv #(select-keys % [:path :schema :message])
+                                          (:errors explanation))})))
+    (when-let [version-error (operations/validate-version op observation)]
+      (throw (ex-info (str "Schema version mismatch for " op)
+                      (assoc version-error :observation observation))))))
+
+(defn- storage-error!
+  "Normalize a Mongo driver exception into the shared :storage-error
+   category. Never returns."
+  [op ^MongoException e]
+  (throw (ex-info (str "MongoDB write failed for " op ": " (.getMessage e))
+                  {:code :storage-error
+                   :operation op
+                   :driver-exception (.getName (class e))}
+                  e)))
 
 ;; ---------------------------------------------------------------------------
 ;; Document conversion
@@ -528,41 +555,56 @@
 ;; Adapter implementation
 
 (defn- doc->observation-equal?
-  "Check if two observation maps are semantically equal (ignoring envelope fields
-   that differ between writes)."
+  "Idempotency equality: the decoded stored observation must equal the
+   submitted record as a whole map — same semantics as the in-memory
+   reference adapter's `(= existing observation)`. Field-subset equality
+   would let a materially different record (e.g. a different
+   :observation/id under the same request-id) masquerade as a replay."
   [a b]
-  (and (= (:resource-id a) (:resource-id b))
-       (= (get-in a [:repository/path :path/raw])
-          (get-in b [:repository/path :path/raw]))
-       (= (get-in a [:repository/common-git-dir :path/raw])
-          (get-in b [:repository/common-git-dir :path/raw]))))
+  (= a b))
 
 (defn make-observations-adapter
   "Create an observations port backed by MongoDB.
    Returns a map matching the observations port schema."
   [conn]
   (letfn [(insert-or-idempotent! [observation]
-            (validate! observation)
+            (validate-write! :record-repository-location! observation)
             (let [^MongoCollection coll (:repository-location-collection conn)
                   request-id (str (:observation/request-id observation))
                   doc        (observation->doc observation)]
               (try
                 (.insertOne coll doc)
-                :inserted
+                nil
                 (catch MongoWriteException e
-                  (let [code (.getCode e)]
-                    (if (= 11000 code)
-                      (let [existing (-> (.find coll)
-                                          (.filter (Document. "request_id" request-id))
-                                         (.first))]
-                        (if (doc->observation-equal? (doc->observation existing) observation)
-                          :idempotent
-                          (throw (ex-info "Idempotency conflict: same request-id with different content"
-                                          {:code :idempotency/conflict
-                                           :request-id (:observation/request-id observation)
-                                           :existing (doc->observation existing)
-                                           :submitted observation}))))
-                      (throw e)))))))]
+                  (if (= 11000 (.getCode e))
+                    (let [existing (-> (.find coll)
+                                        (.filter (Document. "request_id" request-id))
+                                       (.first))]
+                      (if (and existing
+                               (doc->observation-equal? (doc->observation existing) observation))
+                        nil
+                        {:code :idempotency-conflict
+                         :request-id (:observation/request-id observation)
+                         :message "Same request-id with materially different content"}))
+                    (storage-error! :record-repository-location! e)))
+                (catch MongoException e
+                  (storage-error! :record-repository-location! e)))))
+          (validated-insert! [op collection-key doc-fn]
+            (fn [observation]
+              (validate-write! op observation)
+              (let [^MongoCollection coll (get conn collection-key)]
+                (try
+                  (.insertOne coll (doc-fn observation))
+                  nil
+                  (catch MongoWriteException e
+                    ;; Duplicate key on an append-only record: an exact
+                    ;; replay of an already-recorded observation is stable,
+                    ;; not an error (idempotent delivery).
+                    (if (= 11000 (.getCode e))
+                      nil
+                      (storage-error! op e)))
+                  (catch MongoException e
+                    (storage-error! op e))))))]
     {:find-by-request-id
      (fn [request-id]
        (let [^MongoCollection coll (:repository-location-collection conn)
@@ -576,52 +618,28 @@
      insert-or-idempotent!
 
      :record-ingestion-run!
-     (fn [observation]
-       (let [^MongoCollection coll (:ingestion-run-collection conn)]
-         (.insertOne coll (ingestion-run->doc observation))
-         nil))
+     (validated-insert! :record-ingestion-run!
+                        :ingestion-run-collection ingestion-run->doc)
 
       :record-checkpoint!
-      (fn [observation]
-        (let [^MongoCollection coll (:projection-checkpoint-collection conn)]
-          (.insertOne coll (checkpoint->doc observation))
-          nil))
+      (validated-insert! :record-checkpoint!
+                         :projection-checkpoint-collection checkpoint->doc)
 
       :record-section-extraction!
-      (fn [observation]
-        (let [^MongoCollection coll (:section-extraction-collection conn)]
-          (.insertOne coll (section-extraction->doc observation))
-          nil))
+      (validated-insert! :record-section-extraction!
+                         :section-extraction-collection section-extraction->doc)
 
       :record-revision-at-path!
-      (fn [observation]
-        (let [^MongoCollection coll (:revision-at-path-collection conn)]
-          (.insertOne coll (revision-at-path->doc observation))
-          nil))
+      (validated-insert! :record-revision-at-path!
+                         :revision-at-path-collection revision-at-path->doc)
 
       :record-review-decision!
-      (fn [observation]
-        (let [^MongoCollection coll (:review-decision-collection conn)]
-          (try
-            (.insertOne coll (review-decision->doc observation))
-            nil
-            (catch MongoWriteException e
-              ;; Duplicate request_id — idempotent replay, not an error.
-              (if (= 11000 (.getCode e))
-                nil
-                (throw e))))))
+      (validated-insert! :record-review-decision!
+                         :review-decision-collection review-decision->doc)
 
       :record-lineage-candidate!
-      (fn [observation]
-        (let [^MongoCollection coll (:lineage-candidate-collection conn)]
-          (try
-            (.insertOne coll (lineage-candidate->doc observation))
-            nil
-            (catch MongoWriteException e
-              ;; Duplicate request_id — idempotent replay, not an error.
-              (if (= 11000 (.getCode e))
-                nil
-                (throw e))))))
+      (validated-insert! :record-lineage-candidate!
+                         :lineage-candidate-collection lineage-candidate->doc)
 
       :list-ingestion-runs
      (fn [resource-id]
@@ -690,26 +708,26 @@
       :export-all
      (fn []
        {"repository-location" (mapv doc->observation
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:repository-location-collection conn))))
+                                    (.into (.find ^MongoCollection (:repository-location-collection conn))
+                                           (java.util.ArrayList.)))
         "ingestion-run"       (mapv doc->ingestion-run
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:ingestion-run-collection conn))))
+                                    (.into (.find ^MongoCollection (:ingestion-run-collection conn))
+                                           (java.util.ArrayList.)))
         "projection-checkpoint" (mapv doc->checkpoint
-                                      (.into (java.util.ArrayList.)
-                                             (.find ^MongoCollection (:projection-checkpoint-collection conn))))
+                                      (.into (.find ^MongoCollection (:projection-checkpoint-collection conn))
+                                             (java.util.ArrayList.)))
         "section-extraction"  (mapv doc->section-extraction
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:section-extraction-collection conn))))
+                                    (.into (.find ^MongoCollection (:section-extraction-collection conn))
+                                           (java.util.ArrayList.)))
         "revision-at-path"    (mapv doc->revision-at-path
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:revision-at-path-collection conn))))
+                                    (.into (.find ^MongoCollection (:revision-at-path-collection conn))
+                                           (java.util.ArrayList.)))
         "review-decision"     (mapv doc->review-decision
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:review-decision-collection conn))))
+                                    (.into (.find ^MongoCollection (:review-decision-collection conn))
+                                           (java.util.ArrayList.)))
         "lineage-candidate"   (mapv doc->lineage-candidate
-                                    (.into (java.util.ArrayList.)
-                                           (.find ^MongoCollection (:lineage-candidate-collection conn))))})
+                                    (.into (.find ^MongoCollection (:lineage-candidate-collection conn))
+                                           (java.util.ArrayList.)))})
 
       :import-all
      (fn [data]

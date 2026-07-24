@@ -79,16 +79,16 @@
                (get-in found [:repository/path :path/raw])))))))
 
 (deftest ^:integration idempotent-insert-returns-existing
-  (testing "Inserting the same request-id twice returns :idempotent"
+  (testing "Inserting the same request-id twice is a stable no-op (nil), matching the reference adapter"
     (let [obs-adapter (mongo/make-observations-adapter @conn)
           rid         #uuid "22222222-3333-4444-5555-666666666666"
           record      (test-observation {:observation/request-id rid})]
-      (is (= :inserted ((:record-repository-location! obs-adapter) record)))
-      (is (= :idempotent ((:record-repository-location! obs-adapter) record)))
+      (is (nil? ((:record-repository-location! obs-adapter) record)))
+      (is (nil? ((:record-repository-location! obs-adapter) record)))
       (is (= record ((:find-by-request-id obs-adapter) rid))))))
 
-(deftest ^:integration idempotency-conflict-throws
-  (testing "Same request-id with different content throws :idempotency/conflict"
+(deftest ^:integration idempotency-conflict-returns-shared-category
+  (testing "Same request-id with different content returns {:code :idempotency-conflict}, matching the reference adapter"
     (let [obs-adapter (mongo/make-observations-adapter @conn)
           rid         #uuid "33333333-4444-5555-6666-777777777777"
           record-a    (test-observation {:observation/request-id rid
@@ -100,9 +100,11 @@
                                                            :path/source    :filesystem-argument
                                                            :path/comparison :exact}})]
       ((:record-repository-location! obs-adapter) record-a)
-      (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                            #"Idempotency conflict"
-                            ((:record-repository-location! obs-adapter) record-b))))))
+      (let [result ((:record-repository-location! obs-adapter) record-b)]
+        (is (= :idempotency-conflict (:code result)))
+        (is (= rid (:request-id result))))
+      (is (= record-a ((:find-by-request-id obs-adapter) rid))
+          "the stored fact must remain the original"))))
 
 (deftest ^:integration unicode-paths-preserved
   (testing "Unicode path strings are preserved byte-for-byte"
@@ -133,7 +135,7 @@
                                    (test-observation {:observation/request-id rid})))))
                             (range 10))
           results     (mapv deref threads)]
-      (is (every? #{:inserted} results)))))
+      (is (every? nil? results)))))
 
 (deftest ^:integration find-nonexistent-returns-nil
   (testing "Looking up a nonexistent request-id returns nil"
@@ -141,10 +143,10 @@
       (is (nil? ((:find-by-request-id obs-adapter) #uuid "99999999-0000-1111-2222-333333333333"))))))
 
 (deftest ^:integration validates-schema
-  (testing "Invalid observation is rejected with schema error"
+  (testing "Invalid observation is rejected with the shared schema-validation category"
     (let [obs-adapter (mongo/make-observations-adapter @conn)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                             #"Invalid repository-location observation"
+                             #"Schema validation failed for :record-repository-location!"
                              ((:record-repository-location! obs-adapter)
                               {:observation/type :repository/location-observed
                                ;; missing required fields
