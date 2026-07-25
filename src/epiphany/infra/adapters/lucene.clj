@@ -9,11 +9,12 @@
   Two document types coexist in the same index:
 
   Section documents (doc_type=section):
-    - heading_path, path_raw, body_text, commit_oid, blob_oid,
+    - resource_id, heading_path, path_raw, body_text, commit_oid, blob_oid,
       extractor_version, section_level, section_ordinal
 
   Embedding documents (doc_type=embedding):
-    - embedding_path_raw, embedding_commit_oid, embedding_heading_path,
+    - resource_id, embedding_identity, embedding_path_raw,
+      embedding_commit_oid, embedding_heading_path,
       embedding_level, embedding_ordinal, embedding_model,
       embedding_version (stored int for filtering), knn_vector (KNN float)
 
@@ -38,7 +39,13 @@
 
 (def ^:private current-index-version
   "Bump when the index schema (fields, analyzers) changes."
-  2)
+  3)
+
+(defn- require-resource-id
+  [record]
+  (or (:resource-id record)
+      (throw (ex-info "Indexed records require :resource-id"
+                      {:code :invalid-index-record}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Document construction — sections
@@ -60,8 +67,10 @@
 (defn- section->doc
   "Convert a section extraction record + section map into a Lucene Document."
   [extraction section]
-  (let [doc (Document.)]
+  (let [resource-id (require-resource-id extraction)
+        doc (Document.)]
     (.add doc (StringField. "doc_type" "section" Field$Store/YES))
+    (.add doc (StringField. "resource_id" (str resource-id) Field$Store/YES))
     (.add doc (StringField. "path_raw"
                             (:extraction/path-raw extraction)
                             Field$Store/YES))
@@ -100,13 +109,30 @@
 ;; ---------------------------------------------------------------------------
 ;; Document construction — embeddings
 
+(defn- embedding-identity
+  "Stable identity for replacing one resource's exact section/model vector
+   during replay. Heading text is intentionally excluded: commit/path/
+   ordinal already identify the historical section, while model+version
+   identify the projection."
+  [embedding]
+  (pr-str [(require-resource-id embedding)
+           (:embedding/commit-oid embedding)
+           (:embedding/path-raw embedding)
+           (:embedding/ordinal embedding)
+           (:embedding/model embedding)
+           (:embedding-version embedding)]))
+
 (defn- embedding->doc
   "Convert an embedding record into a Lucene Document with a KNN vector field."
   [embedding]
-  (let [vector (:embedding/vector embedding)
+  (let [resource-id (require-resource-id embedding)
+        identity (embedding-identity embedding)
+        vector (:embedding/vector embedding)
         float-vec (float-array vector)
         doc (Document.)]
     (.add doc (StringField. "doc_type" "embedding" Field$Store/YES))
+    (.add doc (StringField. "resource_id" (str resource-id) Field$Store/YES))
+    (.add doc (StringField. "embedding_identity" identity Field$Store/NO))
     (.add doc (StringField. "embedding_path_raw"
                             (:embedding/path-raw embedding)
                             Field$Store/YES))
@@ -182,6 +208,10 @@
   [version]
   (TermQuery. (Term. "embedding_version" (str version))))
 
+(defn- resource-id-query
+  [resource-id]
+  (TermQuery. (Term. "resource_id" (str resource-id))))
+
 ;; ---------------------------------------------------------------------------
 ;; Port implementation
 
@@ -231,11 +261,14 @@
 
    :index-embeddings!
    (fn [embedding-records]
-     (let [docs (mapv embedding->doc embedding-records)]
-       (with-open [writer (open-writer index-dir)]
-         (doseq [^Document doc docs]
-           (.addDocument writer doc))
-         (.commit writer)))
+     (with-open [writer (open-writer index-dir)]
+       (doseq [embedding embedding-records]
+         (.updateDocument writer
+                          (Term. "embedding_identity"
+                                 (embedding-identity embedding))
+                          (embedding->doc embedding)))
+       (.commit writer))
+     (write-version-file! index-dir)
      nil)
 
    :knn-search
@@ -265,12 +298,16 @@
                    (.-scoreDocs hits)))))))
 
    :index-stats
-   (fn [_resource-id]
+   (fn [resource-id]
      (if (index-empty? index-dir)
        {:document-count 0}
        (with-open [reader (DirectoryReader/open (FSDirectory/open index-dir))]
-         (let [searcher (IndexSearcher. reader)]
-           {:document-count (.count searcher (doc-type-query "section"))}))))
+         (let [searcher (IndexSearcher. reader)
+               query (-> (BooleanQuery$Builder.)
+                         (.add (doc-type-query "section") BooleanClause$Occur/FILTER)
+                         (.add (resource-id-query resource-id) BooleanClause$Occur/FILTER)
+                         .build)]
+           {:document-count (.count searcher query)}))))
 
    :index-version
    (fn []

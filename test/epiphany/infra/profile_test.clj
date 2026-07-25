@@ -1,6 +1,7 @@
 (ns epiphany.infra.profile-test
   (:require [clojure.test :refer [deftest is]]
             [epiphany.infra.profile :as profile]
+            [epiphany.infra.adapters.mongo :as mongo]
             [epiphany.application.registration :as registration]))
 
 (defn- fake-common-git-dir [path]
@@ -92,6 +93,19 @@
          ((:record-repository-location! (:observations adapters))
           {:not-a-valid-observation true}))
         "the :services observations port is the validating wrapper")))
+
+(deftest services-profile-reports-durable-registrations
+  (let [expected [{:resource-id (random-uuid)}]
+        index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-profile-test" (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (with-redefs [mongo/list-repository-locations (fn [_] expected)]
+      (let [adapters (profile/resolve-adapters
+                      {:profile :services
+                       :mongo-conn {:fake true}
+                       :common-git-dir-fn fake-common-git-dir
+                       :index-dir index-dir})]
+        (is (= expected
+               ((:list-repositories (:repository-metadata adapters)))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Composition with application layer (bootstrap test)

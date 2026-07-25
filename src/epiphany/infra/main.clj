@@ -426,7 +426,10 @@
 ;; Ingest subcommand
 
 (def ingest-options
-  [["-p" "--profile PROFILE" "Profile for durable observations: :local (in-memory, one-shot) or :services (MongoDB, incremental)"
+  [["-r" "--request-id UUID" "Idempotency ID for replaying the complete ingest command"
+    :id :request-id
+    :parse-fn #(java.util.UUID/fromString %)]
+   ["-p" "--profile PROFILE" "Profile for durable observations: :local (in-memory, one-shot) or :services (MongoDB, incremental)"
     :id :profile
     :default :services
     :parse-fn keyword]
@@ -509,20 +512,62 @@
       ((:record-revision-at-path! observations) observation))
     (count new-observations)))
 
+(defn- hydrate-extraction-content
+  "Rehydrate one durable extraction from its canonical Git blob. Extraction
+   observations deliberately omit source bodies; embedding must recover the
+   exact historical blob before applying the recorded byte spans."
+  [repository-path extraction]
+  (let [blob-oid (:extraction/blob-oid extraction)
+        blob-result (git/read-blob repository-path blob-oid)]
+    (when-let [failure (:blob/failure blob-result)]
+      (throw (ex-info "Cannot rehydrate extraction source for embedding"
+                      {:code :blob-unreadable
+                       :blob-oid blob-oid
+                       :failure failure})))
+    (assoc extraction :extraction/content (:blob/content blob-result))))
+
 (defn- embed-extractions!
   "Embed every recorded section extraction for `resource-id` via the
-   :embeddings port and index the resulting vectors. Returns the count of
-   embedding records indexed."
-  [adapters resource-id]
+   :embeddings port and idempotently index the resulting vectors. Historical
+   source bodies are rehydrated from Git before section spans are sliced.
+   Returns the count of embedding records indexed."
+  [adapters repository-path resource-id ingestion-run-id request-id]
   (let [observations (:observations adapters)
-        revisions ((:list-revision-at-path-by-resource observations) resource-id)
-        extractions (into []
-                          (mapcat #((:list-section-extractions-by-revision observations)
-                                    (:revision-at-path/id %)))
-                          revisions)
-        embeddings ((:embed-sections! (:embeddings adapters)) extractions)]
-    ((:index-embeddings! (:index adapters)) embeddings)
-    (count embeddings)))
+        checkpoint (fn [status processed-count error-message]
+                     (ingestion/make-checkpoint-record
+                      (cond-> {:resource-id resource-id
+                               :projection-name "embedding"
+                               :projection-version 1
+                               :ingestion-run-id ingestion-run-id
+                               :status status
+                               :processed-count processed-count
+                               :request-id
+                               (ingestion/derived-request-id
+                                request-id
+                                (str "checkpoint:embedding:" (name status)))}
+                        error-message
+                        (assoc :error-message error-message))))]
+    (try
+      (let [revisions ((:list-revision-at-path-by-resource observations) resource-id)
+            extractions (into []
+                              (mapcat #((:list-section-extractions-by-revision observations)
+                                        (:revision-at-path/id %)))
+                              revisions)
+            hydrated (mapv #(hydrate-extraction-content repository-path %) extractions)
+            embeddings-port (:embeddings adapters)
+            embedding-version ((:embedding-version embeddings-port))
+            embeddings (mapv #(assoc %
+                                     :resource-id resource-id
+                                     :embedding-version embedding-version)
+                             ((:embed-sections! embeddings-port) hydrated))]
+        ((:index-embeddings! (:index adapters)) embeddings)
+        ((:record-checkpoint! observations)
+         (checkpoint :completed (count embeddings) nil))
+        (count embeddings))
+      (catch Exception error
+        ((:record-checkpoint! observations)
+         (checkpoint :failed 0 (.getMessage error)))
+        (throw error)))))
 
 (defn- run-ingest
   "Execute the ingest subcommand: register, walk commits, project
@@ -550,6 +595,7 @@
       :else
       (try
         (let [repository-path (first arguments)
+              request-id (or (:request-id options) (random-uuid))
               _ (resolve-common-git-dir repository-path)
               _ (when (:embed options)
                   (require-ollama! "Embedding ingestion"))]
@@ -557,7 +603,11 @@
            profile (:index-dir options)
            (fn [adapters]
              (let [{:keys [resource-id]}
-                   (registration/register! adapters {:repository-path repository-path})
+                   (registration/register!
+                    adapters
+                    {:repository-path repository-path
+                     :request-id (ingestion/derived-request-id
+                                  request-id "registration")})
                    observations (:observations adapters)
                    refs (string/split (:refs options) #",")
                    run-record (ingestion/run-ingestion
@@ -566,7 +616,8 @@
                                 :observations observations}
                                {:resource-id resource-id
                                 :repository-path repository-path
-                                :selected-refs refs})
+                                :selected-refs refs
+                                :request-id request-id})
                    revision-count (project-revision-at-path!
                                    observations repository-path resource-id refs)
                    projection (extraction/run-extraction-projection
@@ -575,13 +626,16 @@
                                 :index (:index adapters)}
                                {:resource-id resource-id
                                 :ingestion-run-id (:observation/id run-record)
-                                :repository-path repository-path})
+                                :repository-path repository-path
+                                :request-id request-id})
                    embedded (when (:embed options)
-                              (embed-extractions! adapters resource-id))]
+                              (embed-extractions! adapters repository-path resource-id
+                                                  (:observation/id run-record) request-id))]
                {:exit 0
                 :out (string/join
                       \newline
                       (cond-> [(str "Ingested: " repository-path)
+                               (str "  Request ID:          " request-id)
                                (str "  Resource ID:         " resource-id)
                                (str "  Commits traversed:   " (:ingestion/commit-count run-record))
                                (str "  Revisions observed:  " revision-count)
@@ -863,7 +917,8 @@
               right (resolve-evidence-request repo right-expr)
               result (diff/compare-evidence {:git (make-evidence-git-port repo)}
                                             {:left left :right right})
-              seeded (when (:seed-candidate options)
+              seeded (when (and (:seed-candidate options)
+                                (nil? (:diff/failure result)))
                        (seed-candidate! repo (:profile options) (:seed-candidate options) left right))
               output (str (case (:format options)
                             :edn (pr-str result)
@@ -1206,8 +1261,8 @@
               packet (-> (export/make-packet :resource-id (first resource-ids)
                                              :label (:label options)
                                              :generator-version "ep-export-v1")
-                         (export/populate-from-lineage-candidates candidates)
-                         (export/populate-from-review-decisions decisions)
+                         (export/populate-from-reviewed-lineage-candidates
+                          candidates decisions)
                          (export/add-content-hash))
               output (case (:format options)
                        :edn (export/packet->edn packet)

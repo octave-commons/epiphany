@@ -96,6 +96,18 @@
     (validate-write! op observation)
     (store-fn observation)))
 
+(defn- idempotent-record-fn
+  "Create a validating append function that treats an existing observation
+   ID as a replay. MongoDB enforces the same law through its unique `_id`."
+  [op records]
+  (fn [observation]
+    (validate-write! op observation)
+    (when-not (some #(= (:observation/id observation)
+                        (:observation/id %))
+                    @records)
+      (swap! records conj observation))
+    nil))
+
 ;; ---------------------------------------------------------------------------
 ;; Observations adapter
 
@@ -128,16 +140,10 @@
                                  (fn [observation]
                                    (swap! revision-at-paths conj observation)
                                    nil))
-     :record-ingestion-run! (validated-record-fn
-                              :record-ingestion-run!
-                              (fn [observation]
-                                (swap! ingestion-runs conj observation)
-                                nil))
-     :record-checkpoint! (validated-record-fn
-                           :record-checkpoint!
-                           (fn [observation]
-                             (swap! checkpoints conj observation)
-                             nil))
+     :record-ingestion-run! (idempotent-record-fn
+                             :record-ingestion-run! ingestion-runs)
+     :record-checkpoint! (idempotent-record-fn
+                          :record-checkpoint! checkpoints)
      :record-section-extraction! (validated-record-fn
                                    :record-section-extraction!
                                    (fn [observation]
@@ -265,6 +271,32 @@
 ;; ---------------------------------------------------------------------------
 ;; Index adapter
 
+(defn- embedding-identity
+  [embedding]
+  [(:resource-id embedding)
+   (:embedding/commit-oid embedding)
+   (:embedding/path-raw embedding)
+   (:embedding/ordinal embedding)
+   (:embedding/model embedding)
+   (:embedding-version embedding)])
+
+(defn- upsert-embeddings
+  [existing incoming]
+  (reduce
+   (fn [records embedding]
+     (let [identity (embedding-identity embedding)
+           existing-index
+           (first
+            (keep-indexed
+             (fn [index record]
+               (when (= identity (embedding-identity record)) index))
+             records))]
+       (if (some? existing-index)
+         (assoc records existing-index embedding)
+         (conj records embedding))))
+   (vec existing)
+   incoming))
+
 (defn- make-index-adapter
   "In-memory index port. Stores indexed documents in an atom vector.
    For unit testing — no full-text search, just stores and returns them."
@@ -293,7 +325,7 @@
                           :result/sections (:extraction/sections rec)})
                        matches)))
      :index-embeddings! (fn [embedding-records]
-                          (swap! embeddings into embedding-records)
+                          (swap! embeddings upsert-embeddings embedding-records)
                           nil)
      :knn-search (fn [{:keys [vector k embedding-version]}]
                    ;; Simple cosine similarity for unit testing
@@ -319,9 +351,13 @@
                               :result/model (:embedding/model emb)
                              :result/embedding-version (str (:embedding-version emb))})
                            scored)))
-     :index-stats (fn [_resource-id]
+     :index-stats (fn [resource-id]
                     {:document-count
-                     (reduce + 0 (map #(count (:extraction/sections %)) @docs))})
+                     (reduce + 0
+                             (map #(count (:extraction/sections %))
+                                  (filter (fn [record]
+                                            (= resource-id (:resource-id record)))
+                                          @docs)))})
      :index-version (fn [] @version)
      :rebuild-index! (fn [records]
                        (reset! docs (vec records))
@@ -344,14 +380,16 @@
                         (let [results
                               (mapcat (fn [rec]
                                         (map (fn [s]
-                                               {:embedding/path-raw (:extraction/path-raw rec)
+                                               {:resource-id (:resource-id rec)
+                                                :embedding/path-raw (:extraction/path-raw rec)
                                                 :embedding/commit-oid (:extraction/commit-oid rec)
                                                 :embedding/heading-path (:section/heading-path s)
                                                 :embedding/level (:section/level s)
                                                 :embedding/ordinal (:section/ordinal s)
                                                 :embedding/vector (vec (repeatedly 8 #(double (- (rand 2) 1))))
                                                 :embedding/model "test-embed"
-                                                :embedding/dimensions 8})
+                                                :embedding/dimensions 8
+                                                :embedding-version @version})
                                              (:extraction/sections rec)))
                                       extraction-records)]
                           (swap! embeddings into results)

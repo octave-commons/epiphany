@@ -234,9 +234,154 @@
 ;; populate-from-lineage/populate-from-decisions above predate the durable
 ;; candidate (ENG-005G) and review-decision (ENG-005A) stores and were
 ;; written against a speculative :lineage/*/:review/* shape no producer
-;; ever emitted. These two functions are the seam actually wired to `ep
-;; export`, consuming the real :lineage-candidate/*/:review-decision/*
-;; records those stores hold.
+;; ever emitted. The functions below consume the real
+;; :lineage-candidate/*/:review-decision/* records. Review decisions and
+;; candidates are joined before claims are emitted so a reviewed candidate
+;; cannot remain live in the inferred tier or lose its source evidence.
+
+(defn- span->evidence-ref
+  [span]
+  (make-evidence-ref
+   {:path-raw (:span/path-raw span)
+    :heading-path (:span/heading-path span)}
+   :context (when-let [commit-oid (:span/commit-oid span)]
+              (str "commit " commit-oid))))
+
+(defn- decision-time-ms
+  [value]
+  (cond
+    (instance? java.util.Date value) (.getTime ^java.util.Date value)
+    (number? value) (long value)
+    :else Long/MIN_VALUE))
+
+(defn- ordered-decisions
+  [decisions]
+  (sort-by (fn [decision]
+             [(decision-time-ms (:review-decision/decided-at decision))
+              (decision-time-ms (:observation/observed-at decision))
+              (str (:review-decision/id decision))])
+           decisions))
+
+(defn- review-state
+  "Fold append-only decisions into one effective candidate disposition.
+   Relabels persist across later decisions; annotations add context without
+   silently reopening an accepted or rejected candidate."
+  [candidate decisions]
+  (reduce
+   (fn [state decision]
+     (let [decision-type (:review-decision/decision decision)
+           state (assoc state :latest-decision decision)]
+       (case decision-type
+         :accepted (assoc state :disposition :accepted)
+         :rejected (assoc state :disposition :rejected)
+         :do-not-suggest (assoc state :disposition :do-not-suggest)
+         :deferred (assoc state :disposition :deferred)
+         :relabel (cond-> state
+                    (:review-decision/relabel-to decision)
+                    (assoc :relation (:review-decision/relabel-to decision)))
+         :annotated state
+         state)))
+   {:disposition :inferred
+    :relation (:lineage-candidate/relation candidate)
+    :decisions (vec (ordered-decisions decisions))}
+   (ordered-decisions decisions)))
+
+(defn- candidate-identifiers
+  [candidate target {:keys [disposition relation decisions latest-decision]}]
+  (cond-> {:lineage-candidate/id (:lineage-candidate/id candidate)
+           :lineage-candidate/relation relation
+           :lineage-candidate/original-relation (:lineage-candidate/relation candidate)
+           :lineage-candidate/generator-version (:lineage-candidate/generator-version candidate)
+           :source-commit-oid (get-in candidate [:lineage-candidate/source :span/commit-oid])
+           :target-commit-oid (get-in candidate [:lineage-candidate/target :span/commit-oid])
+           :target target
+           :review/disposition disposition
+           :review-decision/ids (mapv :review-decision/id decisions)}
+    latest-decision
+    (assoc :review-decision/id (:review-decision/id latest-decision)
+           :review-decision/decision (:review-decision/decision latest-decision)
+           :review-decision/decided-at (:review-decision/decided-at latest-decision))
+
+    (:review-decision/relabel-to latest-decision)
+    (assoc :review-decision/relabel-to (:review-decision/relabel-to latest-decision))
+
+    (:review-decision/suppressed latest-decision)
+    (assoc :review-decision/suppressed (:review-decision/suppressed latest-decision))))
+
+(defn- review-rationale
+  [candidate decisions]
+  (str/join
+   "; "
+   (remove str/blank?
+           (concat
+            [(or (:lineage-candidate/rationale candidate)
+                 (:lineage-candidate/evidence-summary candidate))]
+            (mapcat (juxt :review-decision/reason
+                          :review-decision/annotation)
+                    decisions)))))
+
+(defn- populate-candidate
+  [packet candidate decisions]
+  (let [state (review-state candidate decisions)
+        relation (or (:relation state) :related)
+        disposition (:disposition state)
+        source (span->evidence-ref (:lineage-candidate/source candidate))
+        target (span->evidence-ref (:lineage-candidate/target candidate))
+        source-path (get-in candidate [:lineage-candidate/source :span/path-raw])
+        target-path (get-in candidate [:lineage-candidate/target :span/path-raw])
+        rationale (review-rationale candidate (:decisions state))
+        identifiers (candidate-identifiers candidate target state)
+        statement (format "%s candidate: %s -> %s"
+                          (name relation) source-path target-path)]
+    (cond
+      (= :accepted disposition)
+      (add-accepted-interpretation
+       packet
+       (make-claim :accepted
+                   (str "Accepted " statement)
+                   source
+                   :confidence (:lineage-candidate/confidence candidate 0.0)
+                   :rationale rationale
+                   :identifiers identifiers))
+
+      (contains? #{:rejected :do-not-suggest} disposition)
+      (add-observed-fact
+       packet
+       (make-claim :observed
+                   (str (if (= :rejected disposition) "Rejected " "Suppressed ")
+                        statement)
+                   source
+                   :confidence 1.0
+                   :rationale rationale
+                   :identifiers identifiers))
+
+      :else
+      (add-inferred-candidate
+       packet
+       (make-claim :inferred
+                   statement
+                   source
+                   :confidence (:lineage-candidate/confidence candidate 0.0)
+                   :rationale rationale
+                   :identifiers identifiers)))))
+
+(defn populate-from-reviewed-lineage-candidates
+  "Populate a packet by joining durable candidates with their append-only
+   review decisions. Accepted candidates move to the accepted tier with
+   their original evidence; rejected and do-not-suggest candidates become
+   explicit observed review outcomes; relabels change the effective
+   inferred relation; undecided/deferred candidates remain inferred."
+  [packet candidates decisions]
+  (let [decisions-by-candidate
+        (group-by :review-decision/candidate-id decisions)]
+    (reduce
+     (fn [result candidate]
+       (populate-candidate
+        result
+        candidate
+        (get decisions-by-candidate (:lineage-candidate/id candidate) [])))
+     packet
+     candidates)))
 
 (defn populate-from-lineage-candidates
   "Populate packet from durable lineage-candidate records (the real
@@ -249,57 +394,7 @@
 
    Returns updated packet."
   [packet candidates]
-  (reduce (fn [pkt c]
-            (let [source (make-evidence-ref
-                          {:path-raw (get-in c [:lineage-candidate/source :span/path-raw])
-                           :heading-path (get-in c [:lineage-candidate/source :span/heading-path])})
-                  target (make-evidence-ref
-                          {:path-raw (get-in c [:lineage-candidate/target :span/path-raw])
-                           :heading-path (get-in c [:lineage-candidate/target :span/heading-path])})]
-              (add-inferred-candidate
-               pkt
-               (make-claim :inferred
-                           (format "%s candidate: %s -> %s"
-                                   (name (:lineage-candidate/relation c))
-                                   (get-in c [:lineage-candidate/source :span/path-raw])
-                                   (get-in c [:lineage-candidate/target :span/path-raw]))
-                           source
-                           :confidence (:lineage-candidate/confidence c 0.0)
-                           :identifiers {:lineage-candidate/id (:lineage-candidate/id c)
-                                         :lineage-candidate/relation (:lineage-candidate/relation c)
-                                         :lineage-candidate/generator-version (:lineage-candidate/generator-version c)
-                                         :target target}))))
-          packet
-          candidates))
-
-(defn populate-from-review-decisions
-  "Populate packet from durable review-decision records (the real
-   ENG-005A shape -- :review-decision/*, not the earlier speculative
-   :review/* shape). Only :accepted decisions become accepted
-   interpretations; rejected/relabel/deferred/annotated/do-not-suggest
-   never appear as an accepted claim, per the epistemic ladder --
-   a rejected candidate stays auditable, never established.
-
-   Parameters:
-     packet — packet map
-     decisions — seq of durable review-decision records
-
-   Returns updated packet."
-  [packet decisions]
-  (reduce (fn [pkt d]
-            (if (= :accepted (:review-decision/decision d))
-              (add-accepted-interpretation
-               pkt
-               (make-claim :accepted
-                           (or (:review-decision/reason d) "Accepted decision")
-                           (make-no-source "Review decision recorded without a direct evidence excerpt")
-                           :rationale (or (:review-decision/reason d) "")
-                           :identifiers {:review-decision/id (:review-decision/id d)
-                                         :review-decision/candidate-id (:review-decision/candidate-id d)
-                                         :review-decision/decided-at (:review-decision/decided-at d)}))
-              pkt))
-          packet
-          decisions))
+  (populate-from-reviewed-lineage-candidates packet candidates []))
 
 (defn populate-from-concepts
   "Populate packet from concepts and research questions.

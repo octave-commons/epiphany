@@ -66,7 +66,8 @@
       {:git {:common-git-directory common-git-dir-fn}
        :repository-metadata {:read repository-metadata-file/read!
                              :write repository-metadata-file/write!
-                             :list-repositories (fn [] [])}
+                             :list-repositories
+                             (fn [] (mongo/list-repository-locations mongo-conn))}
        :observations (mongo/make-observations-adapter mongo-conn)
        :index (lucene/make-index-adapter
                {:index-dir (if (instance? java.nio.file.Path index-dir)

@@ -46,7 +46,10 @@
    Otherwise returns the last-processed revision-at-path UUID."
   [observations ingestion-run-id]
   (let [checkpoints ((:list-checkpoints observations) ingestion-run-id)
-        completed (filter #(= :completed (:checkpoint/status %)) checkpoints)
+        completed (filter #(and (= projection-name
+                                   (:checkpoint/projection-name %))
+                                (= :completed (:checkpoint/status %)))
+                          checkpoints)
         latest (last (sort-by :checkpoint/processed-count completed))]
     (when latest
       {:last-processed-count (:checkpoint/processed-count latest)
@@ -124,7 +127,7 @@
       :projection/checkpoints-recorded int
       :projection/failures            [{:failure/reason string, :failure/message string}]
       :projection/completed           boolean}"
-  [ports {:keys [resource-id ingestion-run-id]}]
+  [ports {:keys [resource-id ingestion-run-id request-id]}]
   (let [observations (:observations ports)
         ;; List all revisions for this resource
         all-revisions ((:list-revision-at-path-by-resource observations) resource-id)
@@ -150,15 +153,20 @@
       (if (empty? remaining)
         (let [;; Record final checkpoint
               _ (when (pos? processed)
-                   (let [checkpoint (ingestion/make-checkpoint-record
+                   (let [processed-count (+ (or (:last-processed-count resume-point) 0)
+                                            processed)
+                         checkpoint (ingestion/make-checkpoint-record
                                     {:resource-id         resource-id
                                      :projection-name     projection-name
                                      :projection-version  projection-version
                                      :ingestion-run-id    ingestion-run-id
                                      :status              :completed
-                                     :processed-count     (+ (or (:last-processed-count resume-point) 0)
-                                                             processed)
-                                     :last-processed-oid  (:revision/commit-oid (last to-process))})]
+                                     :processed-count     processed-count
+                                     :last-processed-oid  (:revision/commit-oid (last to-process))
+                                     :request-id          (ingestion/derived-request-id
+                                                           request-id
+                                                           (str "checkpoint:section-extraction:completed:"
+                                                                processed-count))})]
                     ((:record-checkpoint! observations) checkpoint)
                     (inc checkpoints)))]
           {:projection/revisions-scanned   (count all-revisions)
@@ -185,7 +193,12 @@
                                :status              :running
                                :processed-count     (+ (or (:last-processed-count resume-point) 0)
                                                        new-processed)
-                               :last-processed-oid  (:revision/commit-oid revision)})]
+                               :last-processed-oid  (:revision/commit-oid revision)
+                               :request-id          (ingestion/derived-request-id
+                                                     request-id
+                                                     (str "checkpoint:section-extraction:running:"
+                                                          (+ (or (:last-processed-count resume-point) 0)
+                                                             new-processed)))})]
               ((:record-checkpoint! observations) checkpoint)))
           (recur (rest remaining)
                  new-processed

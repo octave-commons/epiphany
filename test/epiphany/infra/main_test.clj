@@ -6,6 +6,7 @@
             [clojure.test :refer [deftest is testing]]
             [epiphany.application.validation :as validation]
             [epiphany.infra.main :as main]
+            [epiphany.infra.git :as git]
             [epiphany.infra.profile :as profile]
             [epiphany.domain.export :as export]))
 
@@ -219,7 +220,8 @@
   (let [{:keys [exit out]} (main/run ["ingest" "--help"])]
     (is (zero? exit))
     (is (string/includes? out "Usage: ep ingest"))
-    (is (string/includes? out "--index-dir"))))
+    (is (string/includes? out "--index-dir"))
+    (is (string/includes? out "--request-id"))))
 
 (deftest ingest-rejects-invalid-profile
   (let [{:keys [exit out]} (main/run ["ingest" "-p" "nope" "."])]
@@ -266,6 +268,66 @@
         (is (zero? exit))
         (is (string/includes? out "u.md")
             "body text after non-ASCII characters must be searchable")))))
+
+(deftest embedding-rehydrates-historical-source-and-stamps-projection-identity
+  (testing "stored extraction metadata is joined back to its Git blob before embedding"
+    (let [resource-id (random-uuid)
+          revision-id (random-uuid)
+          ingestion-run-id (random-uuid)
+          request-id (random-uuid)
+          extraction {:resource-id resource-id
+                      :extraction/blob-oid "blob-1"
+                      :extraction/commit-oid "commit-1"
+                      :extraction/path-raw "notes.md"
+                      :extraction/sections []}
+          embedded-input (atom nil)
+          indexed (atom nil)
+          checkpoints (atom [])
+          adapters
+          {:observations
+           {:list-revision-at-path-by-resource
+            (fn [requested-resource-id]
+              (is (= resource-id requested-resource-id))
+              [{:revision-at-path/id revision-id}])
+            :list-section-extractions-by-revision
+            (fn [requested-revision-id]
+              (is (= revision-id requested-revision-id))
+              [extraction])
+            :record-checkpoint! (fn [checkpoint]
+                                  (swap! checkpoints conj checkpoint))}
+           :embeddings
+           {:embed-sections!
+            (fn [records]
+              (reset! embedded-input records)
+              [{:embedding/path-raw "notes.md"
+                :embedding/commit-oid "commit-1"
+                :embedding/heading-path ["Notes"]
+                :embedding/level 1
+                :embedding/ordinal 0
+                :embedding/model "test"
+                :embedding/vector [1.0 0.0]}])
+            :embedding-version (fn [] 17)}
+           :index
+           {:index-embeddings! (fn [records] (reset! indexed records))}}
+          embed! (ns-resolve 'epiphany.infra.main 'embed-extractions!)]
+      (with-redefs [git/read-blob
+                    (fn [repository-path blob-oid]
+                      (is (= "/repo" repository-path))
+                      (is (= "blob-1" blob-oid))
+                      {:blob/content "# Notes\n\nCanonical body.\n"})]
+        (is (= 1 (embed! adapters "/repo" resource-id
+                         ingestion-run-id request-id))))
+      (is (= "# Notes\n\nCanonical body.\n"
+             (:extraction/content (first @embedded-input))))
+      (is (= resource-id (:resource-id (first @indexed))))
+      (is (= 17 (:embedding-version (first @indexed))))
+      (is (= 1 (count @checkpoints)))
+      (is (= "embedding"
+             (:checkpoint/projection-name (first @checkpoints))))
+      (is (= :completed (:checkpoint/status (first @checkpoints))))
+      (is (= ingestion-run-id
+             (:checkpoint/ingestion-run-id (first @checkpoints))))
+      (is (uuid? (:observation/request-id (first @checkpoints)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Show subcommand
@@ -361,6 +423,20 @@
                                       "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
     (is (= 1 exit))
     (is (string/includes? out "Must be one of"))))
+
+(deftest diff-does-not-seed-a-candidate-when-evidence-is-unavailable
+  (testing "a failed comparison cannot leave a durable provisional relation"
+    (let [seed-calls (atom 0)
+          seed-var (ns-resolve 'epiphany.infra.main 'seed-candidate!)]
+      (with-redefs-fn
+        {seed-var (fn [& _] (swap! seed-calls inc))}
+        (fn []
+          (let [{:keys [exit out]}
+                (main/run ["diff" "--seed-candidate" "continues"
+                           "definitely-missing.md@HEAD" "AGENTS.md@HEAD"])]
+            (is (= 1 exit))
+            (is (zero? @seed-calls))
+            (is (not (string/includes? out "Seeded candidate")))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Trace subcommand

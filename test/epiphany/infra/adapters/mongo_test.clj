@@ -82,7 +82,9 @@
         (is (= rid (:observation/request-id found)))
         (is (= (:resource-id record) (:resource-id found)))
         (is (= (get-in record [:repository/path :path/raw])
-               (get-in found [:repository/path :path/raw])))))))
+               (get-in found [:repository/path :path/raw])))
+        (is (= [found] (mongo/list-repository-locations @conn))
+            "registration status reads the durable repository observations")))))
 
 (deftest ^:integration idempotent-insert-returns-existing
   (testing "Inserting the same request-id twice is a stable no-op (nil), matching the reference adapter"
@@ -182,6 +184,7 @@
                        :ingestion/failures         [{:failure/reason "object-unreadable"
                                                       :failure/message "boom"}]}]
       ((:record-ingestion-run! obs-adapter) record)
+      ((:record-ingestion-run! obs-adapter) record)
       ;; Verify the run was recorded (find by _id)
       (let [coll (:ingestion-run-collection @conn)
             doc (-> (.find coll)
@@ -189,7 +192,9 @@
                     (.first))]
         (is (some? doc))
         (is (= 42 (.getLong doc "commit_count")))
-        (is (= 1 (.getLong doc "failure_count")))))))
+        (is (= 1 (.getLong doc "failure_count")))
+        (is (= 1 (.countDocuments coll (Document. "_id" (str rid))))
+            "a retried run record is not duplicated")))))
 
 (deftest ^:integration record-checkpoint
   (testing "Record a projection checkpoint"
@@ -209,13 +214,16 @@
                        :checkpoint/status           :completed
                        :checkpoint/processed-count  42}]
       ((:record-checkpoint! obs-adapter) record)
+      ((:record-checkpoint! obs-adapter) record)
       (let [coll (:projection-checkpoint-collection @conn)
             doc (-> (.find coll)
                     (.filter (Document. "projection_name" "revision-at-path"))
                     (.first))]
         (is (some? doc))
         (is (= 42 (.getLong doc "processed_count")))
-        (is (= "completed" (.getString doc "status")))))))
+        (is (= "completed" (.getString doc "status")))
+        (is (= 1 (.countDocuments coll (Document. "_id" (str (:observation/id record)))))
+            "a retried checkpoint is not duplicated")))))
 
 (deftest ^:integration checkpoint-without-request-id-round-trips
   (testing "an absent optional request id remains absent when decoded"

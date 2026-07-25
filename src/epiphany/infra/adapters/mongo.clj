@@ -796,3 +796,13 @@
      (fn []
        (clean-test-db! conn)
        (ensure-indexes! conn))}))
+
+(defn list-repository-locations
+  "List the durable repository-location observations used by cross-stage
+   registration status. This is an infrastructure read model; Git-local
+   repository.edn remains the identity source for an individual checkout."
+  [conn]
+  (let [^MongoCollection collection (:repository-location-collection conn)
+        documents (.into (.find collection) (java.util.ArrayList.))]
+    (mapv #(decode-validated "repository-location" doc->observation %)
+          documents)))

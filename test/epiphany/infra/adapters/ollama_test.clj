@@ -1,5 +1,6 @@
 (ns epiphany.infra.adapters.ollama-test
   (:require [clojure.test :refer [deftest is testing]]
+            [clojure.string :as string]
             [epiphany.infra.adapters.ollama :as ollama]
             [epiphany.domain.section-extraction :as se]
             [epiphany.shape.markdown :as md]))
@@ -11,6 +12,33 @@
     (se/make-extraction-record sections
                                #uuid "00000000-0000-0000-0000-000000000001"
                                commit-oid path blob-oid blob "test-v1")))
+
+;; ---------------------------------------------------------------------------
+;; Hermetic input construction tests
+
+(deftest embed-sections-includes-the-historical-section-body
+  (testing "embedding input slices the recorded UTF-8 body span, not only heading/path metadata"
+    (let [resource-id (random-uuid)
+          source "# Café\n\nThe naïve zqxwvuniq body is canonical.\n"
+          record (assoc (make-test-record source "notes.md" "c1" "b1")
+                        :resource-id resource-id
+                        :extraction/content source)
+          captured-texts (atom nil)
+          adapter (ollama/make-embeddings-adapter {:model "test-model"})]
+      (with-redefs-fn
+        {(ns-resolve 'epiphany.infra.adapters.ollama 'embed-request)
+         (fn [_client _base-url _model texts _opts]
+           (reset! captured-texts texts)
+           {:embeddings (mapv (fn [_] [1.0 0.0]) texts)})}
+        (fn []
+          (let [results ((:embed-sections! adapter) [record])
+                input (first @captured-texts)
+                result (first results)]
+            (is (string/includes? input "zqxwvuniq"))
+            (is (string/includes? input "naïve"))
+            (is (string/includes? input "notes.md"))
+            (is (= resource-id (:resource-id result)))
+            (is (integer? (:embedding-version result)))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Live Ollama integration tests (require running Ollama with nomic-embed-text)

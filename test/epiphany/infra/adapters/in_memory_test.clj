@@ -87,6 +87,73 @@
               (in-memory/make {}))))
 
 ;; ---------------------------------------------------------------------------
+;; Rebuildable index behavior
+
+(deftest in-memory-index-stats-are-resource-scoped
+  (let [index (:index (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        other-resource-id (random-uuid)]
+    ((:index-sections! index)
+     {:resource-id resource-id
+      :extraction/sections [{:section/ordinal 0} {:section/ordinal 1}]})
+    ((:index-sections! index)
+     {:resource-id other-resource-id
+      :extraction/sections [{:section/ordinal 0}]})
+    (is (= {:document-count 2} ((:index-stats index) resource-id)))
+    (is (= {:document-count 1} ((:index-stats index) other-resource-id)))))
+
+(deftest in-memory-embedding-replay-is-idempotent
+  (let [index (:index (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        embedding {:resource-id resource-id
+                   :embedding/path-raw "docs/a.md"
+                   :embedding/commit-oid "1111111111111111111111111111111111111111"
+                   :embedding/heading-path ["A"]
+                   :embedding/ordinal 0
+                   :embedding/model "test"
+                   :embedding-version 1
+                   :embedding/vector [1.0 0.0]}]
+    ((:index-embeddings! index) [embedding])
+    ((:index-embeddings! index) [embedding])
+    (is (= 1
+           (count ((:knn-search index)
+                   {:vector [1.0 0.0] :k 10 :embedding-version 1}))))))
+
+(deftest ingestion-run-and-checkpoint-replays-are-idempotent
+  (let [observations (:observations
+                      (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        run-id (random-uuid)
+        run {:observation/type :ingestion/run-completed
+             :observation/id run-id
+             :observation/observed-at (java.util.Date.)
+             :observation/adapter-version "test"
+             :observation/schema-version 1
+             :resource-id resource-id
+             :ingestion/repo-path {:path/raw "/repo"
+                                   :path/source :filesystem-argument
+                                   :path/comparison :exact}
+             :ingestion/selected-refs ["HEAD"]
+             :ingestion/commit-count 0
+             :ingestion/failure-count 0
+             :ingestion/failures []}
+        checkpoint {:observation/type :projection/checkpoint-recorded
+                    :observation/id (random-uuid)
+                    :observation/observed-at (java.util.Date.)
+                    :observation/adapter-version "test"
+                    :observation/schema-version 1
+                    :resource-id resource-id
+                    :checkpoint/projection-name "embedding"
+                    :checkpoint/projection-version 1
+                    :checkpoint/ingestion-run-id run-id
+                    :checkpoint/status :completed
+                    :checkpoint/processed-count 0}]
+    ((:record-ingestion-run! observations) run)
+    ((:record-ingestion-run! observations) run)
+    ((:record-checkpoint! observations) checkpoint)
+    ((:record-checkpoint! observations) checkpoint)
+    (let [snapshot ((:export-all observations))]
+      (is (= 1 (count (get snapshot "ingestion-run"))))
+      (is (= 1 (count (get snapshot "projection-checkpoint")))))))
+
+;; ---------------------------------------------------------------------------
 ;; ENG-017C: Contract enforcement
 
 (deftest invalid-write-rejected-before-delegation

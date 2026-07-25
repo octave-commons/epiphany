@@ -10,19 +10,24 @@
 (defn- temp-index-dir []
   (Files/createTempDirectory "lucene-test" (into-array FileAttribute [])))
 
+(def ^:private test-resource-id
+  #uuid "10000000-0000-0000-0000-000000000001")
+
 (defn- make-test-record
   "Create a section extraction record from markdown source."
   [source path commit-oid blob-oid]
   (let [doc (md/parse source)
         sections (se/extract-sections doc)
         blob source]
-    (se/make-extraction-record sections
-                               #uuid "00000000-0000-0000-0000-000000000001"
-                               commit-oid
-                               path
-                               blob-oid
-                               blob
-                               "test-v1")))
+    (assoc (se/make-extraction-record
+            sections
+            #uuid "00000000-0000-0000-0000-000000000001"
+            commit-oid
+            path
+            blob-oid
+            blob
+            "test-v1")
+           :resource-id test-resource-id)))
 
 ;; ---------------------------------------------------------------------------
 ;; index-sections! + search
@@ -92,18 +97,29 @@
       (is (= 1 (count ((:search adapter) "Second")))))))
 
 (deftest index-stats-report-real-document-count-test
-  (testing "index stats expose the documents status actually queries"
+  (testing "index stats count only sections belonging to the requested resource"
     (let [dir (temp-index-dir)
           adapter (lucene/make-index-adapter {:index-dir dir})
+          other-resource-id (random-uuid)
           record (make-test-record "# First\n\nAlpha.\n\n# Second\n\nBeta."
-                                   "doc.md" "c1" "b1")]
+                                   "doc.md" "c1" "b1")
+          other-record (assoc
+                        (make-test-record "# Other\n\nGamma."
+                                          "other.md" "c2" "b2")
+                        :resource-id other-resource-id)]
       (is (= {:document-count 0}
-             ((:index-stats adapter) (random-uuid))))
+             ((:index-stats adapter) test-resource-id)))
       ((:index-sections! adapter) record)
       (is (= {:document-count 2}
-             ((:index-stats adapter) (random-uuid))))
+             ((:index-stats adapter) test-resource-id)))
+      ((:index-sections! adapter) other-record)
+      (is (= {:document-count 2}
+             ((:index-stats adapter) test-resource-id)))
+      (is (= {:document-count 1}
+             ((:index-stats adapter) other-resource-id)))
       ((:index-embeddings! adapter)
-       [{:embedding/path-raw "doc.md"
+       [{:resource-id test-resource-id
+         :embedding/path-raw "doc.md"
          :embedding/commit-oid "c1"
          :embedding/heading-path ["First"]
          :embedding/level 1
@@ -112,8 +128,27 @@
          :embedding-version 1
          :embedding/vector [1.0 0.0]}])
       (is (= {:document-count 2}
-             ((:index-stats adapter) (random-uuid)))
+             ((:index-stats adapter) test-resource-id))
           "embedding vectors are not section-indexing documents"))))
+
+(deftest embedding-indexing-is-idempotent-test
+  (testing "replaying an exact resource/section/model embedding replaces its vector document"
+    (let [dir (temp-index-dir)
+          adapter (lucene/make-index-adapter {:index-dir dir})
+          embedding {:resource-id test-resource-id
+                     :embedding/path-raw "doc.md"
+                     :embedding/commit-oid "c1"
+                     :embedding/heading-path ["First"]
+                     :embedding/level 1
+                     :embedding/ordinal 0
+                     :embedding/model "test"
+                     :embedding-version 1
+                     :embedding/vector [1.0 0.0]}]
+      ((:index-embeddings! adapter) [embedding])
+      ((:index-embeddings! adapter) [embedding])
+      (is (= 1
+             (count ((:knn-search adapter)
+                     {:vector [1.0 0.0] :k 10 :embedding-version 1})))))))
 
 (deftest multiple-files-test
   (testing "sections from different files are indexed separately"
