@@ -5,13 +5,13 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001708", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784960869271-0.48g6tq6ug6cvj42eosz"
+write-id: "1784962760468-0.25bkb6mcwudje9u2okg"
 points: "5"
 verification: ["unit-test", "lint"]
 risk: "high"
 title: "ENG-017J: Pilot mutation checks and CI assurance evidence"
 priority: "P2"
-status: "review"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001710"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -132,4 +132,14 @@ CI assurance evidence:
 Adversarial-case handling (ADR-004 §8): docs/process/adversarial-case-handling.md — public/protected/rotated classes, companion-repo location, rotation-via-CI-secret rules, fork-PR trust boundary. Specification only; companion repo + rotation are follow-up (recorded as current-state gaps in the doc).
 
 Gates: 743 tests, 2005 assertions, 0 failures; kondo clean on new files.
+
+AUDIT 2026-07-25 (ultra-code wave, .ημ/workflows/eng-017j-review.edn): 3 lenses, 18 skeptic votes, quorum 2. 4 confirmed findings (3 unique; 2 BLOCKERS), ALL FIXED in 5f16d5b:
+1. BLOCKER — seed-log spit crashed the unit suite on fresh checkouts (spit doesn't create target/); the skeptics reproduced by deleting target/. Fixed with io/make-parents; verified by rm'ing the seed log and re-running the full suite green.
+2. BLOCKER — the assurance-evidence workflow job lacked if: always(), so a failing build would skip artifact generation — an artifact that can't record a failure. Fixed.
+3. should-fix — artifact schema lived in tools/, not law/ as the card's dogfood AC requires. Moved to law/assurance + registered in law/registry.
+8 other findings refuted by quorum. Gates after fixes: 743 tests, 2005 assertions, 0 failures; kondo clean.
+
+REVIEW 2026-07-25: approve. All confirmed findings from the ultra-code wave fixed in 5f16d5b with verification (fresh-checkout seed-log regeneration proven, job runs always, schema in law/). Gates: 743 tests, 2005 assertions, 0 failures.
+
+GATE 2026-07-25: bin/kanban-done-gate exit 0. document->done via rheos MCP failed server-side ('paths[0]' type error — known bug, chore card exists). Status advanced by direct frontmatter edit with this audit trail.
 ---
