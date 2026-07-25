@@ -1,19 +1,19 @@
 ---
-uuid: "a51d82f0-be84-4fa5-95aa-d777143d7856"
-title: "ENG-017N: Assurance-kernel hardening (prod wrapper wiring, write-op classifier guard, law-suite generalization)"
-status: "incoming"
-priority: "P2"
 labels: ["quality", "schemas", "verification", "hardening", "phase-1"]
-created_at: "2026-07-21T20:06:07.378Z"
 parent: "eng-017b-enforce-schemas-through-validating-observation-ports"
-points: "3"
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784943216531-0.mggrv5myts690tiyy6"
+points: "3"
 verification: ["unit-test"]
 risk: "low"
+title: "ENG-017N: Assurance-kernel hardening (prod wrapper wiring, write-op classifier guard, law-suite generalization)"
+priority: "P2"
+status: "done"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-write-id: "1784664367378-0.kpqf9ctilqek1a87820"
+uuid: "a51d82f0-be84-4fa5-95aa-d777143d7856"
+created_at: "2026-07-21T20:06:07.378Z"
 ---
 
 # ENG-017N: Assurance-kernel hardening
@@ -79,3 +79,22 @@ ENG-017E/017I; coordinate scope.
 
 Test output, `git diff --stat`, reviewer named at done.
 
+---
+TRIAGE 2026-07-24: incoming -> accepted. Points 3 honest across the three bundled hardening items. Parent ENG-017B done; reviewed cards 017A/017D done. Acceptance criteria present, ADR link present. Scope coordination note: item 3 (law-harness generalization) overlaps ENG-017E/017I — implementer must check those cards' status before writing fixtures and take only the harness-generalization part, leaving adapter-specific runs to 017E. Also note: ENG-003G (in review) added more direct adapter construction in main.clj (make-ingest-adapters, make-durable-index-ports) — item 1's retarget onto resolve-adapters must cover these new call sites too.
+
+IMPLEMENTED 2026-07-24 (commit 06cd710).
+
+Item 1 (composition root): profile/resolve-raw-adapters :services now composes real adapters — requires explicit :mongo-conn (lifecycle stays with caller) and :index-dir, real Git-local repository.edn metadata port (ADR-001), Mongo observations, durable Lucene index, Ollama embeddings. main.clj retargeted: run-register, run-status (make-status-adapters), run-ingest (make-ingest-adapters), run-serve (both profiles), with-observations-adapter. Both ADR-004 layers are now live on production CLI paths. Tests: with-redefs spy proves validating-observations-port is invoked by register/inbox-decide/status CLI paths; :services composition proven with a fake conn map (construction is I/O-free); invalid write rejected through the wrapper on a CLI-constructed port.
+
+Item 2 (classifier guard): law/operations gains read-operation? (:find-*/:list-*/:export-all), destructive-port-operations (explicit #{:clear-all!}), and unclassified-port-operations — a port op matching no class fails the completeness suite. A future :append!-style write can no longer slip past the registry AND the wrapper silently; guard test proves the teeth (:append! classifies as nothing).
+
+Item 3 (harness generalization): law suite is now record-type-parametric — op-fixtures for all 7 write ops. Universal laws (valid-write-accepted, invalid-write-rejected, rejection-leaves-state-unchanged) judge every op. Idempotency laws are kind-parametric: :full (repository-location: replay nil + changed-content conflict map), :first-write-wins (review-decision, lineage-candidate: any replay nil, original retained — matches BOTH adapters' actual semantics, verified differentially), :none (others). Mongo law suite re-run: all ops pass, including the new coverage. Scope coordination honored: no adapter-specific enforcement changes (017E), no schema changes.
+
+Gates: clojure -M:unit-test => 712 tests, 1876 assertions, 0 failures. clojure -M:integration-test => 17 tests, 96 assertions, only the 2 pre-existing baseline failures. boundary-check clean. Interop baseline regenerated.
+
+AUDIT 2026-07-25 (ultra-code wave, .ημ/workflows/eng-017n-review.edn): 3 lenses, 18 skeptic votes, quorum 2. 2 confirmed findings (same root, both should-fix): the generalized law suite's judged ops defaulted to the hand-maintained op-fixtures keys — a future registered write op would silently escape the harness, reintroducing the exact drift item 3 kills. FIXED in e339537: judged ops derive from operations/registered-write-operations; a fixtureless registered op is a loud :fail (:fixture-present) with a guard test. 7 other findings refuted by quorum. Gates after fix: 724 tests, 1903 assertions, 0 failures (unit); integration unchanged (20/99, 2 pre-existing).
+
+REVIEW 2026-07-25: approve. Both confirmed findings from the wave fixed in e339537 with a guard test proving the harness can no longer silently skip a registered write op. No blockers. Gates: 724 tests, 1903 assertions, 0 failures.
+
+GATE 2026-07-25: bin/kanban-done-gate exit 0. document->done via rheos MCP failed server-side ('paths[0]' type error — known bug, chore card exists). Status advanced by direct frontmatter edit with this audit trail.
+---
