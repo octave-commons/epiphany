@@ -1,0 +1,124 @@
+ not resolve commit: " expr)
+-                      {:repository-path repository-path
+-                       :git-error (str/trim err)})))))
++  (git/resolve-commit-oid repository-path expr))
+ 
+ (defn evidence-htmx-handler
+   "Handle HTMX evidence request (returns HTML fragment) -- retrieves the
+diff --git a/test/epiphany/infra/adapters/ollama_test.clj b/test/epiphany/infra/adapters/ollama_test.clj
+index ba7a89a..681fdea 100644
+--- a/test/epiphany/infra/adapters/ollama_test.clj
++++ b/test/epiphany/infra/adapters/ollama_test.clj
+@@ -24,7 +24,9 @@
+                         :resource-id resource-id
+                         :extraction/content source)
+           captured-texts (atom nil)
+-          adapter (ollama/make-embeddings-adapter {:model "test-model"})]
++          adapter (ollama/make-embeddings-adapter
++                   {:model "test-model"
++                    :model-digest "sha256:test-model"})]
+       (with-redefs-fn
+         {(ns-resolve 'epiphany.infra.adapters.ollama 'embed-request)
+          (fn [_client _base-url _model texts _opts]
+@@ -38,6 +40,7 @@
+             (is (string/includes? input "naïve"))
+             (is (string/includes? input "notes.md"))
+             (is (= resource-id (:resource-id result)))
++            (is (= "sha256:test-model" (:embedding/model-digest result)))
+             (is (integer? (:embedding-version result)))))))))
+ 
+ ;; ---------------------------------------------------------------------------
+@@ -66,14 +69,18 @@
+       (is (= ["First"] (:embedding/heading-path (first results))))
+       (is (= 768 (:embedding/dimensions (first results))))
+       (is (= "nomic-embed-text" (:embedding/model (first results))))
++      (is (string? (:embedding/model-digest (first results))))
+       (is (vector? (:embedding/vector (first results))))
+       (is (= 768 (count (:embedding/vector (first results))))))))
+ 
+ (deftest ^:integration embed-version-test
+-  (testing "version is deterministic for same config"
+-    (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"})
+-          a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"})
+-          a3 (ollama/make-embeddings-adapter {:model "other-model"})]
++  (testing "version is deterministic for the same immutable model artifact"
++    (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
++                                               :model-digest "sha256:model-a"})
++          a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
++                                               :model-digest "sha256:model-a"})
++          a3 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
++                                               :model-digest "sha256:model-b"})]
+       (is (= ((:embedding-version a1)) ((:embedding-version a2))))
+       (is (not= ((:embedding-version a1)) ((:embedding-version a3)))))))
+ 
+diff --git a/tmp/epiphany-work/test/epiphany/review_feedback_regression_test.clj b/test/epiphany/review_feedback_regression_test.clj
+new file mode 100644
+index 0000000..0d9005d
+--- /dev/null
++++ b/test/epiphany/review_feedback_regression_test.clj
+@@ -0,0 +1,217 @@
++(ns epiphany.review-feedback-regression-test
++  (:require [clojure.java.io :as io]
++            [clojure.java.shell :as shell]
++            [clojure.string :as string]
++            [clojure.test :refer [deftest is testing]]
++            [epiphany.application.commands :as commands]
++            [epiphany.domain.extraction-projection :as extraction]
++            [epiphany.domain.revision-at-path :as revision-at-path]
++            [epiphany.infra.adapters.in-memory :as in-memory]
++            [epiphany.infra.adapters.lucene :as lucene]
++            [epiphany.infra.git :as git]
++            [epiphany.infra.http])
++  (:import [java.io ByteArrayInputStream]
++           [java.nio.file Files]
++           [java.nio.file.attribute FileAttribute]))
++
++(defn- delete-recursive!
++  [^java.io.File file]
++  (when (.exists file)
++    (when (.isDirectory file)
++      (doseq [child (.listFiles file)]
++        (delete-recursive! child)))
++    (io/delete-file file true)))
++
++(defn- temp-dir
++  [prefix]
++  (Files/createTempDirectory prefix (into-array FileAttribute [])))
++
++(defn- valid-candidate
++  [candidate-id resource-id request-id]
++  {:lineage-candidate/id candidate-id
++   :resource-id resource-id
++   :lineage-candidate/relation :continues
++   :lineage-candidate/tier :provisional
++   :lineage-candidate/confidence (double 0.9)
++   :lineage-candidate/generator-version "test-v1"
++   :lineage-candidate/generated-at (java.util.Date.)
++   :lineage-candidate/source {:span/path-raw "a.md"
++                              :span/heading-path ["A"]
++                              :span/commit-oid "0123456789abcdef0123456789abcdef01234567"}
++   :lineage-candidate/target {:span/path-raw "b.md"
++                              :span/heading-path ["B"]
++                              :span/commit-oid "fedcba9876543210fedcba9876543210fedcba98"}
++   :observation/id (random-uuid)
++   :observation/type :lineage/candidate-generated
++   :observation/observed-at (java.util.Date.)
++   :observation/adapter-version "test"
++   :observation/schema-version 1
++   :observation/request-id request-id})
++
++(deftest review-replay-returns-the-persisted-decision
++  (testing "same request returns the durable decision and conflicting reuse is rejected"
++    (let [adapters (in-memory/make {:common-git-dir-fn identity})
++          observations (:observations adapters)
++          candidate-id (random-uuid)
++          resource-id (random-uuid)
++          request-id (random-uuid)
++          candidate (valid-candidate candidate-id resource-id (random-uuid))
++          command {:command/name :command/review-decision
++                   :candidate-id candidate-id
++                   :decision :accepted
++                   :request-id request-id
++                   :reason "verified"}]
++      ((:record-lineage-candidate! observations) candidate)
++      (let [first-outcome (co
