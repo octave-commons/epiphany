@@ -10,10 +10,8 @@
             [clojure.data.json :as json]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [epiphany.application.registration :as registration]
-            [epiphany.domain.hybrid-search :as hs]
-            [epiphany.domain.status :as status]
-            [epiphany.domain.review :as review]
+            [epiphany.application.commands :as commands]
+            [epiphany.infra.adapters.ollama :as ollama]
             [epiphany.infra.profile :as profile]
             [epiphany.infra.workbench :as workbench]))
 
@@ -200,146 +198,127 @@
 
 (def max-search-limit
   "Upper bound on :limit shared with the CLI's --limit validation
-  (ENG-017G boundary hardening); guards against unbounded result sets."
+   (ENG-017G boundary hardening); guards against unbounded result sets."
   1000)
 
 (defn valid-limit?
   [limit]
   (and (integer? limit) (pos? limit) (<= limit max-search-limit)))
 
+;; ---------------------------------------------------------------------------
+;; ENG-017G2 seam encode
+;;
+;; One normalized-category -> problem response mapping for every command
+;; that flows decode -> execute -> encode. Handlers no longer build
+;; per-command error tables.
+
+(defn- encode-outcome
+  "Encode a normalized outcome as a ring response. Accepted payloads are
+   shaped by `present` before serialization; rejections/unavailable/
+   not-found become RFC 9457 problems from the single category table."
+  [outcome fmt present & {:keys [accepted-status] :or {accepted-status 200}}]
+  (let [category (:outcome/category outcome)
+        payload (:outcome/payload outcome)]
+    (if (= :accepted category)
+      (-> (response/response (serialize (present payload) fmt))
+          (response/content-type (content-type-for fmt))
+          (response/status accepted-status))
+      (problem-response (commands/http-status-for-category category)
+                        (commands/http-title-for-category category)
+                        (:detail payload)))))
+
+(defn- rejected->problem
+  "A decode-level rejection becomes the same 400 an execute-level one does."
+  [outcome]
+  (problem-response 400 "Bad Request" (:detail (:outcome/payload outcome))))
+
+(defn- parse-uuid-or-raw
+  "Parse s as a UUID; return the raw value on failure so schema validation
+   (not a surface-specific nil check) produces the rejection."
+  [s]
+  (if (string? s)
+    (try (java.util.UUID/fromString s)
+         (catch Exception _ s))
+    s))
+
 (defn search-handler
   "Handle search requests."
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          query (:query body)
-          mode (or (:mode body) "hybrid")
-          mode (if (string? mode) (keyword mode) mode)
-          limit (or (:limit body) 20)
-          path-prefix (:path-prefix body)
-          ref (:ref body)
-          fmt (parse-accept (get-in request [:headers "accept"]))]
-      (cond
-        (str/blank? query)
-        (bad-request-problem "Query is required")
-
-        (not (#{:lexical :semantic :hybrid} mode))
-        (bad-request-problem (str "Invalid mode: " (pr-str mode)
-                                  ". Must be lexical, semantic, or hybrid"))
-
-        (not (valid-limit? limit))
-        (bad-request-problem (str "Invalid limit: " (pr-str limit)
-                                  ". Must be a positive integer <= " max-search-limit))
-
-        :else
-        (let [request-map (cond-> {:query query
-                                   :mode mode
-                                   :limit limit}
-                            path-prefix (assoc-in [:filters :path-prefix] path-prefix)
-                            ref (assoc-in [:filters :ref] ref))
-              results (hs/search adapters request-map)
-              body (serialize results fmt)]
-          (-> (response/response body)
-              (response/content-type (content-type-for fmt))
-              (response/status 200)))))))
+          fmt (parse-accept (get-in request [:headers "accept"]))
+          candidate (cond-> {:command/name :query/search
+                             :query (if (str/blank? (:query body)) "" (:query body))
+                             :mode (let [m (or (:mode body) "hybrid")]
+                                     (if (string? m) (keyword m) m))
+                             :limit (or (:limit body) 20)}
+                      (:path-prefix body) (assoc-in [:filters :path-prefix] (:path-prefix body))
+                      (:ref body) (assoc-in [:filters :ref] (:ref body)))
+          decoded (commands/decode candidate)]
+      (if (commands/rejected? decoded)
+        (rejected->problem decoded)
+        (encode-outcome (commands/execute {:search-ports adapters
+                                           :service-available? ollama/available?}
+                                          decoded)
+                        fmt identity)))))
 
 (defn register-handler
   "Handle register requests."
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          path (or (:path body) (:repository-path body))]
-      (cond
-        (str/blank? path)
-        (bad-request-problem "Path is required")
-
-        :else
-        (try
-          (let [result (registration/register! adapters {:repository-path path})]
-            (-> (response/response (serialize result :json))
-                (response/content-type "application/json")
-                (response/status 201)))
-          (catch clojure.lang.ExceptionInfo e
-            (let [data (ex-data e)]
-              (case (:code data)
-                :unavailable (unavailable-problem (.getMessage e))
-                :already-exists (problem-response 409 "Conflict" (.getMessage e))
-                (problem-response 400 "Bad Request"
-                                  (str (.getMessage e)
-                                       (when (:explanation data)
-                                         (str "\n" (pr-str (:explanation data))))))))))))))
+          candidate (cond-> {:command/name :command/register
+                             :repository-path (or (:path body) (:repository-path body) "")}
+                      (:request-id body)
+                      (assoc :request-id (parse-uuid-or-raw (:request-id body))))
+          decoded (commands/decode candidate)]
+      (if (commands/rejected? decoded)
+        (rejected->problem decoded)
+        (encode-outcome (commands/execute {:adapters adapters} decoded)
+                        :json identity
+                        :accepted-status 201)))))
 
 (defn status-handler
   "Handle status requests."
   [adapters]
   (fn [request]
-    (let [resource-id-str (get-in request [:path-params :resource-id])
-          resource-id (try
-                        (java.util.UUID/fromString resource-id-str)
-                        (catch Exception _ nil))]
-      (cond
-        (nil? resource-id)
-        (bad-request-problem "Invalid resource ID format")
-
-        :else
-        (let [result (status/query-status adapters resource-id)
-              fmt (parse-accept (get-in request [:headers "accept"]))
-              body (serialize result fmt)]
-          (-> (response/response body)
-              (response/content-type (content-type-for fmt))
-              (response/status 200)))))))
+    (let [fmt (parse-accept (get-in request [:headers "accept"]))
+          candidate {:command/name :query/status
+                     :resource-id (parse-uuid-or-raw (get-in request [:path-params :resource-id]))}
+          decoded (commands/decode candidate)]
+      (if (commands/rejected? decoded)
+        (rejected->problem decoded)
+        (encode-outcome (commands/execute {:adapters adapters} decoded)
+                        fmt identity)))))
 
 (defn review-decisions-handler
   "Handle POST /api/v1/review-decisions: creates a review-decision command
    resource against a real, existing lineage candidate -- never a mutable
    update of the candidate itself (ADR/CLAUDE.md epistemic ladder: a
-   decision is a durable event, not an edit). Durably records through the
-   observations port's :record-review-decision!, the same op `ep inbox
-   decide` uses -- so an HTTP-recorded decision and a CLI-recorded one are
-   indistinguishable in the store."
+   decision is a durable event, not an edit). Flows through the ENG-017G2
+   seam, so an HTTP-recorded decision and a CLI-recorded one execute the
+   identical validated command map."
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          decision-str (:decision body)
-          candidate-id-str (:candidate-id body)
-          rationale (:rationale body)]
-      (cond
-        (str/blank? decision-str)
-        (bad-request-problem "Decision is required")
-
-        (str/blank? candidate-id-str)
-        (bad-request-problem "Candidate ID is required")
-
-        (not (contains? review/review-decision-types (keyword decision-str)))
-        (bad-request-problem (str "Decision must be one of "
-                                  (str/join ", " (map name review/review-decision-types))))
-
-        :else
-        (let [candidate-id (try (java.util.UUID/fromString candidate-id-str)
-                                 (catch Exception _ nil))]
-          (if-not candidate-id
-            (bad-request-problem "Candidate ID must be a UUID")
-            (let [find-candidate (get-in adapters [:observations :find-lineage-candidate-by-id])
-                  candidate (when find-candidate (find-candidate candidate-id))]
-              (if-not candidate
-                (problem-response 404 "Not Found"
-                                  (str "No lineage candidate found for id " candidate-id-str))
-                (let [decision (review/make-decision candidate-id (keyword decision-str)
-                                                     :reason rationale)
-                      record-observation (review/decision->observation
-                                          decision {:resource-id (:resource-id candidate)
-                                                    :adapter-version "0.1.0"})
-                      record! (get-in adapters [:observations :record-review-decision!])]
-                  (record! record-observation)
-                  (-> (response/response
-                       (serialize {:id (:review-decision/id decision)
-                                   :decision decision-str
-                                   :candidate-id candidate-id-str
-                                   :rationale rationale
-                                   :created-at (:review-decision/decided-at decision)}
-                                  :json))
-                      (response/content-type "application/json")
-                      (response/status 201)))))))))))
+          candidate (cond-> {:command/name :command/review-decision
+                             :candidate-id (parse-uuid-or-raw (:candidate-id body))
+                             :decision (if (str/blank? (:decision body))
+                                         ""
+                                         (keyword (:decision body)))}
+                      (:rationale body) (assoc :reason (:rationale body)))
+          decoded (commands/decode candidate)]
+      (if (commands/rejected? decoded)
+        (rejected->problem decoded)
+        (encode-outcome (commands/execute {:adapters adapters} decoded)
+                        :json
+                        (fn [{:keys [decision]}]
+                          {:id (:review-decision/id decision)
+                           :decision (name (:review-decision/decision decision))
+                           :candidate-id (str (:review-decision/candidate-id decision))
+                           :rationale (:review-decision/reason decision)
+                           :created-at (:review-decision/decided-at decision)})
+                        :accepted-status 201)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Router

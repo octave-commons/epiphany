@@ -104,3 +104,53 @@
     (is (= :rejected (cli-outcome (main/run ["search" "-l" (str (inc http/max-search-limit)) "test"]))))
     (is (= :rejected (http-outcome (http-search {:query "test" :mode :hybrid
                                                   :limit (inc http/max-search-limit)}))))))
+
+;; ---------------------------------------------------------------------------
+;; status parity (ENG-017G2 extension)
+
+(defn- http-status [resource-id-str]
+  (let [app (http/create-handler (http-adapters))]
+    (app {:request-method :get
+          :uri (str "/api/v1/status/" resource-id-str)
+          :headers {"accept" "application/json"}})))
+
+(deftest status-invalid-resource-id-parity
+  (testing "a malformed resource-id: both surfaces reject"
+    (is (= :rejected (cli-outcome (main/run ["status" "-r" "not-a-uuid"]))))
+    (is (= :rejected (http-outcome (http-status "not-a-uuid"))))))
+
+(deftest status-valid-resource-id-parity
+  (testing "a well-formed resource-id against an empty store: both surfaces accept"
+    (let [rid (str (random-uuid))]
+      (is (= :accepted (cli-outcome (main/run ["status" "-p" "local" "-r" rid]))))
+      (is (= :accepted (http-outcome (http-status rid)))))))
+
+;; ---------------------------------------------------------------------------
+;; review-decision parity (ENG-017G2 extension)
+
+(defn- http-review-decision [body]
+  (let [app (http/create-handler (http-adapters))]
+    (app {:request-method :post
+          :uri "/api/v1/review-decisions"
+          :body-params body
+          :headers {"content-type" "application/json"}})))
+
+(deftest review-decision-invalid-type-parity
+  (testing "an unrecognized decision type: both surfaces reject"
+    (let [cid (str (random-uuid))]
+      (is (= :rejected (cli-outcome (main/run ["inbox" "decide" cid "bogus-decision"]))))
+      (is (= :rejected (http-outcome (http-review-decision {:candidate-id cid
+                                                            :decision "bogus-decision"})))))))
+
+(deftest review-decision-malformed-candidate-id-parity
+  (testing "a malformed candidate-id: both surfaces reject"
+    (is (= :rejected (cli-outcome (main/run ["inbox" "decide" "not-a-uuid" "accepted"]))))
+    (is (= :rejected (http-outcome (http-review-decision {:candidate-id "not-a-uuid"
+                                                          :decision "accepted"}))))))
+
+(deftest review-decision-phantom-candidate-parity
+  (testing "a decision against a nonexistent candidate: both surfaces reject"
+    (let [cid (str (random-uuid))]
+      (is (= :rejected (cli-outcome (main/run ["inbox" "decide" cid "accepted"]))))
+      (is (= :rejected (http-outcome (http-review-decision {:candidate-id cid
+                                                            :decision "accepted"})))))))

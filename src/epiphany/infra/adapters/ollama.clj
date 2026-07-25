@@ -105,3 +105,16 @@
 
      :clear-embeddings!
      (fn [] nil)}))
+
+(defn available?
+  "TCP probe for a local Ollama service (explicit, never silent).
+   Used by the command seam to return UNAVAILABLE rather than letting a
+   connection error escape as a generic fault."
+  ([]
+   (available? {:host "127.0.0.1" :port 11434 :timeout-ms 2000}))
+  ([{:keys [host port timeout-ms]}]
+   (try
+     (with-open [sock (java.net.Socket.)]
+       (.connect sock (java.net.InetSocketAddress. ^String host ^int port) ^int timeout-ms)
+       true)
+     (catch Exception _ false))))

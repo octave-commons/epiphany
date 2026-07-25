@@ -1,6 +1,12 @@
 ;; Reviewed interop baseline (ENG-017H). Regenerate with
 ;; `clojure -M:boundary-check --write` only after reviewing the diff.
-{epiphany.application.registration
+{epiphany.application.commands
+ {:quadrant :application,
+  :imports #{},
+  :dot-calls 4,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.application.registration
  {:quadrant :application,
   :imports #{},
   :dot-calls 0,
@@ -189,7 +195,6 @@
     org.apache.lucene.search.TermQuery
     org.apache.lucene.search.ScoreDoc
     org.apache.lucene.index.VectorSimilarityFunction
-    org.apache.lucene.search.BooleanQuery
     org.apache.lucene.index.IndexWriterConfig$OpenMode
     org.apache.lucene.queryparser.classic.QueryParser
     org.apache.lucene.index.Term},
@@ -204,12 +209,13 @@
     org.bson.Document
     com.mongodb.client.model.Indexes
     com.mongodb.client.MongoClients
+    com.mongodb.MongoException
     com.mongodb.client.MongoDatabase
     com.mongodb.client.model.IndexOptions
     com.mongodb.client.MongoCollection},
-  :dot-calls 340,
+  :dot-calls 339,
   :static-calls 6,
-  :type-hints 47},
+  :type-hints 43},
  epiphany.infra.adapters.ollama
  {:quadrant :infra,
   :imports
@@ -220,9 +226,9 @@
     java.net.http.HttpRequest
     java.net.http.HttpClient
     java.net.http.HttpRequest$BodyPublishers},
-  :dot-calls 10,
+  :dot-calls 11,
   :static-calls 3,
-  :type-hints 1},
+  :type-hints 2},
  epiphany.infra.git
  {:quadrant :infra,
   :imports
@@ -240,14 +246,14 @@
  epiphany.infra.http
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 15,
+  :dot-calls 12,
   :static-calls 1,
   :type-hints 1},
  epiphany.infra.main
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 23,
-  :static-calls 10,
+  :dot-calls 24,
+  :static-calls 11,
   :type-hints 2},
  epiphany.infra.profile
  {:quadrant :infra,
@@ -264,7 +270,7 @@
  epiphany.infra.repository-metadata-file
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 3,
+  :dot-calls 4,
   :static-calls 0,
   :type-hints 0},
  epiphany.infra.services
@@ -278,6 +284,12 @@
   :imports #{},
   :dot-calls 3,
   :static-calls 2,
+  :type-hints 0},
+ epiphany.law.commands
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
   :type-hints 0},
  epiphany.law.git
  {:quadrant :law,

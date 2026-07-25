@@ -79,11 +79,12 @@
     (is (= 1 exit))
     (is (string/includes? out "invalid profile"))))
 
-(deftest status-local-profile-rejected
-  (testing "status with :local profile reports not supported"
+(deftest status-local-profile-reports-cross-stage-status
+  (testing "status with :local profile reports the shared cross-stage status (ENG-017G2 seam: no surface-specific rejection)"
     (let [{:keys [exit out]} (main/run ["status" "-p" :local "-r" (str (java.util.UUID/randomUUID))])]
-      (is (= 1 exit))
-      (is (string/includes? out "does not persist")))))
+      (is (zero? exit))
+      (is (string/includes? out "Resource:"))
+      (is (string/includes? out "Summary:")))))
 
 (deftest status-services-profile-requires-mongo
   (testing "status with :services fails when MongoDB is unavailable"
@@ -390,18 +391,20 @@
 (deftest inbox-decide-rejects-invalid-decision-type
   (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "not-a-real-decision"])]
     (is (= 1 exit))
-    (is (string/includes? out "decision must be one of"))))
+    (is (string/includes? out "review-decision"))
+    (is (string/includes? out "decision"))))
 
 (deftest inbox-decide-rejects-invalid-candidate-id
   (let [{:keys [exit out]} (main/run ["inbox" "decide" "not-a-uuid" "accepted"])]
     (is (= 1 exit))
-    (is (string/includes? out "invalid candidate id"))))
+    (is (string/includes? out "review-decision"))
+    (is (string/includes? out "candidate-id"))))
 
-(deftest inbox-decide-records-a-real-decision
-  (testing "a valid decide call durably records through the observations port and confirms it"
+(deftest inbox-decide-rejects-phantom-candidate
+  (testing "a decision against a nonexistent candidate is rejected (ENG-017G2 parity with HTTP)"
     (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "rejected"])]
-      (is (zero? exit))
-      (is (string/includes? out "Recorded rejected for candidate")))))
+      (is (= 1 exit))
+      (is (string/includes? out "No lineage candidate found")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Export subcommand
