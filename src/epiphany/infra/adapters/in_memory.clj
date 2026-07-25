@@ -102,10 +102,13 @@
   [op records]
   (fn [observation]
     (validate-write! op observation)
-    (when-not (some #(= (:observation/id observation)
-                        (:observation/id %))
-                    @records)
-      (swap! records conj observation))
+    (swap! records
+           (fn [current]
+             (if (some #(= (:observation/id observation)
+                            (:observation/id %))
+                       current)
+               current
+               (conj current observation))))
     nil))
 
 ;; ---------------------------------------------------------------------------

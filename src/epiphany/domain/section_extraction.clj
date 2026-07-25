@@ -77,13 +77,14 @@
   [classified]
   (loop [remaining classified
          path-stack []    ;; root-first: [[level text] ...]
+         sibling-counts {}
          acc []]
     (if (empty? remaining)
       acc
       (let [{:keys [heading preamble?]} (first remaining)
             rest-secs (rest remaining)]
         (if preamble?
-          (recur rest-secs path-stack
+          (recur rest-secs path-stack sibling-counts
                  (conj acc [[] (assoc (first remaining) :heading-path [])]))
           (let [level (:heading/level heading)
                 text  (heading-text (:heading/inlines heading))
@@ -93,22 +94,24 @@
                           (if (and (seq stack) (>= (first (peek stack)) level))
                             (recur (pop stack))
                             stack))
+                parent-path (vec (map second trimmed))
+                sibling-key [parent-path level]
+                ordinal (get sibling-counts sibling-key 0)
                 new-stack (conj trimmed [level text])
-                full-path (vec (map second new-stack))
-                sibling-count (count (filter (fn [[l _]] (= l level))
-                                             path-stack))]
+                full-path (vec (map second new-stack))]
             (recur rest-secs new-stack
+                   (update sibling-counts sibling-key (fnil inc 0))
                    (conj acc [full-path
                               (assoc (first remaining)
                                      :heading-path full-path
-                                     :ordinal sibling-count)]))))))))
+                                     :ordinal ordinal)]))))))))
 (defn extract-sections
   "Extract heading-delimited sections from a parsed Markdown document."
   [parsed-doc]
   (let [blocks (:doc/body parsed-doc)
         classified (classify-blocks blocks)
         with-paths (build-heading-paths classified)]
-    (mapv (fn [[heading-path {:keys [heading body _ordinal]}]]
+    (mapv (fn [[heading-path {:keys [heading body ordinal]}]]
             (make-section (or heading
                               {:block/type :heading
                                :heading/level 0
@@ -119,7 +122,7 @@
                                             :span/end-line 1}})
                           body
                           heading-path
-                          (or _ordinal 0)))
+                          (or ordinal 0)))
           with-paths)))
 
 (defn section-content-hash

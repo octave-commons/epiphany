@@ -18,7 +18,7 @@
       (is (= ["Second"] (:section/heading-path (second sections))))
       (is (= 1 (:section/level (first sections))))
       (is (= 0 (:section/ordinal (first sections))))
-      (is (= 0 (:section/ordinal (second sections))))
+      (is (= 1 (:section/ordinal (second sections))))
       (is (= 1 (count (:section/body-blocks (first sections)))))
       (is (= 1 (count (:section/body-blocks (second sections))))))))
 
@@ -42,8 +42,8 @@
           sections (se/extract-sections doc)]
       (is (= 3 (count sections)))
       (is (= 0 (:section/ordinal (first sections))))
-      (is (= 0 (:section/ordinal (second sections))))
-      (is (= 0 (:section/ordinal (nth sections 2)))))))
+      (is (= 1 (:section/ordinal (second sections))))
+      (is (= 2 (:section/ordinal (nth sections 2)))))))
 
 (deftest body-blocks-grouping-test
   (testing "body blocks belong to the preceding heading"
