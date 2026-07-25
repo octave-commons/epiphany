@@ -13,6 +13,8 @@
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
+            [clojure.edn]
+            [clojure.set]
             [epiphany.domain.backup :as backup]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.law-suite.generators :as gens]
@@ -142,8 +144,8 @@
                                   nil
                                   (catch clojure.lang.ExceptionInfo e (:code (ex-data e))))
                  corrupt (let [target (make-port)
-                               broken (assoc-in payload [:data "repository-location" 0
-                                                         :observation/schema-version] 1)
+                               _broken (assoc-in payload [:data "repository-location" 0
+                                                          :observation/schema-version] 1)
                                _ (spit file (pr-str (update payload :manifest dissoc :content-hash)))]
                            (try (backup/import-from-file target file)
                                 nil
