@@ -248,17 +248,9 @@
 
 (defn- resolve-commit-oid
   "Resolve a ref, short OID, or HEAD-relative expression to a full commit
-   OID (mirrors infra.main's resolve-commit-oid -- evidence/retrieve-
-   evidence needs the full OID, not a ref name, to look up tree entries)."
+   OID through the repository's JGit boundary."
   [repository-path expr]
-  (let [{:keys [exit out err]}
-        (clojure.java.shell/sh "git" "-C" repository-path "rev-parse" "--verify"
-                               (str expr "^{commit}"))]
-    (if (zero? exit)
-      (str/trim out)
-      (throw (ex-info (str "Could not resolve commit: " expr)
-                      {:repository-path repository-path
-                       :git-error (str/trim err)})))))
+  (git/resolve-commit-oid repository-path expr))
 
 (defn evidence-htmx-handler
   "Handle HTMX evidence request (returns HTML fragment) -- retrieves the

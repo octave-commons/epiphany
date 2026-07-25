@@ -24,7 +24,9 @@
                         :resource-id resource-id
                         :extraction/content source)
           captured-texts (atom nil)
-          adapter (ollama/make-embeddings-adapter {:model "test-model"})]
+          adapter (ollama/make-embeddings-adapter
+                   {:model "test-model"
+                    :model-digest "sha256:test-model"})]
       (with-redefs-fn
         {(ns-resolve 'epiphany.infra.adapters.ollama 'embed-request)
          (fn [_client _base-url _model texts _opts]
@@ -38,6 +40,7 @@
             (is (string/includes? input "naïve"))
             (is (string/includes? input "notes.md"))
             (is (= resource-id (:resource-id result)))
+            (is (= "sha256:test-model" (:embedding/model-digest result)))
             (is (integer? (:embedding-version result)))))))))
 
 ;; ---------------------------------------------------------------------------
@@ -66,14 +69,18 @@
       (is (= ["First"] (:embedding/heading-path (first results))))
       (is (= 768 (:embedding/dimensions (first results))))
       (is (= "nomic-embed-text" (:embedding/model (first results))))
+      (is (string? (:embedding/model-digest (first results))))
       (is (vector? (:embedding/vector (first results))))
       (is (= 768 (count (:embedding/vector (first results))))))))
 
 (deftest ^:integration embed-version-test
-  (testing "version is deterministic for same config"
-    (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"})
-          a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"})
-          a3 (ollama/make-embeddings-adapter {:model "other-model"})]
+  (testing "version is deterministic for the same immutable model artifact"
+    (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
+                                               :model-digest "sha256:model-a"})
+          a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
+                                               :model-digest "sha256:model-a"})
+          a3 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
+                                               :model-digest "sha256:model-b"})]
       (is (= ((:embedding-version a1)) ((:embedding-version a2))))
       (is (not= ((:embedding-version a1)) ((:embedding-version a3)))))))
 

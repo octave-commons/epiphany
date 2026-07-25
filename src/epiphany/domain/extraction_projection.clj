@@ -65,13 +65,19 @@
      {:extraction/record     — the extraction observation (or nil on error)
       :extraction/error      — error map if extraction failed
       :extraction/revision-id — the revision-at-path ID (for logging)}"
-  [ports {:keys [resource-id revision-at-path/id revision/commit-oid
-                 revision/path-raw revision/blob-oid] :as _revision}]
-  (let [git-fn   (get-in ports [:git :read-blob])
-        obs-fn   (:record-section-extraction! (:observations ports))
-        idx-fn   (:index-sections! (:index ports))]
-    (try
-      (let [blob-result (git-fn nil blob-oid)
+  ([ports revision]
+   (extract-revision ports nil revision))
+  ([ports request-id
+    {:keys [resource-id revision-at-path/id revision/commit-oid
+            revision/path-raw revision/blob-oid] :as _revision}]
+   (let [git-fn   (get-in ports [:git :read-blob])
+         obs-fn   (:record-section-extraction! (:observations ports))
+         idx-fn   (:index-sections! (:index ports))
+         write-id (ingestion/derived-request-id
+                   request-id
+                   (str "section-extraction:" id ":" extractor-version))]
+     (try
+       (let [blob-result (git-fn nil blob-oid)
             _          (when (:blob/failure blob-result)
                          (throw (ex-info "Blob not readable"
                                          {:code :blob-unreadable
@@ -82,25 +88,28 @@
             sections   (se/extract-sections parsed)
             record     (se/make-extraction-record
                         sections id commit-oid path-raw blob-oid blob extractor-version)
-            observation (assoc record
-                               :observation/type :section/extraction-completed
-                               :observation/id (java.util.UUID/randomUUID)
-                               :observation/observed-at (java.util.Date.)
-                               :observation/adapter-version "0.1.0"
-                               :observation/schema-version 1
-                               :resource-id resource-id)]
+             observation (cond-> (assoc record
+                                        :observation/type :section/extraction-completed
+                                        :observation/id (or write-id
+                                                            (java.util.UUID/randomUUID))
+                                        :observation/observed-at (java.util.Date.)
+                                        :observation/adapter-version "0.1.0"
+                                        :observation/schema-version 1
+                                        :resource-id resource-id)
+                           write-id
+                           (assoc :observation/request-id write-id))]
         (obs-fn observation)
         (when idx-fn
           (idx-fn (assoc observation :extraction/content blob)))
         {:extraction/record     observation
          :extraction/error      nil
          :extraction/revision-id id})
-      (catch Exception e
-        {:extraction/record     nil
-         :extraction/error      {:failure/reason "extraction-failed"
-                                 :failure/message (.getMessage e)
-                                 :failure/revision-id id}
-         :extraction/revision-id id}))))
+       (catch Exception e
+         {:extraction/record     nil
+          :extraction/error      {:failure/reason "extraction-failed"
+                                  :failure/message (.getMessage e)
+                                  :failure/revision-id id}
+          :extraction/revision-id id})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Projection runner
@@ -175,7 +184,7 @@
            :projection/failures            failures
            :projection/completed           true})
         (let [revision (first remaining)
-              result (extract-revision ports revision)
+              result (extract-revision ports request-id revision)
               error (:extraction/error result)
               new-failures (if error (conj failures error) failures)
               new-extracted (if (:extraction/record result) (inc extracted) extracted)

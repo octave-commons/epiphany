@@ -92,6 +92,8 @@
     :text (str data)
     (json/write-str data :key-fn (fn [k] (subs (str k) 1)))))
 
+(declare parse-query-params)
+
 (defn- read-body
   "Read and parse request body. EDN parsing uses clojure.edn with no
   data readers — unknown tags and #=(...) are parse errors, never
@@ -106,6 +108,9 @@
 
         (.contains content-type "application/json")
         (json/read-str body-str :key-fn keyword)
+
+        (.contains content-type "application/x-www-form-urlencoded")
+        (parse-query-params body-str)
 
         :else
         (try (json/read-str body-str :key-fn keyword)

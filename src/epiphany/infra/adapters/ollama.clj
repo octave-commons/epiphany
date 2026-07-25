@@ -39,6 +39,34 @@
                        :body (.body response)})))
     (json/read-str (.body response) :key-fn keyword)))
 
+(defn- model-digest-request
+  "Resolve the immutable digest for `model` from Ollama's /api/tags API."
+  [^HttpClient client base-url model]
+  (let [request (-> (HttpRequest/newBuilder)
+                    (.uri (URI. (str base-url "/api/tags")))
+                    (.GET)
+                    (.timeout (Duration/ofSeconds 30))
+                    .build)
+        response (.send client request (HttpResponse$BodyHandlers/ofString))]
+    (when-not (= 200 (.statusCode response))
+      (throw (ex-info (str "Ollama model metadata failed: " (.statusCode response))
+                      {:status (.statusCode response)
+                       :body (.body response)})))
+    (let [models (:models (json/read-str (.body response) :key-fn keyword))
+          aliases #{model
+                    (str model ":latest")
+                    (str/replace model #":latest$" "")}
+          exact (some #(when (or (contains? aliases (:name %))
+                                 (contains? aliases (:model %)))
+                         %)
+                      models)
+          digest (:digest exact)]
+      (when (str/blank? digest)
+        (throw (ex-info (str "Ollama model digest unavailable for " model)
+                        {:code :model-digest-unavailable
+                         :model model})))
+      digest)))
+
 (defn- section-body-text
   [extraction section]
   (when-let [content (:extraction/content extraction)]
@@ -71,16 +99,23 @@
      :base-url  — Ollama server URL (default: \"http://localhost:11434\")
      :model     — embedding model name (default: \"nomic-embed-text\")
      :dimensions — output dimensions, nil for model default (default: nil)
+     :model-digest — optional immutable digest override (tests/offline pinning)
      :batch-size — texts per embed request (default: 64)"
-  [{:keys [base-url model dimensions batch-size]
+  [{:keys [base-url model dimensions model-digest batch-size]
     :or {base-url "http://localhost:11434"
          model "nomic-embed-text"
          batch-size 64}}]
   (let [client (make-http-client)
-        version (hash {:model model :dimensions dimensions})]
+        resolved-model-digest
+        (delay (or model-digest
+                   (model-digest-request client base-url model)))
+        version (delay (hash {:model model
+                              :digest @resolved-model-digest
+                              :dimensions dimensions}))]
     {:embed-sections!
      (fn [extraction-records]
-       (let [ ;; Build section texts from extraction records
+       (let [embedding-version @version
+             ;; Build section texts from extraction records
              section-inputs
              (mapcat (fn [rec]
                        (map #(section-input rec %) (:extraction/sections rec)))
@@ -108,8 +143,9 @@
                             :embedding/ordinal (:section/ordinal input)
                             :embedding/vector embedding
                             :embedding/model model
+                            :embedding/model-digest @resolved-model-digest
                             :embedding/dimensions (count embedding)
-                            :embedding-version version})
+                            :embedding-version embedding-version})
                          batch embeddings))))
          @results))
 
@@ -121,7 +157,7 @@
          (first (:embeddings resp))))
 
      :embedding-version
-     (fn [] version)
+     (fn [] @version)
 
      :clear-embeddings!
      (fn [] nil)}))

@@ -47,6 +47,18 @@
       (.findGitDir)
       .build))
 
+(defn resolve-commit-oid
+  "Resolve a ref, abbreviated OID, or rev expression to a full commit OID
+   through JGit. Throws when the expression does not name a commit."
+  [^String repository-path expr]
+  (with-open [repo (open-repository repository-path)
+              walk (RevWalk. repo)]
+    (if-let [oid (.resolve repo (str expr "^{commit}"))]
+      (.getName (.parseCommit walk oid))
+      (throw (ex-info (str "Could not resolve commit: " expr)
+                      {:repository-path repository-path
+                       :expression expr})))))
+
 (defn- resolve-ref-oid
   "Resolve a ref name to its target OID string. Returns nil on failure."
   [^org.eclipse.jgit.lib.Repository repo ^String ref-name]

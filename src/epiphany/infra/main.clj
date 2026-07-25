@@ -493,18 +493,26 @@
                (mapcat
                 (fn [commit]
                   (let [commit-oid (:commit/oid commit)
+                        tree-entries (:entries (git/commit-tree-entries
+                                                repository-path commit-oid))
                         entries (markdown-selection/select-markdown
-                                 commit-oid
-                                 (:entries (git/commit-tree-entries repository-path commit-oid)))
+                                 commit-oid tree-entries)
                         parent-oid (first (:commit/parent-oids commit))
                         parent-entries (when parent-oid
-                                         (:entries (git/commit-tree-entries repository-path parent-oid)))]
+                                         (:entries (git/commit-tree-entries
+                                                    repository-path parent-oid)))
+                        selected-parent-entries
+                        (when parent-oid
+                          (markdown-selection/select-markdown
+                           parent-oid parent-entries))]
                     (revision-at-path/revisions-for-commit
                      entries
                      {:resource-id resource-id
+                      :commit-oid commit-oid
                       :tree-oid (:commit/tree-oid commit)
                       :parent-commit-oid parent-oid
                       :parent-entries parent-entries
+                      :selected-parent-entries selected-parent-entries
                       :observed-at (java.util.Date.)}))))
                (remove #(contains? existing (revision-at-path/observation-id-key %))))
               commits)]

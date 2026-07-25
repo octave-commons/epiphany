@@ -144,11 +144,9 @@
                              :record-ingestion-run! ingestion-runs)
      :record-checkpoint! (idempotent-record-fn
                           :record-checkpoint! checkpoints)
-     :record-section-extraction! (validated-record-fn
+     :record-section-extraction! (idempotent-record-fn
                                    :record-section-extraction!
-                                   (fn [observation]
-                                     (swap! section-extractions conj observation)
-                                     nil))
+                                   section-extractions)
      ;; Append-only, idempotent by request-id: a retry carrying a
      ;; request-id already recorded returns nil without appending a
      ;; second decision (ENG-005A AC: "retries do not duplicate").
@@ -305,7 +303,16 @@
         embeddings (atom [])
         version (atom 1)]
     {:index-sections! (fn [extraction-record]
-                        (swap! docs conj extraction-record)
+                        (let [identity (juxt :resource-id
+                                             :extraction/commit-oid
+                                             :extraction/path-raw
+                                             :extraction/extractor-version)]
+                          (swap! docs
+                                 (fn [records]
+                                   (conj (filterv #(not= (identity %)
+                                                        (identity extraction-record))
+                                                  records)
+                                         extraction-record))))
                         nil)
      :search (fn [query]
                ;; Simple substring match for unit testing
