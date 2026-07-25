@@ -39,7 +39,7 @@
 
 (def ^:private current-index-version
   "Bump when the index schema (fields, analyzers) changes."
-  3)
+  4)
 
 (defn- require-resource-id
   [record]
@@ -64,12 +64,24 @@
       (when (and start end)
         (md/slice content {:span/start-byte start :span/end-byte end})))))
 
+(defn- section-identity
+  "Stable identity for one extracted section. Replays replace the exact
+   resource/commit/path/ordinal/extractor projection rather than appending."
+  [extraction section]
+  (pr-str [(require-resource-id extraction)
+           (:extraction/commit-oid extraction)
+           (:extraction/path-raw extraction)
+           (:section/ordinal section)
+           (:extraction/extractor-version extraction)]))
+
 (defn- section->doc
   "Convert a section extraction record + section map into a Lucene Document."
   [extraction section]
   (let [resource-id (require-resource-id extraction)
+        identity (section-identity extraction section)
         doc (Document.)]
     (.add doc (StringField. "doc_type" "section" Field$Store/YES))
+    (.add doc (StringField. "section_identity" identity Field$Store/NO))
     (.add doc (StringField. "resource_id" (str resource-id) Field$Store/YES))
     (.add doc (StringField. "path_raw"
                             (:extraction/path-raw extraction)
@@ -120,6 +132,8 @@
            (:embedding/path-raw embedding)
            (:embedding/ordinal embedding)
            (:embedding/model embedding)
+           (or (:embedding/model-digest embedding)
+               (:embedding-version embedding))
            (:embedding-version embedding)]))
 
 (defn- embedding->doc
@@ -151,6 +165,8 @@
     (.add doc (StringField. "embedding_model"
                             (:embedding/model embedding)
                             Field$Store/YES))
+    (when-let [digest (:embedding/model-digest embedding)]
+      (.add doc (StringField. "embedding_model_digest" digest Field$Store/YES)))
     (.add doc (StringField. "embedding_version"
                             (str (:embedding-version embedding))
                             Field$Store/YES))
@@ -162,12 +178,30 @@
 ;; ---------------------------------------------------------------------------
 ;; Index writer management
 
+(declare read-version-file index-empty?)
+
 (defn- open-writer
-  "Open or create an IndexWriter at the given directory path."
+  "Open or create an IndexWriter at the given directory path. Refuse to
+   append to a non-empty index whose sidecar is missing, corrupt, or stale."
+  [^Path dir]
+  (let [stored (read-version-file dir)
+        stored-version (when (map? stored) (:index/version stored))]
+    (when (and (not (index-empty? dir))
+               (not= current-index-version stored-version))
+      (throw (ex-info "Lucene index schema version mismatch; rebuild required"
+                      {:code :index-version-mismatch
+                       :expected current-index-version
+                       :actual stored-version})))
+    (let [analyzer (StandardAnalyzer.)
+          config (IndexWriterConfig. analyzer)]
+      (.setOpenMode config IndexWriterConfig$OpenMode/CREATE_OR_APPEND)
+      (IndexWriter. (FSDirectory/open dir) config))))
+
+(defn- open-rebuild-writer
   [^Path dir]
   (let [analyzer (StandardAnalyzer.)
         config (IndexWriterConfig. analyzer)]
-    (.setOpenMode config IndexWriterConfig$OpenMode/CREATE_OR_APPEND)
+    (.setOpenMode config IndexWriterConfig$OpenMode/CREATE)
     (IndexWriter. (FSDirectory/open dir) config)))
 
 (defn- write-version-file!
@@ -188,12 +222,13 @@
         (catch Exception _ :integrity/corrupt-version-file)))))
 
 (defn- index-empty?
-  "Check if the Lucene index directory has any segment files."
+  "Return true when the directory has no Lucene index or zero live documents."
   [^Path index-dir]
-  (let [dir (java.io.File. (.toString index-dir))
-        segment-files (filter #(.startsWith (.getName %) "segments_")
-                               (.listFiles dir))]
-    (empty? segment-files)))
+  (with-open [directory (FSDirectory/open index-dir)]
+    (if-not (DirectoryReader/indexExists directory)
+      true
+      (with-open [reader (DirectoryReader/open directory)]
+        (zero? (.numDocs reader))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Query helpers
@@ -227,10 +262,14 @@
 
   {:index-sections!
    (fn [extraction-record]
-     (let [docs (extraction-record->docs extraction-record)]
+     (let [sections (:extraction/sections extraction-record)
+           docs (extraction-record->docs extraction-record)]
        (with-open [writer (open-writer index-dir)]
-         (doseq [^Document doc docs]
-           (.addDocument writer doc))
+         (doseq [[section ^Document doc] (map vector sections docs)]
+           (.updateDocument writer
+                            (Term. "section_identity"
+                                   (section-identity extraction-record section))
+                            doc))
          (.commit writer)))
      (write-version-file! index-dir)
      nil)
@@ -319,10 +358,7 @@
 
    :rebuild-index!
    (fn [records]
-     (with-open [writer (open-writer index-dir)]
-       (.deleteAll writer)
-       (.commit writer))
-     (with-open [writer (open-writer index-dir)]
+     (with-open [writer (open-rebuild-writer index-dir)]
        (doseq [record records]
          (let [docs (extraction-record->docs record)]
            (doseq [^Document doc docs]
@@ -333,8 +369,7 @@
 
    :clear-index!
    (fn []
-     (with-open [writer (open-writer index-dir)]
-       (.deleteAll writer)
+     (with-open [writer (open-rebuild-writer index-dir)]
        (.commit writer))
      (let [version-file (.resolve index-dir "index-version.edn")]
        (when (.exists (.toFile version-file))

@@ -1,2 +1,0 @@
-+  [{:keys [base-url model dimensions model-digest batch-size]
-     :or {base-url "http://localhost:11434

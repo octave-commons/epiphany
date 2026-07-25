@@ -789,8 +789,24 @@
                                         "lineage-candidate"   (lineage-candidate->doc doc))]
                (try
                  (.insertOne coll bson-doc)
-                 (catch MongoWriteException _e
-                   nil)))))))
+                 (catch MongoWriteException e
+                   (if (= 11000 (.getCode e))
+                     (let [existing (or (-> (.find coll)
+                                            (.filter (Document. "_id" (.get bson-doc "_id")))
+                                            (.first))
+                                        (when-let [request-id (.getString bson-doc "request_id")]
+                                          (-> (.find coll)
+                                              (.filter (Document. "request_id" request-id))
+                                              (.first))))]
+                       (when-not (= existing bson-doc)
+                         (throw (ex-info "Mongo import idempotency conflict"
+                                         {:code :idempotency-conflict
+                                          :collection coll-name
+                                          :document-id (.get bson-doc "_id")}
+                                         e))))
+                     (storage-error! :import-all e)))
+                 (catch MongoException e
+                   (storage-error! :import-all e))))))))
 
       :clear-all!
      (fn []
