@@ -57,7 +57,10 @@
            :candidate-id (try (java.util.UUID/fromString candidate-id-str)
                               (catch IllegalArgumentException _ candidate-id-str))
            :decision (keyword decision-str)}
-    (:reason opts) (assoc :reason (:reason opts))))
+    (:request-id opts) (assoc :request-id (:request-id opts))
+    (:reason opts) (assoc :reason (:reason opts))
+    (:relabel-to opts) (assoc :relabel-to (:relabel-to opts))
+    (:annotation opts) (assoc :annotation (:annotation opts))))
 
 (defn- http-review-decision-candidate [body]
   (cond-> {:command/name :command/review-decision
@@ -66,7 +69,10 @@
            :decision (if (string? (:decision body))
                        (keyword (:decision body))
                        (:decision body))}
-    (:rationale body) (assoc :reason (:rationale body))))
+    (:request-id body) (assoc :request-id (:request-id body))
+    (:rationale body) (assoc :reason (:rationale body))
+    (:relabel-to body) (assoc :relabel-to (keyword (:relabel-to body)))
+    (:annotation body) (assoc :annotation (:annotation body))))
 
 (deftest decode-parity-table-test
   (testing "equivalent CLI and HTTP inputs decode to the identical validated command map"
@@ -94,10 +100,31 @@
                   :cli (cli-status-candidate rid)
                   :http (http-status-candidate (str rid))}
                  {:name "review-decision"
-                  :cli (cli-review-decision-candidate (str cid) "accepted" {:reason "ship it"})
+                  :cli (cli-review-decision-candidate (str cid) "accepted"
+                                                      {:request-id rid
+                                                       :reason "ship it"})
                   :http (http-review-decision-candidate {:candidate-id (str cid)
                                                          :decision "accepted"
-                                                         :rationale "ship it"})}]]
+                                                         :request-id rid
+                                                         :rationale "ship it"})}
+                 {:name "review-decision relabel"
+                  :cli (cli-review-decision-candidate
+                        (str cid) "relabel"
+                        {:request-id rid :relabel-to :derives-from})
+                  :http (http-review-decision-candidate
+                         {:candidate-id (str cid)
+                          :decision "relabel"
+                          :request-id rid
+                          :relabel-to "derives-from"})}
+                 {:name "review-decision annotation"
+                  :cli (cli-review-decision-candidate
+                        (str cid) "annotated"
+                        {:request-id rid :annotation "human note"})
+                  :http (http-review-decision-candidate
+                         {:candidate-id (str cid)
+                          :decision "annotated"
+                          :request-id rid
+                          :annotation "human note"})}]]
       (doseq [{:keys [name cli http]} cases]
         (let [cli-decoded (commands/decode cli)
               http-decoded (commands/decode http)]
@@ -117,6 +144,7 @@
                        (cli-search-candidate "q" {:limit 0})
                        (http-status-candidate "not-a-uuid")
                        (cli-status-candidate nil)
+                       (cli-review-decision-candidate (str (random-uuid)) "accepted" {})
                        (cli-review-decision-candidate "not-a-uuid" "accepted" {})
                        (http-review-decision-candidate {:candidate-id "not-a-uuid" :decision "accepted"})
                        (cli-review-decision-candidate (str (random-uuid)) "bogus" {})
@@ -156,16 +184,20 @@
                      :observation/schema-version 1
                      :observation/request-id (random-uuid)}]
       ((:record-lineage-candidate! observations) candidate)
-      (let [outcome (commands/execute
-                     {:adapters adapters}
-                     {:command/name :command/review-decision
-                      :candidate-id candidate-id
-                      :decision :accepted
-                      :reason "verified"})]
+      (let [request-id (random-uuid)
+            command {:command/name :command/review-decision
+                     :candidate-id candidate-id
+                     :decision :accepted
+                     :request-id request-id
+                     :reason "verified"}
+            outcome (commands/execute {:adapters adapters} command)
+            replay-outcome (commands/execute {:adapters adapters} command)]
         (is (= :accepted (:outcome/category outcome)))
+        (is (= :accepted (:outcome/category replay-outcome)))
         (let [decisions ((:list-review-decisions-by-candidate observations) candidate-id)]
           (is (= 1 (count decisions)))
           (is (= :accepted (:review-decision/decision (first decisions))))
+          (is (= request-id (:observation/request-id (first decisions))))
           (is (= (:resource-id candidate) (:resource-id (first decisions)))
               "decision is recorded under the candidate's resource-id"))))))
 
@@ -176,7 +208,8 @@
                    {:adapters adapters}
                    {:command/name :command/review-decision
                     :candidate-id (random-uuid)
-                    :decision :accepted})]
+                    :decision :accepted
+                    :request-id (random-uuid)})]
       (is (= :not-found (:outcome/category outcome)))
       (is (empty? ((:list-review-decisions (:observations adapters)) (random-uuid)))))))
 
@@ -188,7 +221,8 @@
                    {:command/name :query/status :resource-id (random-uuid)})]
       (is (= :accepted (:outcome/category outcome)))
       (is (contains? (:outcome/payload outcome) :stages))
-      (is (contains? (:outcome/payload outcome) :summary)))))
+      (is (contains? (:outcome/payload outcome) :summary))
+      (is (zero? (get-in outcome [:outcome/payload :summary :error]))))))
 
 (deftest execute-search-honors-lexical-mode-without-ollama
   (testing "lexical search never consults the service probe; hybrid does"

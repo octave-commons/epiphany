@@ -317,8 +317,11 @@
                               :result/heading-path (:embedding/heading-path emb)
                               :result/score (:result/score emb)
                               :result/model (:embedding/model emb)
-                              :result/embedding-version (str (:embedding-version emb))})
+                             :result/embedding-version (str (:embedding-version emb))})
                            scored)))
+     :index-stats (fn [_resource-id]
+                    {:document-count
+                     (reduce + 0 (map #(count (:extraction/sections %)) @docs))})
      :index-version (fn [] @version)
      :rebuild-index! (fn [records]
                        (reset! docs (vec records))

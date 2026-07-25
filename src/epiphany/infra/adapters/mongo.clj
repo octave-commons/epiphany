@@ -319,8 +319,6 @@
   "Convert a MongoDB Document back to a projection-checkpoint observation."
   [^Document doc]
   (cond-> {:observation/type            (keyword (.getString doc "observation_type"))
-           :observation/request-id      (when-let [s (.getString doc "request_id")]
-                                          (java.util.UUID/fromString s))
            :observation/id              (java.util.UUID/fromString (.getString doc "observation_id"))
            :observation/observed-at     (.getDate doc "observed_at")
            :observation/adapter-version (.getString doc "adapter_version")
@@ -331,6 +329,9 @@
            :checkpoint/ingestion-run-id (java.util.UUID/fromString (.getString doc "ingestion_run_id"))
            :checkpoint/status           (keyword (.getString doc "status"))
            :checkpoint/processed-count  (.getLong doc "processed_count")}
+    (.getString doc "request_id")
+    (assoc :observation/request-id
+           (java.util.UUID/fromString (.getString doc "request_id")))
     (.containsKey doc "last_processed_oid")
     (assoc :checkpoint/last-processed-oid (.getString doc "last_processed_oid"))
     (.containsKey doc "error_message")
@@ -792,4 +793,6 @@
                    nil)))))))
 
       :clear-all!
-     (fn [] (clean-test-db! conn))}))
+     (fn []
+       (clean-test-db! conn)
+       (ensure-indexes! conn))}))

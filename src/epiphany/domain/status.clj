@@ -69,21 +69,46 @@
                          :status :error
                          :failures [(make-failure-record (.getMessage e))]))))
 
+(defn- observed-at-ms
+  [record]
+  (if-let [observed-at (:observation/observed-at record)]
+    (.getTime ^java.util.Date observed-at)
+    0))
+
+(defn- latest-observation
+  [records]
+  (last (sort-by observed-at-ms records)))
+
+(defn- checkpoints-for-resource
+  [obs-adapter resource-id projection-name]
+  (->> ((:list-ingestion-runs obs-adapter) resource-id)
+       (mapcat (fn [run]
+                 ((:list-checkpoints obs-adapter) (:observation/id run))))
+       (filter #(= projection-name (:checkpoint/projection-name %)))))
+
 (defn query-discovery-status
-  "Query Git discovery status for a repository.
+  "Query recorded Git discovery results for a repository.
 
-   Parameters:
-     git-adapter — adapter implementing :repository, :resolve-ref
-     resource-id — repository resource UUID
-
-   Returns a stage status map."
-  [git-adapter resource-id]
+   The observations port is authoritative for completed ingestion work;
+   status does not reopen a repository or invent Git adapter operations."
+  [obs-adapter resource-id]
   (try
-    (let [repo ((:repository git-adapter) resource-id)
-          refs ((:resolve-ref git-adapter) repo "HEAD")]
-      (make-stage-status :discovery
-                         :status :ok
-                         :counts {:refs (count refs)}))
+    (if-let [run (latest-observation
+                  ((:list-ingestion-runs obs-adapter) resource-id))]
+      (let [failure-count (:ingestion/failure-count run 0)]
+        (make-stage-status
+         :discovery
+         :status (if (pos? failure-count) :error :ok)
+         :counts {:commits (:ingestion/commit-count run 0)
+                  :failures failure-count}
+         :failures (mapv (fn [failure]
+                           (make-failure-record
+                            (or (:failure/message failure)
+                                (:failure/reason failure)
+                                "Git discovery failed")
+                            :resource-id resource-id))
+                         (:ingestion/failures run))))
+      (make-stage-status :discovery :status :unknown))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (if (= :unavailable (:code data))
@@ -108,18 +133,26 @@
    Returns a stage status map."
   [obs-adapter resource-id]
   (try
-    (let [checkpoints ((:list-checkpoints obs-adapter) resource-id "extraction")]
-      (if (seq checkpoints)
-        (let [ckpt (first checkpoints)]
+    (let [checkpoints (checkpoints-for-resource obs-adapter resource-id
+                                                "section-extraction")]
+      (if-let [ckpt (latest-observation checkpoints)]
           (make-stage-status :extraction
-                             :status (if (= :completed (:checkpoint/status ckpt)) :ok :in-progress)
+                             :status (case (:checkpoint/status ckpt)
+                                       :completed :ok
+                                       :failed :error
+                                       :in-progress)
                              :counts {:processed (:checkpoint/processed-count ckpt)}
                              :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
                                          :version (:checkpoint/projection-version ckpt)
                                          :last-processed (:checkpoint/last-processed-oid ckpt)}
-                             :lag (when-let [ts (:checkpoint/last-updated-at ckpt)]
-                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000)))))
-        (make-stage-status :extraction :status :unknown)))
+                             :failures (cond-> []
+                                         (:checkpoint/error-message ckpt)
+                                         (conj (make-failure-record
+                                                (:checkpoint/error-message ckpt)
+                                                :resource-id resource-id)))
+                             :lag (when-let [ts (:observation/observed-at ckpt)]
+                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000))))
+          (make-stage-status :extraction :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (if (= :unavailable (:code data))
@@ -173,18 +206,26 @@
    Returns a stage status map."
   [obs-adapter resource-id]
   (try
-    (let [checkpoints ((:list-checkpoints obs-adapter) resource-id "embedding")]
-      (if (seq checkpoints)
-        (let [ckpt (first checkpoints)]
+    (let [checkpoints (checkpoints-for-resource obs-adapter resource-id
+                                                "embedding")]
+      (if-let [ckpt (latest-observation checkpoints)]
           (make-stage-status :embedding
-                             :status (if (= :completed (:checkpoint/status ckpt)) :ok :in-progress)
+                             :status (case (:checkpoint/status ckpt)
+                                       :completed :ok
+                                       :failed :error
+                                       :in-progress)
                              :counts {:processed (:checkpoint/processed-count ckpt)}
                              :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
                                          :version (:checkpoint/projection-version ckpt)
                                          :last-processed (:checkpoint/last-processed-oid ckpt)}
-                             :lag (when-let [ts (:checkpoint/last-updated-at ckpt)]
-                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000)))))
-        (make-stage-status :embedding :status :unknown)))
+                             :failures (cond-> []
+                                         (:checkpoint/error-message ckpt)
+                                         (conj (make-failure-record
+                                                (:checkpoint/error-message ckpt)
+                                                :resource-id resource-id)))
+                             :lag (when-let [ts (:observation/observed-at ckpt)]
+                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000))))
+          (make-stage-status :embedding :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (if (= :unavailable (:code data))
@@ -220,7 +261,7 @@
   [adapters resource-id]
   (let [stages (vec
                  [(query-registration-status (:repository-metadata adapters))
-                  (query-discovery-status (:git adapters) resource-id)
+                  (query-discovery-status (:observations adapters) resource-id)
                   (query-extraction-status (:observations adapters) resource-id)
                   (query-indexing-status (:index adapters) resource-id)
                   (query-embedding-status (:observations adapters) resource-id)])

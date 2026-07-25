@@ -160,19 +160,48 @@
 (deftest router-handles-review-decisions-post
   (testing "Router handles POST /api/v1/review-decisions and durably records it"
     (let [adapters (mock-adapters)
+          request-id (random-uuid)
           app (http/make-router adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/review-decisions"
                      :body-params {:decision "accepted"
                                    :candidate-id (str mock-candidate-id)
+                                   :request-id (str request-id)
                                    :rationale "good"}
                      :headers {}})]
       (is (= 201 (:status resp)))
       (is (= 1 (count @(get-in adapters [:observations :recorded-decisions]))))
       (is (= :accepted (:review-decision/decision
                         (first @(get-in adapters [:observations :recorded-decisions])))))
+      (is (= request-id
+             (:observation/request-id
+              (first @(get-in adapters [:observations :recorded-decisions])))))
       (is (= mock-candidate-resource-id
              (:resource-id (first @(get-in adapters [:observations :recorded-decisions]))))))))
+
+(deftest router-forwards-review-decision-specific-fields
+  (testing "HTTP relabel and annotation fields reach durable review events"
+    (let [adapters (mock-adapters)
+          app (http/make-router adapters)
+          relabel-resp (app {:request-method :post
+                             :uri "/api/v1/review-decisions"
+                             :body-params {:decision "relabel"
+                                           :candidate-id (str mock-candidate-id)
+                                           :request-id (str (random-uuid))
+                                           :relabel-to "derives-from"}
+                             :headers {}})
+          annotation-resp (app {:request-method :post
+                                :uri "/api/v1/review-decisions"
+                                :body-params {:decision "annotated"
+                                              :candidate-id (str mock-candidate-id)
+                                              :request-id (str (random-uuid))
+                                              :annotation "human note"}
+                                :headers {}})
+          decisions @(get-in adapters [:observations :recorded-decisions])]
+      (is (= 201 (:status relabel-resp)))
+      (is (= 201 (:status annotation-resp)))
+      (is (= :derives-from (:review-decision/relabel-to (first decisions))))
+      (is (= "human note" (:review-decision/annotation (second decisions)))))))
 
 (deftest router-handles-review-decisions-missing-fields
   (testing "Router returns 400 for missing decision"
@@ -370,7 +399,7 @@
 
 (deftest unhandled-exception-does-not-leak-message
   (testing "a bare (non-ex-info) exception in a handler returns a generic detail, never its own message"
-    (let [sensitive-message "connection string: postgres://admin:hunter2@internal-db/prod"
+    (let [sensitive-message "SENSITIVE_TEST_MARKER_8f3c"
           leaky-adapters {:git {:common-git-directory (fn [_] (throw (RuntimeException. sensitive-message)))
                                 :repository (constantly ::mock-repo)
                                 :resolve-ref (constantly [])}
@@ -392,7 +421,7 @@
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 500 (:status resp)))
       (is (= "An internal error occurred." (:detail body)))
-      (is (not (.contains (:detail body) "hunter2"))))))
+      (is (not (.contains (:detail body) "SENSITIVE_TEST_MARKER_8f3c"))))))
 
 (deftest register-unrecognized-ex-info-code-currently-echoes-message
   (testing (str "DOCUMENTS CURRENT BEHAVIOR, not a desired contract: register-handler's own "

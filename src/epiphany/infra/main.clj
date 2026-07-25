@@ -1038,6 +1038,8 @@
 
 (def inbox-decide-options
   [repo-option
+   [nil "--request-id UUID" "Idempotent request ID (UUID format)"
+    :parse-fn #(java.util.UUID/fromString %)]
    [nil "--reason TEXT" "Human-readable reason for the decision"]
    [nil "--relabel-to RELATION" "New relation type (for relabel decisions)"
     :parse-fn keyword]
@@ -1131,10 +1133,12 @@
 
       :else
       (let [[candidate-id-str decision-str] arguments
+            request-id (or (:request-id options) (random-uuid))
             candidate (cond-> {:command/name :command/review-decision
                                :candidate-id (try (java.util.UUID/fromString candidate-id-str)
                                                   (catch IllegalArgumentException _ candidate-id-str))
-                               :decision (keyword decision-str)}
+                               :decision (keyword decision-str)
+                               :request-id request-id}
                         (:reason options) (assoc :reason (:reason options))
                         (:relabel-to options) (assoc :relabel-to (:relabel-to options))
                         (:annotation options) (assoc :annotation (:annotation options)))

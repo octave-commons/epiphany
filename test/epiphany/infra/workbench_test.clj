@@ -308,7 +308,7 @@
           app (http/make-router adapters)
           decide-resp (app {:request-method :post
                             :uri "/htmx/inbox/decide"
-                            :body-params {:candidate-id (str candidate-id) :decision "rejected" :reason "not related"}
+                            :body-params {:candidate-id (str candidate-id) :decision "rejected" :reason ""}
                             :headers {}})
           list-resp (app {:request-method :post
                           :uri "/htmx/inbox"
@@ -317,7 +317,9 @@
       (is (= 200 (:status decide-resp)))
       (is (.contains (:body decide-resp) "No candidates to review."))
       (is (.contains (:body list-resp) "No candidates to review."))
-      (is (= 1 (count ((:list-review-decisions obs) resource-id)))))))
+      (let [decisions ((:list-review-decisions obs) resource-id)]
+        (is (= 1 (count decisions)))
+        (is (not (contains? (first decisions) :review-decision/reason)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; health-page-handler tests

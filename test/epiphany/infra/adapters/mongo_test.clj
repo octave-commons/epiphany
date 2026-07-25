@@ -29,8 +29,10 @@
          overrides))
 
 (def ^:private test-uri
-  "MongoDB URI with authentication for integration tests."
-  "mongodb://openplanner:GamG7Ly2g7eyMJoIa-4zS17eAUlWiUup@127.0.0.1:27017/openplanner?authSource=openplanner")
+  "MongoDB URI for integration tests. Credentials must come from environment."
+  (or (System/getenv "EPIPHANY_TEST_MONGODB_URI")
+      (System/getenv "MONGODB_URI")
+      "mongodb://127.0.0.1:27017"))
 
 (def ^:private conn (atom nil))
 
@@ -212,6 +214,26 @@
         (is (= 42 (.getLong doc "processed_count")))
         (is (= "completed" (.getString doc "status")))))))
 
+(deftest ^:integration checkpoint-without-request-id-round-trips
+  (testing "an absent optional request id remains absent when decoded"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)
+          run-id (random-uuid)
+          record {:observation/type :projection/checkpoint-recorded
+                  :observation/id (random-uuid)
+                  :observation/observed-at (java.util.Date.)
+                  :observation/adapter-version "0.1.0"
+                  :observation/schema-version 1
+                  :resource-id (random-uuid)
+                  :checkpoint/projection-name "section-extraction"
+                  :checkpoint/projection-version 1
+                  :checkpoint/ingestion-run-id run-id
+                  :checkpoint/status :completed
+                  :checkpoint/processed-count 1}]
+      ((:record-checkpoint! obs-adapter) record)
+      (let [decoded (first ((:list-checkpoints obs-adapter) run-id))]
+        (is (= record decoded))
+        (is (not (contains? decoded :observation/request-id)))))))
+
 ;; ---------------------------------------------------------------------------
 ;; ENG-017F: decode integrity — malformed stored documents are named
 ;; integrity findings, never silently omitted or returned as empty.
@@ -271,3 +293,18 @@
         (let [re-exported (backup/export-to-file obs-adapter file2)]
           (is (= (:manifest exported) (:manifest re-exported))
               "round trip preserves the canonical manifest"))))))
+
+(defn- index-names
+  [collection]
+  (set (map #(.getString ^Document % "name")
+            (.into (.listIndexes collection) (java.util.ArrayList.)))))
+
+(deftest ^:integration clear-all-recreates-idempotency-indexes
+  (testing "restore clearing leaves every request-id uniqueness index active"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)]
+      ((:clear-all! obs-adapter))
+      (doseq [collection [(:repository-location-collection @conn)
+                          (:review-decision-collection @conn)
+                          (:lineage-candidate-collection @conn)]]
+        (is (contains? (index-names collection) "request_id_unique_v1"))))))
+

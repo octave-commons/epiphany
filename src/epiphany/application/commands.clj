@@ -115,6 +115,7 @@
     (if-not candidate
       (not-found (str "No lineage candidate found for id " (:candidate-id command)))
       (let [decision (review/make-decision (:candidate-id command) (:decision command)
+                                           :request-id (:request-id command)
                                            :reason (:reason command)
                                            :relabel-to (:relabel-to command)
                                            :annotation (:annotation command))

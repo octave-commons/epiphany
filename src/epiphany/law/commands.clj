@@ -43,6 +43,7 @@
     [:command/name [:= :command/review-decision]]
     [:candidate-id :uuid]
     [:decision (into [:enum] (sort (map identity review-decision-types)))]
-    [:reason {:optional true} :string]
+    [:request-id :uuid]
+    [:reason {:optional true} [:string {:min 1}]]
     [:relabel-to {:optional true} :keyword]
-    [:annotation {:optional true} :string]]})
+    [:annotation {:optional true} [:string {:min 1}]]]})

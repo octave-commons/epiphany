@@ -409,7 +409,8 @@
 (deftest inbox-decide-shows-help
   (let [{:keys [exit out]} (main/run ["inbox" "decide" "--help"])]
     (is (zero? exit))
-    (is (string/includes? out "Usage: ep inbox decide"))))
+    (is (string/includes? out "Usage: ep inbox decide"))
+    (is (string/includes? out "--request-id"))))
 
 (deftest inbox-decide-requires-candidate-id-and-decision
   (let [{:keys [exit out]} (main/run ["inbox" "decide"])]
@@ -427,6 +428,13 @@
     (is (= 1 exit))
     (is (string/includes? out "review-decision"))
     (is (string/includes? out "candidate-id"))))
+
+(deftest inbox-decide-rejects-invalid-request-id
+  (let [{:keys [exit out]} (main/run ["inbox" "decide"
+                                      (str (random-uuid)) "accepted"
+                                      "--request-id" "not-a-uuid"])]
+    (is (= 1 exit))
+    (is (string/includes? out "UUID"))))
 
 (deftest inbox-decide-rejects-phantom-candidate
   (testing "a decision against a nonexistent candidate is rejected (ENG-017G2 parity with HTTP)"

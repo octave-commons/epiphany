@@ -303,12 +303,26 @@
   [adapters]
   (fn [request]
     (let [body (:body-params request)
+          relabel-to (let [value (:relabel-to body)]
+                       (cond
+                         (keyword? value) value
+                         (and (string? value) (not (str/blank? value)))
+                         (keyword value)
+                         :else nil))
           candidate (cond-> {:command/name :command/review-decision
                              :candidate-id (parse-uuid-or-raw (:candidate-id body))
                              :decision (if (str/blank? (:decision body))
                                          ""
-                                         (keyword (:decision body)))}
-                      (:rationale body) (assoc :reason (:rationale body)))
+                                         (keyword (:decision body)))
+                             :request-id (parse-uuid-or-raw
+                                          (or (:request-id body)
+                                              (random-uuid)))}
+                      (not (str/blank? (:rationale body)))
+                      (assoc :reason (:rationale body))
+                      relabel-to
+                      (assoc :relabel-to relabel-to)
+                      (not (str/blank? (:annotation body)))
+                      (assoc :annotation (:annotation body)))
           decoded (commands/decode candidate)]
       (if (commands/rejected? decoded)
         (rejected->problem decoded)

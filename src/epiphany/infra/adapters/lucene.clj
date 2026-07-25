@@ -264,6 +264,14 @@
                         :result/embedding-version (.get doc "embedding_version")}))
                    (.-scoreDocs hits)))))))
 
+   :index-stats
+   (fn [_resource-id]
+     (if (index-empty? index-dir)
+       {:document-count 0}
+       (with-open [reader (DirectoryReader/open (FSDirectory/open index-dir))]
+         (let [searcher (IndexSearcher. reader)]
+           {:document-count (.count searcher (doc-type-query "section"))}))))
+
    :index-version
    (fn []
      (let [result (read-version-file index-dir)]

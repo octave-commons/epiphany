@@ -582,7 +582,9 @@
                                  [:p "No candidate found for that id."]])
             (let [resource-id (:resource-id candidate)
                   decision (review/make-decision candidate-id decision-type
-                                                 :reason (:reason body))
+                                                 :reason (not-empty
+                                                          (str/trim
+                                                           (or (:reason body) ""))))
                   observation (review/decision->observation
                                decision {:resource-id resource-id :adapter-version "0.1.0"})
                   record! (get-in adapters [:observations :record-review-decision!])

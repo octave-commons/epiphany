@@ -91,6 +91,30 @@
       (is (= 1 (count ((:search adapter) "First"))))
       (is (= 1 (count ((:search adapter) "Second")))))))
 
+(deftest index-stats-report-real-document-count-test
+  (testing "index stats expose the documents status actually queries"
+    (let [dir (temp-index-dir)
+          adapter (lucene/make-index-adapter {:index-dir dir})
+          record (make-test-record "# First\n\nAlpha.\n\n# Second\n\nBeta."
+                                   "doc.md" "c1" "b1")]
+      (is (= {:document-count 0}
+             ((:index-stats adapter) (random-uuid))))
+      ((:index-sections! adapter) record)
+      (is (= {:document-count 2}
+             ((:index-stats adapter) (random-uuid))))
+      ((:index-embeddings! adapter)
+       [{:embedding/path-raw "doc.md"
+         :embedding/commit-oid "c1"
+         :embedding/heading-path ["First"]
+         :embedding/level 1
+         :embedding/ordinal 0
+         :embedding/model "test"
+         :embedding-version 1
+         :embedding/vector [1.0 0.0]}])
+      (is (= {:document-count 2}
+             ((:index-stats adapter) (random-uuid)))
+          "embedding vectors are not section-indexing documents"))))
+
 (deftest multiple-files-test
   (testing "sections from different files are indexed separately"
     (let [dir (temp-index-dir)

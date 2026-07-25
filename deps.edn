@@ -77,7 +77,7 @@
             :main-opts ["-m" "noahtheduke.splint" "-o" "simple" "src" "test" "dev"]}
 
    ;; Coverage reporting.
-   :coverage {:extra-paths ["test"]
+   :coverage {:extra-paths ["test" "tools"]
               :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                            cloverage/cloverage {:mvn/version "1.2.4"}}
               :main-opts ["-m" "cloverage.coverage"

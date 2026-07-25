@@ -25,7 +25,7 @@
   [parent-dir]
   (let [repo-dir (io/file parent-dir "fixture-repo")]
     ;; init
-    (sh! "git" "init" (.getPath repo-dir))
+    (sh! "git" "init" "-b" "main" (.getPath repo-dir))
     (sh! "git" "-C" (.getPath repo-dir) "config" "user.email" "test@example.invalid")
     (sh! "git" "-C" (.getPath repo-dir) "config" "user.name" "Epiphany Test")
 

@@ -104,6 +104,7 @@
 ;;   - :search — lexical query, return ranked results
 ;;   - :index-embeddings! — add embedding records with KNN vector fields
 ;;   - :knn-search — vector nearest-neighbor query, return ranked results
+;;   - :index-stats — document counts used by cross-stage status
 ;;   - :index-version — current schema version of the index
 ;;   - :rebuild-index! — drop and rebuild from stored records
 ;;   - :clear-index! — drop all index data
@@ -115,6 +116,7 @@
    [:search           :any]
    [:index-embeddings! :any]
    [:knn-search       :any]
+   [:index-stats      :any]
    [:index-version    :any]
    [:rebuild-index!   :any]
    [:clear-index!     :any]])
