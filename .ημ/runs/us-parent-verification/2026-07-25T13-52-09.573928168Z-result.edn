@@ -1,0 +1,117 @@
+{:workflow/id :us-parent-verification,
+ :ημ/kind :ultra/run-result,
+ :finished-at "2026-07-25T13:52:09.573905510Z",
+ :raw-findings 11,
+ :confirmed [],
+ :all
+ [{:title
+   "AC 'report counts' partially unmet: no Markdown-paths-found, unique-blobs, or duplicate-blobs-reused counts exist anywhere",
+   :file "src/epiphany/infra/main.clj",
+   :detail
+   "US-004 AC: 'The system can report counts for commits scanned, Markdown paths found, unique blobs found, duplicate blobs reused, and failures.' Verified live today with a fixture repo (/tmp/us004-fix, 2 commits, 2 md files, 1 modify): `clojure -M:run -- ingest /tmp/us004-fix --profile local` prints only 'Commits traversed', 'Revisions observed' (commit×path pairs, not unique paths), 'Revisions scanned', 'Sections extracted', 'Extraction failures'. Greps for unique-blob|blobs-found|duplicate-blob|paths-found across src/ and test/ return nothing; domain/ingestion.clj's run record has only :ingestion/commit-count and :ingestion/failure-count; domain/status.clj stage counts cover refs/documents/processed only. Three of the five mandated counts (Markdown paths found as a distinct count, unique blobs found, duplicate blobs reused) have no reporting surface in CLI output, `ep status`, or any observation schema — the criterion as written is contradicted by the delivered reporting surface.",
+   :severity "blocker",
+   :card "story-04",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC1 contradicted: `clojure -M:test` exits 2 TODAY — the 'green baseline' is red whenever any service is down",
+   :file "test/epiphany/integration_suite_test.clj",
+   :detail
+   "AC: 'On a supported JDK, a fresh clone succeeds with clojure -M:test without manually editing local files.' Measured today (MongoDB up, MinIO down — the machine's normal state per AGENTS.md): `clojure -M:test` → exit 2, '763 tests, 2104 assertions, 2 failures'. The two failures are US-000C's own readiness-gate tests (services-are-reachable, integration-suite-is-wired) which live in the default test paths and cannot pass without MongoDB+MinIO running. Worse for the fresh-clone case: the other ^:integration suites (test/epiphany/infra/adapters/mongo_test.clj, law_suite/observations_mongo_test.clj, ollama_test.clj) have NO availability guard — their fixtures connect directly (mongo_test.clj:41), so on a true fresh clone with no services they error out rather than skip. `:test` includes :integration by construction (tests.edn has only :unit and :integration suites; bare `kaocha.runner` runs both), so 'fresh clone → clojure -M:test → green' is unattainable as delivered. AGENTS.md calls `clojure -M:test` 'the green baseline'; it is red right now.",
+   :severity "blocker",
+   :card "story-00",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC4 partially contradicted: `clojure -M:integration-test` with unavailable services exits non-zero but with misleading diagnostics that never name the unavailable service",
+   :file "test/epiphany/integration_suite_test.clj",
+   :detail
+   "AC: 'clojure -M:integration-test either runs against explicitly started local services or exits with clear availability diagnostics.' Measured with MinIO down (S3 unavailable, confirmed via `ep --check-services`: '[UNAVAILABLE] s3 at 127.0.0.1:9000'): `clojure -M:integration-test` → exit 2, '20 tests, 99 assertions, 2 failures', each failure reading 'Test ran without assertions. Did you forget an (is ...)?'. The output never mentions services, MongoDB, S3, or UNAVAILABLE. Structural cause: the require-services fixture (lines 11-21) reports a clojure.test :skip that kaocha never prints, and it wraps the readiness test itself — so `services-are-reachable`'s own `(is (services/all-available?) \"MongoDB and S3 must be running...\")` diagnostic is short-circuited by its fixture and can never fire. US-000C's completion comment claims 'integration-test exits with clear diagnostics when services unavailable, diagnostics name each unavailable service' — that is only true of the `ep --check-services` CLI path (which does work: names the service, prints a start hint), not of the test-suite path the AC names. Not a silent pass (exit 2 is loud), hence should-fix rather than blocker; the first branch of the AC is demonstrable (18 service-backed integration tests ran green against local MongoDB in the same run).",
+   :severity "should-fix",
+   :card "story-00",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC5 contradicted: copied repo with same :resource-id but unrelated Git history is silently merged — no identity-conflict flag exists",
+   :file "src/epiphany/application/registration.clj",
+   :detail
+   "AC: 'If a copied repository carries the same :resource-id but does not share expected Git object/history evidence, the system flags an identity conflict for review rather than merging silently.' register! (registration.clj:20-35) only resolves the common git dir and reads corpus-archaeology/repository.edn; it never reads Git objects or compares history evidence. Live demonstration: created /tmp/us002/repoD with a completely unrelated history, copied repository.edn ({:resource-id #uuid \"7dbc7717-...\"}) from repoC into repoD/.git/corpus-archaeology/, ran register! — it silently reused resource-id 7dbc7717-9512-4c89-9ee4-49b88806817f and recorded an ordinary :repository/location-observed with no conflict, no review event, no evidence comparison. Repo-wide grep for identity-conflict / shared-history evidence checks in the registration path finds nothing. Neither ENG-001B1 (identity resolution) nor ENG-001A (location observations) covers this, so the decomposition claim does not cover AC5.",
+   :severity "blocker",
+   :card "story-02",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC1 contradicted: no automatic family join on shared commit OIDs",
+   :file "src/epiphany/application/registration.clj",
+   :detail
+   "AC: 'When a newly registered repository shares one or more commit OIDs with an existing repository family, it joins that family automatically.' Demonstrated false TODAY: created /tmp/opencode/us003/repo-a with 2 commits, cloned to repo-b (shares both commit OIDs), ran `clojure -M:run -- register` on each — repo-a got Resource ID 4f288374-6552-4683-aa89-d9d87248551e, repo-b got a fresh unrelated ID e80629a0-cde3-4213-95e1-9bd44b940a23. No family-join code exists: registration/register! (lines 11-39) only reads/writes per-common-git-dir repository.edn and records a :repository/location-observed observation; grep for :joined-existing/:new-family across src matches only the unused law schema (src/epiphany/law/observation.clj:56). The decomposition claim is hollow: ENG-001B1 covers single-repo Git-local identity only, and ENG-001D explicitly declares 'Do not infer repository-family equivalence' out of scope (story-01d line 29). ADR-001 §3 mandates the family-join behavior, so no card ever implemented it.",
+   :severity "blocker",
+   :card "story-03",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC3 unverifiable: no repository-family reassessment scheduling exists",
+   :file
+   "docs/kanban/stories/story-06-detect-potential-history-replacement.md",
+   :detail
+   "US-006 AC3: 'It schedules repository-family reassessment only for this exception, not during ordinary indexing.' The 'not during ordinary indexing' half holds (family assessment is recorded only at registration, law/observation.clj:56-57; ADR-001:366), but the 'schedules reassessment' half has no implementation: grep for 'reassess' across src/ and test/ finds zero hits (only docs/adrs/adr-001...md:114-131). There is no job, queue entry, or durable event scheduling family reassessment after a suspected rewrite. No deferral of this is recorded on the card (it records only 'Decomposed into 1 story (ENG-001H)').",
+   :severity "should-fix",
+   :card "story-06",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC1 contradicted: no `:repository/history-rewrite-suspected` event, detection unwired, and trigger ignores ancestry (fires on ordinary fast-forward)",
+   :file "src/epiphany/domain/history_replacement.clj",
+   :detail
+   "US-006 AC1 requires: 'If a known ref changes to a newly observed tip WITHOUT EXPECTED ANCESTRY, the system emits a :repository/history-rewrite-suspected event.' Three gaps: (1) No event of that name exists in src/ (grep finds it only in docs/adrs/adr-001...md:119); the delivered analog is an observation type `:git/history-replacement-observed` (law/observation.clj:177-187, history_replacement.clj:32) — an acceptable epistemic softening per the child card, but the emission is never exercised. (2) `detect-replacements` and `make-replacement-record` are referenced ONLY by test/epiphany/domain/history_replacement_test.clj — no caller in ingestion (domain/ingestion.clj tracks no prior ref targets and never invokes detection), so 'the system emits' is not demonstrable via any CLI path. (3) The trigger condition is contradicted: `detect-replacements` (history_replacement.clj:62-75) flags ANY OID change on a known ref with no reachability/ancestry check — test `detect-replacements-finds-changed-refs` (test line 39-46) proves a bare OID change with zero ancestry evidence is flagged, meaning ordinary fast-forward development would produce 'replacement' observations, exactly what AC1's 'without expected ancestry' qualifier and ENG-001H's own docstring ('no longer reachable', line 4) rule out.",
+   :severity "blocker",
+   :card "story-06",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC2 contradicted: the documented command `clojure -M:run -- --help` exits 1 with 'Unknown command: --help'",
+   :file "src/epiphany/infra/main.clj",
+   :detail
+   "AC: 'clojure -M:run -- --help succeeds and identifies the canonical executable as epiphany; ep invokes the same entry point.' Measured: `clojure -M:run -- --help` → stdout 'Unknown command: --help' + usage, exit 1. Root cause verified empirically: the Clojure CLI passes the literal `--` through to `-main` (confirmed with a scratch -m project: args arrive as (\"--\" \"--help\")), and tools.cli (`cli/parse-opts args global-options :in-order true`, main.clj:1252) treats `--` as end-of-options, so `--help` lands in `arguments` and falls into the unknown-command branch (main.clj:1287-1288). Nothing in main.clj's history ever stripped a leading `--`. The same documented `--` separator breaks worse elsewhere: `clojure -M:run -- ingest <path> --profile services` dies in clojure.main with FileNotFoundException \"--\". This exact broken command is documented in AGENTS.md:17 and README.md:190, so every agent/user following the repo's own instructions hits it. Mitigating evidence: help itself works — `bin/ep --help` and `clojure -M:run --help` exit 0 and identify both `epiphany` and the `ep` alias, and bin/ep + bin/epiphany exec the same entry point — but the criterion's literal command does not succeed.",
+   :severity "blocker",
+   :card "story-00",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC3 contradicted: shared commits/blobs are re-recorded per instance, not deduplicated by family",
+   :file "src/epiphany/domain/revision_at_path.clj",
+   :detail
+   "AC: 'Commits and blobs already observed in the family are not re-recorded as new facts merely because another instance exposes them.' The revision-at-path identity key includes :resource-id (revision_at_path.clj:97-104) and ingest-time dedup is scoped per resource via (:list-revision-at-path-by-resource observations) (infra/main.clj:483-485). Commit observations likewise carry per-instance :resource-id envelopes (law/observation.clj:102-109). Since family join does not exist (see AC1 finding), a clone with 100% shared history re-walks and re-records every commit and revision-at-path fact under its new resource-id. Dedup exists only within one resource-id's reruns (ENG-001D scope), never across family instances.",
+   :severity "blocker",
+   :card "story-03",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC4 unverifiable: no CLI/UI surface identifies old tip, new tip, instance, detection reason, and time",
+   :file "src/epiphany/infra/main.clj",
+   :detail
+   "US-006 AC4: 'The UI/CLI identifies old tip, new tip, affected repository instance, detection reason, and time.' The CLI dispatch table (main.clj:1276-1287: register, ingest, search, status, show, diff, trace, inbox, export, serve) contains no command that surfaces history-replacement observations; `status` reports ingestion-run state only (domain/status.clj). The observation record itself carries old/new OIDs, resource-id, and timestamps (law/observation.clj:181-187) but has NO detection-reason field, whereas the ADR-001:119 example mandates `:reason :no-common-ancestor-at-known-ref`. Nothing demonstrates this criterion today.",
+   :severity "should-fix",
+   :card "story-06",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}
+  {:title
+   "AC5 contradicted: registration result carries no family assessment and cites no overlapping-commit evidence",
+   :file "src/epiphany/application/registration.clj",
+   :detail
+   "AC: 'The registration result explains whether the instance created a new family or joined an existing family and cites the overlapping commit evidence.' register! returns only {:resource-id :repository-path :common-git-dir :request-id} (registration.clj:36-39); format-register-result (infra/main.clj:54-64) prints only Registered/Resource ID/Common Git dir/Profile — demonstrated live on the clone fixtures above. The HTTP register-handler (infra/http.clj:267-281) delegates to the same register!, so parity gives the same gap. No :repository/registered observation with :family/assessment is ever emitted anywhere in src — the observation/registration-v1 schema (law/observation.clj:47-57) is only exercised by law/fixture tests (test/epiphany/law/registry_test.clj:93-103), i.e. the contract exists but no producer does.",
+   :severity "blocker",
+   :card "story-03",
+   :lens "us-acceptance",
+   :survives false,
+   :reasons []}]}

@@ -1,8 +1,8 @@
 (Π-state
-  (timestamp "2026-07-20T20:15:00Z")
-  (branch "main")
-  (base-commit "7f9c6ae")
-  (staged-count 19)
+  (timestamp "2026-07-21T00:00:00Z")
+  (branch "triage/2026-07-21-assurance-fixes-launcher")
+  (base-commit "0525950")
+  (staged-count 8)
   (unstaged)
   (push
     (status "pending")
@@ -12,6 +12,6 @@
     (CLAUDE.md "Claude Code guidance — not committed")
     (opencode.json "OpenCode config — not committed"))
   (test-result
-    (total 608)
-    (assertions 1540)
+    (total 743)
+    (assertions 2005)
     (failures 0)))

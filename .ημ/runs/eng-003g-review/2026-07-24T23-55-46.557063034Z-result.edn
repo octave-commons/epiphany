@@ -1,0 +1,6 @@
+{:workflow/id :eng-003g-review,
+ :ημ/kind :ultra/run-result,
+ :finished-at "2026-07-24T23:55:46.557036656Z",
+ :raw-findings 0,
+ :confirmed [],
+ :all []}

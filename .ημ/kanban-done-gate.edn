@@ -1,0 +1,7 @@
+;; Read by muse's plugins.kanban-gate (../muse/.ημ/plugins/kanban_gate.cljs).
+;; Names the CLI dispatch file to check named `ep <word>` commands against
+;; when a story's card body claims one as its headline deliverable -- the
+;; check that caught the ENG-004A/B/D + ENG-005B/F phantom-CLI pattern
+;; audited 2026-07-12/13. See docs/kanban/AGENTS.md hard rule 7 and
+;; docs/kanban/chores/chore-kanban-done-gate-shared-hook-and-ledger.md.
+{:dispatch-file "src/epiphany/infra/main.clj"}

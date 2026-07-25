@@ -1,0 +1,6 @@
+{"type":"started","key":"v2:8198c9674acb683cbbf2dbed2c2d2d8b7c6f7c558bc9c57f807f38f79305f92e","label":"review:eng-003g:correctness","ts":"2026-07-24T23:40:46.525274139Z"}
+{"type":"started","key":"v2:80d925fc4e89617785e3cdeef634dd293edddbeb3f86ce819566368e11ac173b","label":"review:eng-003g:architecture-law","ts":"2026-07-24T23:40:46.525716482Z"}
+{"type":"started","key":"v2:4ca9911d934f10e77f85536168e0d63f532ae59a9fd3887f1652cc35336587f5","label":"review:eng-003g:dod-coverage","ts":"2026-07-24T23:40:46.525854791Z"}
+{"type":"error","key":"v2:80d925fc4e89617785e3cdeef634dd293edddbeb3f86ce819566368e11ac173b","label":"review:eng-003g:architecture-law","error":"no parseable JSON object in agent output","ts":"2026-07-24T23:54:56.429560942Z"}
+{"type":"error","key":"v2:4ca9911d934f10e77f85536168e0d63f532ae59a9fd3887f1652cc35336587f5","label":"review:eng-003g:dod-coverage","error":"agent timeout after 900000ms","ts":"2026-07-24T23:55:46.555968697Z"}
+{"type":"error","key":"v2:8198c9674acb683cbbf2dbed2c2d2d8b7c6f7c558bc9c57f807f38f79305f92e","label":"review:eng-003g:correctness","error":"agent timeout after 900000ms","ts":"2026-07-24T23:55:46.556629931Z"}
