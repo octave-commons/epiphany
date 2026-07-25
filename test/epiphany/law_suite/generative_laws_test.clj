@@ -14,6 +14,7 @@
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [clojure.edn]
+            [clojure.java.io]
             [clojure.set]
             [epiphany.domain.backup :as backup]
             [epiphany.infra.adapters.in-memory :as in-memory]
@@ -30,6 +31,7 @@
   [label property]
   (let [seed (rand-int 1000000)
         _ (println (str "SEED " label " " seed))
+        _ (clojure.java.io/make-parents "target/property-seeds.edn")
         _ (spit "target/property-seeds.edn"
                 (str (pr-str {:label label :seed seed}) "\n")
                 :append true)

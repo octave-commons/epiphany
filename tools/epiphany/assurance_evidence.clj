@@ -20,35 +20,15 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [epiphany.law.assurance]
             [malli.core :as m]))
 
 ;; ---------------------------------------------------------------------------
-;; Artifact schema (dogfooded Malli contract)
+;; Artifact schema — lives in law/assurance (ENG-017J review finding: the
+;; contract belongs in law/, not in the generator).
 
 (def artifact-schema
-  [:map {:closed true}
-   [:artifact/version [:= 1]]
-   [:revision [:map {:closed true}
-               [:sha :string]
-               [:branch :string]
-               [:dirty? :boolean]]]
-   [:generated-at :string]
-   [:commands [:vector [:map {:closed true}
-                        [:name :string]
-                        [:exit :int]
-                        [:summary :string]]]]
-   [:property-seeds [:vector [:map {:closed true}
-                              [:label :string]
-                              [:seed :int]]]]
-   [:interop [:map {:closed true}
-              [:baseline-clean? :boolean]
-              [:delta :string]]]
-   [:suites [:map {:closed true}
-             [:unit [:map {:closed true}
-                     [:tests :int]
-                     [:assertions :int]
-                     [:failures :int]
-                     [:errors :int]]]]]])
+  epiphany.law.assurance/artifact-schema)
 
 ;; ---------------------------------------------------------------------------
 ;; Execution capture
