@@ -1,0 +1,117 @@
+{:workflow/id :us-parent-verification
+ :workflow/version 1
+
+ :meta {:name "us-parent-verification"
+        :description "Verify US-level acceptance criteria of decomposed breakdown parents against the actual system before closing them."
+        :phases [{:title "Review" :detail "AC verification per parent"}
+                 {:title "Verify" :detail "2 skeptic votes per finding, quorum 2"}]}
+
+ :run {:model "kimi-for-coding/k3"
+       :dir "/home/err/spaces/epiphany"
+       :agent-timeout-ms 900000
+       :max-concurrency 3}
+
+ :vars
+ {:repo "/home/err/spaces/epiphany"
+  :cards
+  [{:key "story-00" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-00-establish-executable-local-development-baseline.md"
+    :context "Decomposed parent. All children (story-00a/b/c) are done. Verify THIS card's US-level acceptance criteria are demonstrable TODAY (run the commands, read the code). Report only UNMET criteria as findings."}
+   {:key "story-02" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-02-rediscover-moved-repository.md"
+    :context "Decomposed parent claiming implicit coverage by ENG-001B1 + ENG-001A (both done). Verify the card's own acceptance criteria hold TODAY (e.g. actually move a fixture repo and re-register). Report only UNMET criteria."}
+   {:key "story-03" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-03-recognize-shared-history.md"
+    :context "Decomposed parent claiming implicit coverage by ENG-001B1 + ENG-001D (both done). Verify the card's own acceptance criteria hold TODAY. Report only UNMET criteria."}
+   {:key "story-04" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-04-discover-git-backed-markdown-revisions.md"
+    :context "Decomposed parent; children ENG-001D/E/F (all done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-05" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-05-resume-and-replay-projections.md"
+    :context "Decomposed parent; children ENG-001G/J (all done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-06" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-06-detect-potential-history-replacement.md"
+    :context "Decomposed parent; child ENG-001H (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-07" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-07-extract-revision-scoped-sections.md"
+    :context "Decomposed parent; children ENG-002A/B/C (all done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-08" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-08-extract-deterministic-continuity-features.md"
+    :context "Decomposed parent; child ENG-002D (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-09" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-09-propose-path-repurpose-boundaries.md"
+    :context "Decomposed parent; child ENG-002E (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-10" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-10-search-current-and-historical-notes.md"
+    :context "Decomposed parent; children ENG-003A-F (all done) plus ENG-003G (done — ep ingest + durable search). Verify this card's US-level acceptance criteria are demonstrable TODAY — run `ep ingest` + `ep search` on a fixture if needed. Report only UNMET criteria."}
+   {:key "story-11" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-11-inspect-search-evidence.md"
+    :context "Decomposed parent; child ENG-004A (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep show`). Report only UNMET criteria."}
+   {:key "story-12" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-12-compare-historical-expressions.md"
+    :context "Decomposed parent; child ENG-004B (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep diff`). Report only UNMET criteria."}
+   {:key "story-13" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-13-generate-candidate-lineage-links.md"
+    :context "Decomposed parent; child ENG-004C (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-14" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-14-trace-idea-through-time.md"
+    :context "Decomposed parent; child ENG-004D (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep trace`). Report only UNMET criteria."}
+   {:key "story-15" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-15-identify-research-gaps.md"
+    :context "Decomposed parent; child ENG-005E (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-16" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-16-review-proposed-relationships.md"
+    :context "Decomposed parent; children ENG-005A/B/C (all done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep inbox`, decision events). Report only UNMET criteria."}
+   {:key "story-17" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-17-curate-concept-from-evidence.md"
+    :context "Decomposed parent; child ENG-005D (done). Verify this card's US-level acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "story-18" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-18-export-evidence-packet.md"
+    :context "Decomposed parent; child ENG-005F (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep export`). Report only UNMET criteria."}
+   {:key "story-19" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-19-use-minimal-local-workbench.md"
+    :context "Decomposed parent; children ENG-006A/B/C (all done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep serve`). Report only UNMET criteria."}
+   {:key "story-20" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-20-observe-ingestion-and-indexing.md"
+    :context "Decomposed parent; children ENG-001J + ENG-020A (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (`ep status`). Report only UNMET criteria."}
+   {:key "story-21" :path "/home/err/spaces/epiphany/docs/kanban/stories/story-21-recover-corpus-archaeology-view.md"
+    :context "Decomposed parent; child ENG-021A (done). Verify this card's US-level acceptance criteria are demonstrable TODAY (backup/restore drill). Report only UNMET criteria."}
+   {:key "epic-01" :path "/home/err/spaces/epiphany/docs/kanban/epics/epic-01-archaeological-ledger.md"
+    :context "Phase-1 epic. All stories under it are done. Verify the EPIC's outcome statement + acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "epic-02" :path "/home/err/spaces/epiphany/docs/kanban/epics/epic-02-markdown-evidence-extraction.md"
+    :context "Phase-1 epic. All stories under it are done. Verify the EPIC's outcome statement + acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "epic-04" :path "/home/err/spaces/epiphany/docs/kanban/epics/epic-04-temporal-idea-lineage.md"
+    :context "Phase-1 epic. All stories under it are done. Verify the EPIC's outcome statement + acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "epic-05" :path "/home/err/spaces/epiphany/docs/kanban/epics/epic-05-redundancy-tension-review.md"
+    :context "Phase-1 epic. All stories under it are done. Verify the EPIC's outcome statement + acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}
+   {:key "epic-06" :path "/home/err/spaces/epiphany/docs/kanban/epics/epic-06-temporal-research-workbench.md"
+    :context "Phase-1 epic. All stories under it are done. Verify the EPIC's outcome statement + acceptance criteria are demonstrable TODAY. Report only UNMET criteria."}]
+  :lenses
+  [{:key "us-acceptance"
+    :prompt "You are verifying a DECOMPOSED parent card before it is closed. For EACH acceptance criterion on the card, find the concrete evidence it is met TODAY: the CLI command that demonstrates it (run it if cheap), the test that proves it, or the code path. Report ONLY criteria you CANNOT verify as findings (severity: blocker if the criterion is contradicted, should-fix if merely unverifiable). If every criterion is verifiable, return zero findings and say so in dodVerdict with the per-AC evidence table."}]}
+
+ :schemas
+ {:findings {:type "object"
+             :additionalProperties false
+             :properties {:findings {:type "array"
+                                     :items {:type "object"
+                                             :additionalProperties false
+                                             :properties {:title {:type "string"}
+                                                          :file {:type "string"}
+                                                          :detail {:type "string" :description "Which acceptance criterion is unmet/unverifiable, with evidence"}
+                                                          :severity {:type "string" :enum ["blocker" "should-fix" "nit"]}}
+                                             :required ["title" "file" "detail" "severity"]}}
+                          :dodVerdict {:type "string" :description "Per-AC evidence table (required)"}}
+             :required ["findings" "dodVerdict"]}
+  :verdict {:type "object"
+            :additionalProperties false
+            :properties {:refuted {:type "boolean" :description "true if the finding is wrong, already handled, out of scope for the card, or not worth acting on"}
+                         :reason {:type "string"}}
+            :required ["refuted" "reason"]}}
+
+ :stages
+ [{:stage/id :review
+   :stage/kind :map-agent
+   :stage/phase "Review"
+   :stage/items {:cartesian [{:bind :card :from [:vars :cards]}
+                             {:bind :lens :from [:vars :lenses]}]}
+   :stage/agent "ultra-reviewer"
+   :stage/schema :findings
+   :stage/label "verify:{card/key}"
+   :stage/prompt "You are verifying a decomposed parent card in the repo ({repo}) before it is closed as done.\n\nCard: read {card/path} in full (including comment history).\n{card/context}\n\nYour task: {lens/prompt}\n\nRepo rules: read {repo}/AGENTS.md if present. You MAY run read-only commands (clojure -M:unit-test, ep <cmd> --help, git log) and create fixture repos under /tmp to demonstrate criteria. Do not modify the repo."}
+
+  {:stage/id :verify
+   :stage/kind :vote-fan-out
+   :stage/phase "Verify"
+   :stage/over :review
+   :stage/finding-path [:findings]
+   :stage/agent "ultra-skeptic"
+   :stage/schema :verdict
+   :stage/votes 2
+   :stage/quorum 2
+   :stage/label "vote:{finding/title|40}"
+   :stage/prompt "A reviewer claims an acceptance criterion is UNMET on card {card/path} in repo ({repo}):\n\nTITLE: {finding/title}\nCLAIM: {finding/detail}\nSEVERITY CLAIMED: {finding/severity}\n\nSkeptic pass #{vote/n}: try to REFUTE this by finding the evidence the criterion IS met (run the command, read the test). Refute if the criterion is demonstrably met, out of the parent's scope, or covered by a documented deferral. Default to refuted=true if uncertain."}
+
+  {:stage/id :return
+   :stage/kind :return
+   :stage/return {:confirmed :surviving :all :flat}}]}
