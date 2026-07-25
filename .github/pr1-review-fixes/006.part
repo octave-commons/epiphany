@@ -1,0 +1,109 @@
+mmands/execute {:adapters adapters} command)
++            replay-outcome (commands/execute {:adapters adapters} command)
++            conflict-outcome (commands/execute {:adapters adapters}
++                                               (assoc command :decision :rejected))
++            first-decision (get-in first-outcome [:outcome/payload :decision])
++            replay-decision (get-in replay-outcome [:outcome/payload :decision])]
++        (is (= :accepted (:outcome/category first-outcome)))
++        (is (= :accepted (:outcome/category replay-outcome)))
++        (is (= (:review-decision/id first-decision)
++               (:review-decision/id replay-decision)))
++        (is (= (:review-decision/decided-at first-decision)
++               (:review-decision/decided-at replay-decision)))
++        (is (= 1 (count ((:list-review-decisions-by-candidate observations)
++                         candidate-id))))
++        (is (= :rejected (:outcome/category conflict-outcome)))))))
++
++(deftest extraction-replay-converges-in-observations-and-lucene
++  (testing "same ingest request cannot append duplicate extraction or section documents"
++    (let [dir (temp-dir "epiphany-extraction-replay")
++          adapters (in-memory/make {:common-git-dir-fn identity})
++          observations (:observations adapters)
++          index (lucene/make-index-adapter {:index-dir dir})
++          resource-id (random-uuid)
++          revision-id (random-uuid)
++          request-id (random-uuid)
++          source "# One\n\nDurable body.\n"
++          revision {:resource-id resource-id
++                    :revision-at-path/id revision-id
++                    :revision/commit-oid "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
++                    :revision/path-raw "docs/one.md"
++                    :revision/blob-oid "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
++          ports {:git {:read-blob (fn [_ _] {:blob/content source})}
++                 :observations observations
++                 :index index}]
++      (try
++        (is (some? (:extraction/record
++                    (extraction/extract-revision ports request-id revision))))
++        (is (some? (:extraction/record
++                    (extraction/extract-revision ports request-id revision))))
++        (is (= 1 (count ((:list-section-extractions-by-revision observations)
++                         revision-id))))
++        (is (= {:document-count 1} ((:index-stats index) resource-id)))
++        (finally
++          (delete-recursive! (.toFile dir)))))))
++
++(deftest revisions-for-commit-emits-deletion-observations
++  (testing "selected parent markdown paths absent from the child are durable deletes"
++    (let [resource-id (random-uuid)
++          child-oid "cccccccccccccccccccccccccccccccccccccccc"
++          parent-oid "dddddddddddddddddddddddddddddddddddddddd"
++          keep-blob "1111111111111111111111111111111111111111"
++          gone-blob "2222222222222222222222222222222222222222"
++          entries [{:entry/commit-oid child-oid
++                    :entry/path-raw "keep.md"
++                    :entry/blob-oid keep-blob
++                    :entry/mode 33188
++                    :entry/policy-version "markdown-tree-v1"}]
++          selected-parent-entries
++          [{:entry/commit-oid parent-oid
++            :entry/path-raw "keep.md"
++            :entry/blob-oid keep-blob
++            :entry/mode 33188
++            :entry/policy-version "markdown-tree-v1"}
++           {:entry/commit-oid parent-oid
++            :entry/path-raw "gone.md"
++            :entry/blob-oid gone-blob
++            :entry/mode 33188
++            :entry/policy-version "markdown-tree-v1"}]
++          parent-entries [{:git/path "keep.md" :git/blob-oid keep-blob :git/mode 33188}
++                          {:git/path "gone.md" :git/blob-oid gone-blob :git/mode 33188}]
++          observations
++          (revision-at-path/revisions-for-commit
++           entries
++           {:resource-id resource-id
++            :commit-oid child-oid
++            :tree-oid "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
++            :parent-commit-oid parent-oid
++            :parent-entries parent-entries
++            :selected-parent-entries selected-parent-entries
++            :observed-at #inst "2026-07-25T00:00:00Z"})
++          deletion (first (filter #(= "gone.md" (:revision/path-raw %))
++                                  observations))]
++      (is (= 2 (count observations)))
++      (is (= :delete (:revision/evidence deletion)))
++      (is (= child-oid (:revision/commit-oid deletion)))
++      (is (= gone-blob (:revision/blob-oid deletion)))
++      (is (= gone-blob (:revision/parent-blob-oid deletion))))))
++
++(deftest urlencoded-form-bodies-are-decoded-before-dispatch
++  (testing "ordinary HTMX form payloads become keyword-keyed body params"
++    (let [read-body (var-get (ns-resolve 'epiphany.infra.http 'read-body))
++          body "resource-id=00000000-0000-0000-0000-000000000001&reason=needs+review"
++          request {:body (ByteArrayInputStream. (.getBytes body "UTF-8"))
++                   :headers {"content-type" "application/x-www-form-urlencoded"}}]
++      (is (= {:resource-id "00000000-0000-0000-0000-000000000001"
++              :reason "needs review"}
++             (read-body request))))))
++
++(deftest stale-lucene-schema-requires-an-explicit-rebuild
++  (testing "append rejects stale data while rebuild replaces it with the current schema"
++    (let [dir (temp-dir "epiphany-lucene-version")
++          adapter (lucene/make-index-adapter {:index-dir dir})
++          record {:resource-id (random-uuid)
++                  :extraction/revision-at-path-id (random-uuid)
++                  :extraction/commit-oid "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
++                  :extraction/path-raw "docs/version.md"
++                  :extraction/blob-oid "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
++                  :extraction/extractor-version "test-v1"
++                  :extraction/sections [{:section/heading-path [
