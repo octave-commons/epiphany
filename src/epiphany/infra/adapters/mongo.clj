@@ -13,7 +13,8 @@
   Integration tests use an isolated database (\"epiphany-test\") and clean
   only collections they own."
 
-  (:require [epiphany.law.operations :as operations]
+  (:require [epiphany.domain.backup :as backup]
+            [epiphany.law.operations :as operations]
             [epiphany.law.registry :as registry])
    (:import [com.mongodb.client MongoClients MongoDatabase MongoCollection]
             [com.mongodb.client.model IndexOptions Indexes]
@@ -572,6 +573,26 @@
   [a b]
   (= a b))
 
+
+(defn- decode-validated
+  "Decode a stored document and validate the record against its
+   collection schema (ENG-017F): a malformed stored document is a named
+   integrity finding (:integrity/corrupt /
+   :integrity/unsupported-version) — never silently omitted, defaulted,
+   or collapsed into an empty result."
+  [collection-key decode-fn doc]
+  (let [record (try
+                 (decode-fn doc)
+                 (catch Exception e
+                   (throw (ex-info (str "Stored document in " collection-key " cannot be decoded")
+                                   {:code :integrity/corrupt
+                                    :collection collection-key
+                                    :document-id (.get ^Document doc "_id")
+                                    :decode-error (.getMessage e)}
+                                   e))))]
+    (backup/validate-record collection-key record)
+    record))
+
 (defn make-observations-adapter
   "Create an observations port backed by MongoDB.
    Returns a map matching the observations port schema."
@@ -590,7 +611,7 @@
                                         (.filter (Document. "request_id" request-id))
                                        (.first))]
                       (if (and existing
-                               (doc->observation-equal? (doc->observation existing) observation))
+                               (doc->observation-equal? (decode-validated "repository-location" doc->observation existing) observation))
                         nil
                         {:code :idempotency-conflict
                          :request-id (:observation/request-id observation)
@@ -621,7 +642,7 @@
                       (.filter (Document. "request_id" (str request-id)))
                      (.first))]
          (when doc
-           (doc->observation doc))))
+           (decode-validated "repository-location" doc->observation doc))))
 
      :record-repository-location!
      insert-or-idempotent!
@@ -656,7 +677,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "resource_id" (str resource-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->ingestion-run docs)))
+         (mapv #(decode-validated "ingestion-run" doc->ingestion-run %) docs)))
 
       :list-checkpoints
      (fn [ingestion-run-id]
@@ -664,7 +685,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "ingestion_run_id" (str ingestion-run-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->checkpoint docs)))
+         (mapv #(decode-validated "projection-checkpoint" doc->checkpoint %) docs)))
 
       :list-revision-at-path-by-resource
      (fn [resource-id]
@@ -672,7 +693,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "resource_id" (str resource-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->revision-at-path docs)))
+         (mapv #(decode-validated "revision-at-path" doc->revision-at-path %) docs)))
 
       :list-section-extractions-by-revision
      (fn [revision-at-path-id]
@@ -680,7 +701,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "revision_at_path_id" (str revision-at-path-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->section-extraction docs)))
+         (mapv #(decode-validated "section-extraction" doc->section-extraction %) docs)))
 
       :list-review-decisions
      (fn [resource-id]
@@ -688,7 +709,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "resource_id" (str resource-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->review-decision docs)))
+         (mapv #(decode-validated "review-decision" doc->review-decision %) docs)))
 
       :list-review-decisions-by-candidate
      (fn [candidate-id]
@@ -696,7 +717,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "candidate_id" (str candidate-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->review-decision docs)))
+         (mapv #(decode-validated "review-decision" doc->review-decision %) docs)))
 
       :list-lineage-candidates
      (fn [resource-id]
@@ -704,7 +725,7 @@
              docs (-> (.find coll)
                       (.filter (Document. "resource_id" (str resource-id)))
                       (.into (java.util.ArrayList.)))]
-         (mapv doc->lineage-candidate docs)))
+         (mapv #(decode-validated "lineage-candidate" doc->lineage-candidate %) docs)))
 
       :find-lineage-candidate-by-id
      (fn [candidate-id]
@@ -712,34 +733,39 @@
              doc (-> (.find coll)
                      (.filter (Document. "candidate_id" (str candidate-id)))
                      (.first))]
-         (when doc (doc->lineage-candidate doc))))
+         (when doc (decode-validated "lineage-candidate" doc->lineage-candidate doc))))
 
       :export-all
      (fn []
-       {"repository-location" (mapv doc->observation
+       {"repository-location" (mapv #(decode-validated "repository-location" doc->observation %)
                                     (.into (.find ^MongoCollection (:repository-location-collection conn))
                                            (java.util.ArrayList.)))
-        "ingestion-run"       (mapv doc->ingestion-run
+        "ingestion-run"       (mapv #(decode-validated "ingestion-run" doc->ingestion-run %)
                                     (.into (.find ^MongoCollection (:ingestion-run-collection conn))
                                            (java.util.ArrayList.)))
-        "projection-checkpoint" (mapv doc->checkpoint
+        "projection-checkpoint" (mapv #(decode-validated "projection-checkpoint" doc->checkpoint %)
                                       (.into (.find ^MongoCollection (:projection-checkpoint-collection conn))
                                              (java.util.ArrayList.)))
-        "section-extraction"  (mapv doc->section-extraction
+        "section-extraction"  (mapv #(decode-validated "section-extraction" doc->section-extraction %)
                                     (.into (.find ^MongoCollection (:section-extraction-collection conn))
                                            (java.util.ArrayList.)))
-        "revision-at-path"    (mapv doc->revision-at-path
+        "revision-at-path"    (mapv #(decode-validated "revision-at-path" doc->revision-at-path %)
                                     (.into (.find ^MongoCollection (:revision-at-path-collection conn))
                                            (java.util.ArrayList.)))
-        "review-decision"     (mapv doc->review-decision
+        "review-decision"     (mapv #(decode-validated "review-decision" doc->review-decision %)
                                     (.into (.find ^MongoCollection (:review-decision-collection conn))
                                            (java.util.ArrayList.)))
-        "lineage-candidate"   (mapv doc->lineage-candidate
+        "lineage-candidate"   (mapv #(decode-validated "lineage-candidate" doc->lineage-candidate %)
                                     (.into (.find ^MongoCollection (:lineage-candidate-collection conn))
                                            (java.util.ArrayList.)))})
 
       :import-all
      (fn [data]
+       ;; Validate every record BEFORE any mutation (ENG-017F): a
+       ;; malformed or unknown-version import payload mutates nothing.
+       (doseq [[coll-name docs] data
+               doc docs]
+         (backup/validate-record coll-name doc))
        (doseq [[coll-name docs] data]
          (let [^MongoCollection coll (case coll-name
                                        "repository-location" (:repository-location-collection conn)

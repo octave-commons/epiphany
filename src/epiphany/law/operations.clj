@@ -87,6 +87,31 @@
   (disj (registered-operations) :import-all))
 
 ;; ---------------------------------------------------------------------------
+;; Collection <-> schema mapping (ENG-017F)
+;;
+;; The logical collection keys used by :export-all / :import-all and the
+;; backup manifest, mapped to the schema every record in that collection
+;; must satisfy. This is the two-way contract for decode/import
+;; validation: the same registry that judges writes judges reads.
+
+(def collection-schemas
+  "Logical collection key (as returned by :export-all) -> named schema
+   every record in that collection must satisfy."
+  {"repository-location"   "observation/repository-location-v1"
+   "ingestion-run"         "observation/ingestion-run-v1"
+   "projection-checkpoint" "observation/projection-checkpoint-v1"
+   "section-extraction"    "observation/section-extraction-v1"
+   "revision-at-path"      "observation/revision-at-path-v1"
+   "review-decision"       "observation/review-decision-v1"
+   "lineage-candidate"     "observation/lineage-candidate-v1"})
+
+(def expected-record-version
+  "The :observation/schema-version every current record must claim.
+   An unknown future version is :integrity/unsupported-version, never
+   silently decoded as the nearest known one."
+  1)
+
+;; ---------------------------------------------------------------------------
 ;; Version check
 
 (defn validate-version

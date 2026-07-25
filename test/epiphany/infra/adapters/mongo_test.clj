@@ -3,6 +3,7 @@
    Requires a running MongoDB instance (localhost:27017).
    Tagged ^:integration so they only run with the :integration profile."
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
+            [epiphany.domain.backup :as backup]
             [epiphany.infra.adapters.mongo :as mongo])
   (:import [org.bson Document]))
 
@@ -210,3 +211,63 @@
         (is (some? doc))
         (is (= 42 (.getLong doc "processed_count")))
         (is (= "completed" (.getString doc "status")))))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-017F: decode integrity — malformed stored documents are named
+;; integrity findings, never silently omitted or returned as empty.
+
+(defn- raw-location-doc
+  "A repository-location document built by hand (bypassing adapter
+   validation) with the given schema_version value."
+  [request-id schema-version]
+  (doto (Document.)
+    (.put "_id" (str (random-uuid)))
+    (.put "observation_type" "repository/location-observed")
+    (.put "request_id" (str request-id))
+    (.put "observation_id" (str (random-uuid)))
+    (.put "observed_at" (java.util.Date.))
+    (.put "adapter_version" "0.1.0")
+    (.put "schema_version" schema-version)
+    (.put "resource_id" (str (random-uuid)))
+    (.put "repository_path" "/x")
+    (.put "repository_path_source" "filesystem-argument")
+    (.put "common_git_dir" "/x/.git")
+    (.put "common_git_dir_source" "filesystem-argument")))
+
+(deftest ^:integration malformed-stored-doc-is-integrity-corrupt-not-empty
+  (testing "a stored doc that cannot be decoded is :integrity/corrupt, never []"
+    (let [rid (random-uuid)
+          coll (:repository-location-collection @conn)]
+      (.insertOne coll (raw-location-doc rid "not-a-number"))
+      (try
+        ((:find-by-request-id (mongo/make-observations-adapter @conn)) rid)
+        (is false "expected an integrity failure, got a clean result")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :integrity/corrupt (:code (ex-data e)))))))))
+
+(deftest ^:integration future-version-stored-doc-is-unsupported-version
+  (testing "a stored doc claiming an unknown future version is :integrity/unsupported-version, never decoded as nearest-known"
+    (let [rid (random-uuid)
+          coll (:repository-location-collection @conn)]
+      (.insertOne coll (raw-location-doc rid (long 99)))
+      (try
+        ((:find-by-request-id (mongo/make-observations-adapter @conn)) rid)
+        (is false "expected an integrity failure, got a clean result")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :integrity/unsupported-version (:code (ex-data e)))))))))
+
+(deftest ^:integration export-import-export-round-trip-on-mongo
+  (testing "canonical export -> clear -> import -> export preserves the manifest"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)
+          rid (random-uuid)
+          record (test-observation {:observation/request-id rid})
+          file1 (str (java.nio.file.Files/createTempFile "epiphany-mongo-backup" ".edn"
+                                                         (make-array java.nio.file.attribute.FileAttribute 0)))
+          file2 (str file1 ".re")]
+      ((:record-repository-location! obs-adapter) record)
+      (let [exported (backup/export-to-file obs-adapter file1)]
+        (mongo/clean-test-db! @conn)
+        (backup/import-from-file obs-adapter file1)
+        (let [re-exported (backup/export-to-file obs-adapter file2)]
+          (is (= (:manifest exported) (:manifest re-exported))
+              "round trip preserves the canonical manifest"))))))

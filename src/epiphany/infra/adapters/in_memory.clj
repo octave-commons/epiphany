@@ -14,7 +14,9 @@
   idempotency semantics. Rejected writes leave all observable state
   byte-identical to the pre-write state."
 
-  (:require [epiphany.law.operations :as operations]
+  (:require [clojure.string :as string]
+            [epiphany.domain.backup :as backup]
+            [epiphany.law.operations :as operations]
             [epiphany.law.registry :as registry]))
 
 ;; ---------------------------------------------------------------------------
@@ -196,14 +198,19 @@
                                                    (:lineage-candidate/id %))
                                                @lineage-candidates)))
       :export-all (fn []
-                    {"repository-location" (vals @by-request-id)
-                     "ingestion-run"       @ingestion-runs
-                     "projection-checkpoint" @checkpoints
-                     "section-extraction"  @section-extractions
-                     "revision-at-path"    @revision-at-paths
-                     "review-decision"     @review-decisions
-                     "lineage-candidate"   @lineage-candidates})
+                    {"repository-location" (vec (vals @by-request-id))
+                     "ingestion-run"       (vec @ingestion-runs)
+                     "projection-checkpoint" (vec @checkpoints)
+                     "section-extraction"  (vec @section-extractions)
+                     "revision-at-path"    (vec @revision-at-paths)
+                     "review-decision"     (vec @review-decisions)
+                     "lineage-candidate"   (vec @lineage-candidates)})
       :import-all (fn [data]
+                    ;; Validate the entire payload BEFORE any mutation
+                    ;; (ENG-017F): a malformed import mutates nothing.
+                    (doseq [[coll-name docs] data
+                            doc docs]
+                      (backup/validate-record coll-name doc))
                     (doseq [[coll-name docs] data]
                       (case coll-name
                         "repository-location"
@@ -270,7 +277,7 @@
                         nil)
      :search (fn [query]
                ;; Simple substring match for unit testing
-               (let [q (clojure.string/lower-case query)
+               (let [q (string/lower-case query)
                      matches (filterv
                               (fn [rec]
                                 (some (fn [s]
@@ -346,7 +353,7 @@
                                       extraction-records)]
                           (swap! embeddings into results)
                           (vec results)))
-     :embed-query (fn [text]
+     :embed-query (fn [_text]
                     (vec (repeatedly 8 #(double (- (rand 2) 1)))))
      :embedding-version (fn [] @version)
      :clear-embeddings! (fn []

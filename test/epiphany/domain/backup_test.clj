@@ -146,7 +146,7 @@
       (spit backup-file (pr-str tampered))
       (let [adapters2 (test-adapters)
             obs2 (:observations adapters2)]
-        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"content hash mismatch"
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"(content hash mismatch|counts do not match)"
                               (backup/import-from-file obs2 backup-file)))))))
 
 (deftest import-rejects-unsupported-format
