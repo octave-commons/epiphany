@@ -27,6 +27,7 @@
     [:query [:string {:min 1}]]
     [:mode [:enum :lexical :semantic :hybrid]]
     [:limit [:int {:min 1 :max 1000}]]
+    [:embedding-version {:optional true} :int]
     [:filters {:optional true}
      [:map {:closed true}
       [:path-prefix {:optional true} :string]

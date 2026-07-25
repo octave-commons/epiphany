@@ -392,6 +392,8 @@
                                :query (string/join " " arguments)
                                :mode (:mode options)
                                :limit (:limit options)}
+                        (:embedding-version options)
+                        (assoc :embedding-version (:embedding-version options))
                         (:path-prefix options)
                         (assoc-in [:filters :path-prefix] (:path-prefix options))
                         (:ref options)
@@ -399,21 +401,26 @@
             decoded (commands/decode candidate)]
         (if (commands/rejected? decoded)
           {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
-          (let [outcome (commands/execute {:search-ports (make-durable-index-ports (:index-dir options))
-                                           :service-available? ollama/available?}
-                                          decoded)
-                category (:outcome/category outcome)]
-            (if (= :accepted category)
-              (let [results (:outcome/payload outcome)
-                    fmt (:format options)
-                    output (case fmt
-                             :edn  (format-results-edn results)
-                             :json (format-results-json results)
-                             :text (format-results-text results (:verbose options) profile))]
-                {:exit 0 :out output})
-              {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
-                                 (when (= :unavailable category)
-                                   "\n  Code: unavailable\n  Hint: Start Ollama on localhost:11434, or use --mode lexical."))})))))))
+          (try
+            (let [outcome (commands/execute {:search-ports (make-durable-index-ports (:index-dir options))
+                                             :service-available? ollama/available?}
+                                            decoded)
+                  category (:outcome/category outcome)]
+              (if (= :accepted category)
+                (let [results (:outcome/payload outcome)
+                      fmt (:format options)
+                      output (case fmt
+                               :edn  (format-results-edn results)
+                               :json (format-results-json results)
+                               :text (format-results-text results (:verbose options) profile))]
+                  {:exit 0 :out output})
+                {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
+                                   (when (= :unavailable category)
+                                     "\n  Code: unavailable\n  Hint: Start Ollama on localhost:11434, or use --mode lexical."))}))
+            (catch clojure.lang.ExceptionInfo e
+              {:exit 1 :out (str "Error: " (.getMessage e))})
+            (catch Exception e
+              {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Ingest subcommand

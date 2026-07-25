@@ -252,6 +252,8 @@
                              :mode (let [m (or (:mode body) "hybrid")]
                                      (if (string? m) (keyword m) m))
                              :limit (or (:limit body) 20)}
+                      (:embedding-version body)
+                      (assoc :embedding-version (:embedding-version body))
                       (:path-prefix body) (assoc-in [:filters :path-prefix] (:path-prefix body))
                       (:ref body) (assoc-in [:filters :ref] (:ref body)))
           decoded (commands/decode candidate)]

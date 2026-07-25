@@ -19,8 +19,7 @@
 
   No I/O in decode or encode-cli; execute performs the side effects
   through injected ports."
-  (:require [clojure.string :as str]
-            [epiphany.application.registration :as registration]
+  (:require [epiphany.application.registration :as registration]
             [epiphany.domain.hybrid-search :as hs]
             [epiphany.domain.review :as review]
             [epiphany.domain.status :as status]
