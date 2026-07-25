@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001706"
-title: "ENG-017F: Validate decoded and imported observation data"
-status: "accepted"
-type: "story"
-priority: "P1"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 5
-labels: ["quality", "backups", "decoding", "integrity", "phase-1"]
 category: "stories"
+labels: ["quality", "backups", "decoding", "integrity", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001701", "01900d7c-7f3a-7e8b-9c4d-000000001705"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784941593021-0.jxw4jihz5fhqp5n85nk"
+points: "5"
 verification: ["unit-test", "integration-test"]
 risk: "medium"
+title: "ENG-017F: Validate decoded and imported observation data"
+priority: "P1"
+status: "ready"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001706"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017F: Validate decoded and imported observation data
@@ -109,4 +110,6 @@ card makes testable.
 REWORK 2026-07-12: body rewritten to the story contract (original preserved in git history and scratchpad; see ENG-017A comment for the shared rework rationale). Triage authority: user instruction this session. --tasks-dir docs/kanban
 
 HELD AT ACCEPTED 2026-07-12: dependency ENG-017E is accepted but not ready (CI service decision pending). Per the unblocked-slice rule (docs/process/design.md), the manifest/corruption-fixture portion is insulated from that question and could be split out if E stalls — record the cut as a child card rather than starting F whole. --tasks-dir docs/kanban
+
+TRIAGE 2026-07-25: accepted -> ready. Dependencies now done: ENG-017A (done), ENG-017E (done 2026-07-24, commit 91ab60f + review wave). Points 5 at cap, acceptance criteria present, design link present.
 ---

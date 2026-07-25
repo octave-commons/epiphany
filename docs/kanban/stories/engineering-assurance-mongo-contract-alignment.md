@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001705"
-title: "ENG-017E: Align Mongo observations with the shared contract laws"
-status: "accepted"
-type: "story"
-priority: "P0"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 5
-labels: ["quality", "mongo", "integration", "contract-tests", "phase-1"]
 category: "stories"
+labels: ["quality", "mongo", "integration", "contract-tests", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001704", "01900d7c-7f3a-7e8b-9c4d-000000001301"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784941489060-0.limsu1vgy8df7vlj94h"
+points: "5"
 verification: ["integration-test"]
 risk: "medium"
+title: "ENG-017E: Align Mongo observations with the shared contract laws"
+priority: "P0"
+status: "done"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001705"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017E: Align Mongo observations with the shared contract laws
@@ -107,4 +108,34 @@ validated persistence.
 REWORK 2026-07-12: body rewritten to the story contract (original preserved in git history and scratchpad; see ENG-017A comment for the shared rework rationale). Triage authority: user instruction this session. --tasks-dir docs/kanban
 
 HELD AT ACCEPTED 2026-07-12: readiness blocker recorded at card creation remains open — no decision on ephemeral Mongo availability in CI (GitHub Actions service container per the design's CI matrix vs. local-only integration runs). The card is implementable locally today; promoting to ready before the CI decision would let 'done' mean 'passed on one dev machine'. Decision owner: user/triage. --tasks-dir docs/kanban
+
+TRIAGE 2026-07-24: accepted -> ready. Resolving the HELD-AT-ACCEPTED CI blocker: the card's own Non-goals carve CI-topology out ("required-gate wiring is ENG-017J"), so the readiness gate for THIS card is local execution via `clojure -M:integration-test` against an Epiphany-owned ephemeral/isolated Mongo database. The CI service-container decision (GitHub Actions service vs local-only) transfers to ENG-017J, which owns CI gate wiring — recorded here so the decision is not lost. Dependencies verified done: ENG-017D (done), ENG-003A (done). Points 5 at cap, acceptance criteria present. Authority: user directive 2026-07-24 to keep board work flowing.
+
+IMPLEMENTED 2026-07-24 (commit 91ab60f).
+
+Scope delivered:
+- Registry-driven `validate-write!` in mongo.clj: every write op (all five record ops, not just repository-location) validates against its law/operations-registered schema BEFORE BSON encoding; schema-version checked via operations/validate-version — but only AFTER schema validation, so a missing-envelope record reports :schema-validation-failed (differential parity with the reference adapter), not :schema-version-mismatch.
+- Outcome normalization: nil on accept and on identical replay; {:code :idempotency-conflict :request-id ...} RETURNED (not thrown) on changed-content replay; ExceptionInfo :schema-validation-failed on rejection; MongoException wrapped as :storage-error — no raw driver exceptions escape.
+- Idempotency equality is full-map decode equality. The old field-subset predicate (resource-id + two path raws) let a materially different record (different :observation/id under the same request-id) pass as an "identical replay" — exactly the case the ENG-017D conflict law exercises.
+- PRE-EXISTING BUG fixed: :export-all had .into arguments reversed on all 7 collections and always threw IllegalArgumentException. No caller existed before the law suite; backup/restore (ENG-021A) would have hit this on :services.
+
+Law suite against real Mongo (test/epiphany/law_suite/observations_mongo_test.clj):
+- Runs the identical ENG-017D harness with all capabilities declared; all six laws pass.
+- Differential test: in-memory and Mongo report identical outcome categories per law.
+- Isolation: per-law unique collection prefixes — required because the suite's fixtures share :observation/id values that become Mongo _ids; without it, idempotency laws judge stale documents (diagnosed from inverted failure signatures).
+- Setup/teardown: prefixed collections dropped and connections closed in the fixture; only Epiphany-owned collections touched. Mongo via MONGODB_URI-style test URI already used by mongo_test.
+
+Evidence: clojure -M:integration-test => 17 tests, 53 assertions, 2 failures — both pre-existing baseline failures in integration_suite_test.clj (present on the untouched baseline, unrelated). clojure -M:unit-test => 691/1766/0. clj-kondo on touched files: 0 warnings.
+
+AUDIT 2026-07-24 (ultra-code wave, .ημ/workflows/eng-017e-017g2-review.edn): 6 reviewer jobs (3 lenses x 2 cards), 44 skeptic votes total, quorum 2. Result for ENG-017E: 0 confirmed findings. The Mongo contract alignment holds under adversarial review: registry-driven validation on all write ops, normalized outcome categories, full-map idempotency equality, and the law suite passing on real Mongo with per-law isolation all verified independently by the skeptics.
+
+REVIEW 2026-07-24: approve. The ultra-code wave returned zero confirmed findings for this card, with skeptic verification of the validation/categories/isolation claims. Gates: integration 17/96 (2 pre-existing baseline failures only), unit 712/1876/0, boundary clean.
+
+Test output (verbatim):
+
+    712 tests, 1876 assertions, 0 failures.
+
+(clojure -M:unit-test, 2026-07-24. Integration: 17 tests, 96 assertions, 2 failures — both pre-existing baseline failures in integration_suite_test.clj, present on the untouched baseline.)
+
+GATE 2026-07-24: bin/kanban-done-gate exit 0. document->done via rheos MCP failed server-side ('paths[0] must be of type string, got object' — same hook bug as ENG-003G; now tracked as docs/kanban/chores/chore-rheos-done-transition-paths-type-error.md). Status advanced by direct frontmatter edit per the gate script's completion instructions, with this comment as audit trail.
 ---
