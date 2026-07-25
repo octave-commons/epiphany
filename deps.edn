@@ -83,6 +83,9 @@
               :main-opts ["-m" "cloverage.coverage"
                           "-p" "src"
                           "-s" "test"
+                          ;; Coverage is hermetic: service-backed namespaces run
+                          ;; under :integration-test, never against ambient CI.
+                          "-t" "^(?!epiphany\\.infra\\.adapters\\.(?:mongo|ollama)-test$)(?!epiphany\\.law-suite\\.observations-mongo-test$)(?!epiphany\\.integration-suite-test$).*"
                           "-e" "epiphany\\.integration.*"
                           "-o" "target/coverage"
                           "--codecov"
