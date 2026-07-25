@@ -24,7 +24,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/pr1-review-fixes/*.part > /tmp/pr1-review-fixes.patch
+          cat \
+            .github/pr1-review-fixes/000.part \
+            .github/pr1-review-fixes/001.part \
+            .github/pr1-review-fixes/002.part \
+            .github/pr1-review-fixes/003a.part \
+            .github/pr1-review-fixes/003b.part \
+            .github/pr1-review-fixes/003c.part \
+            .github/pr1-review-fixes/004.part \
+            .github/pr1-review-fixes/005.part \
+            .github/pr1-review-fixes/006.part \
+            .github/pr1-review-fixes/007.part \
+            > /tmp/pr1-review-fixes.patch
           echo '80dbd086d11632cf923de26ee18af17b6dc8ca0583449f7a3c83c4dcd882de5b  /tmp/pr1-review-fixes.patch' | sha256sum --check --strict
           git apply --check /tmp/pr1-review-fixes.patch
           git apply /tmp/pr1-review-fixes.patch
