@@ -19,3 +19,7 @@ data/
 # The story .md files under docs/kanban/stories/ stay tracked -- they're
 # real card content, not a log -- only the ledger is excluded.
 docs/kanban/.events/ledger.edn
+
+# Heretic mutation pilot working dirs
+.heretic/
+.heretic-sandbox/

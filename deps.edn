@@ -86,4 +86,23 @@
                           "-e" "epiphany\\.integration.*"
                           "-o" "target/coverage"
                           "--codecov"
-                          "--text"]}}}
+                          "--text"]}
+
+   ;; ENG-017J: CI assurance evidence artifact (revision-bound EDN).
+   :assurance-evidence {:extra-paths ["tools"]
+                        :main-opts ["-m" "epiphany.assurance-evidence"]}
+
+   ;; ENG-017J mutation pilot (boundary-critical namespaces only, heretic.edn).
+   :heretic {:extra-paths ["test"]
+             :classpath-overrides {org.clojure/clojure nil}
+             :extra-deps {io.github.parenstech/heretic {:git/sha "45ed7c7deffd5fee1b3050efa7396d0113b30a4f"}
+                          com.github.flow-storm/clojure {:mvn/version "1.12.5"}}
+             :jvm-opts ["-Dclojure.storm.instrumentEnable=true"
+                        "-Dclojure.storm.instrumentOnlyPrefixes=epiphany"]
+             :main-opts ["-m" "heretic.core"]}
+   ;; Child classpath for heretic's sandboxed mutant runs (no :main-opts —
+   ;; the sandbox driver supplies -e).
+   :heretic-child {:extra-paths ["test"]
+                   :classpath-overrides {org.clojure/clojure nil}
+                   :extra-deps {io.github.parenstech/heretic {:git/sha "45ed7c7deffd5fee1b3050efa7396d0113b30a4f"}
+                                com.github.flow-storm/clojure {:mvn/version "1.12.5"}}}}}

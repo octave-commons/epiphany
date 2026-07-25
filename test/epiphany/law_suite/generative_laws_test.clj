@@ -24,10 +24,15 @@
 (def ^:private num-tests 30)
 
 (defn- quick
-  "Run a property with a printed, replayable seed."
+  "Run a property with a printed, replayable seed. The seed is also
+   appended to target/property-seeds.edn (kaocha's capture-output swallows
+   console prints; the file is the durable, CI-readable record — ENG-017J)."
   [label property]
   (let [seed (rand-int 1000000)
         _ (println (str "SEED " label " " seed))
+        _ (spit "target/property-seeds.edn"
+                (str (pr-str {:label label :seed seed}) "\n")
+                :append true)
         result (tc/quick-check num-tests property :seed seed)]
     (is (:pass? result)
         (str label " failed (replay with seed " seed "): "

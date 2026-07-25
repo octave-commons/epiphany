@@ -1,0 +1,14 @@
+{:source-paths ["src"]
+ :test-paths ["test"]
+ :test-namespaces [epiphany.law.operations-test
+                   epiphany.application.validation-test
+                   epiphany.law-suite.observations-test]
+ :heretic-dir ".heretic"
+ :instrument-prefixes ["epiphany.law.operations"
+                       "epiphany.application.validation"]
+ :sandbox-aliases ["heretic-child"]
+ :preset :fast
+ :timeout-ms 15000
+ :parallel-workers 2
+ :report-format :edn
+ :output-path "target/heretic-report"}
