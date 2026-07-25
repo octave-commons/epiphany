@@ -38,6 +38,77 @@ jobs:
 
           section = Path('src/epiphany/domain/section_extraction.clj')
           text = section.read_text()
+          old = '\n'.join([
+              '(defn- build-heading-paths',
+              '  "Given classified sections, assign heading paths based on heading hierarchy.',
+              '  The path-stack is kept root-first (oldest ancestor at index 0). Returns a',
+              '  vector of [heading-path section] pairs."',
+              '  [classified]',
+              '  (loop [remaining classified',
+              '         path-stack []    ;; root-first: [[level text] ...]',
+              '         acc []]',
+              '    (if (empty? remaining)',
+              '      acc',
+              '      (let [{:keys [heading preamble?]} (first remaining)',
+              '            rest-secs (rest remaining)]',
+              '        (if preamble?',
+              '          (recur rest-secs path-stack',
+              '                 (conj acc [[] (assoc (first remaining) :heading-path [])]))',
+              '          (let [level (:heading/level heading)',
+              '                text  (heading-text (:heading/inlines heading))',
+              '                ;; Pop younger siblings / descendants (level >= current) from',
+              '                ;; the end of the stack, keeping older ancestors.',
+              '                trimmed (loop [stack path-stack]',
+              '                          (if (and (seq stack) (>= (first (peek stack)) level))',
+              '                            (recur (pop stack))',
+              '                            stack))',
+              '                new-stack (conj trimmed [level text])',
+              '                full-path (vec (map second new-stack))',
+              '                sibling-count (count (filter (fn [[l _]] (= l level))',
+              '                                             path-stack))]',
+              '            (recur rest-secs new-stack',
+              '                   (conj acc [full-path',
+              '                              (assoc (first remaining)',
+              '                                     :heading-path full-path',
+              '                                     :ordinal sibling-count)]))))))))'])
+          new = '\n'.join([
+              '(defn- build-heading-paths',
+              '  "Given classified sections, assign heading paths based on heading hierarchy.',
+              '  The path-stack is kept root-first (oldest ancestor at index 0). Returns a',
+              '  vector of [heading-path section] pairs."',
+              '  [classified]',
+              '  (loop [remaining classified',
+              '         path-stack []    ;; root-first: [[level text] ...]',
+              '         sibling-counts {}',
+              '         acc []]',
+              '    (if (empty? remaining)',
+              '      acc',
+              '      (let [{:keys [heading preamble?]} (first remaining)',
+              '            rest-secs (rest remaining)]',
+              '        (if preamble?',
+              '          (recur rest-secs path-stack sibling-counts',
+              '                 (conj acc [[] (assoc (first remaining) :heading-path [])]))',
+              '          (let [level (:heading/level heading)',
+              '                text  (heading-text (:heading/inlines heading))',
+              '                ;; Pop younger siblings / descendants (level >= current) from',
+              '                ;; the end of the stack, keeping older ancestors.',
+              '                trimmed (loop [stack path-stack]',
+              '                          (if (and (seq stack) (>= (first (peek stack)) level))',
+              '                            (recur (pop stack))',
+              '                            stack))',
+              '                parent-path (vec (map second trimmed))',
+              '                sibling-key [parent-path level]',
+              '                ordinal (get sibling-counts sibling-key 0)',
+              '                new-stack (conj trimmed [level text])',
+              '                full-path (vec (map second new-stack))]',
+              '            (recur rest-secs new-stack',
+              '                   (update sibling-counts sibling-key (fnil inc 0))',
+              '                   (conj acc [full-path',
+              '                              (assoc (first remaining)',
+              '                                     :heading-path full-path',
+              '                                     :ordinal ordinal)]))))))))'])
+          assert text.count(old) == 1, text.count(old)
+          text = text.replace(old, new)
           assert text.count('{:keys [heading body _ordinal]}') == 1
           text = text.replace('{:keys [heading body _ordinal]}',
                               '{:keys [heading body ordinal]}')
@@ -67,6 +138,21 @@ jobs:
               '    nil))'])
           assert text.count(old) == 1, text.count(old)
           memory.write_text(text.replace(old, new))
+
+          tests = Path('test/epiphany/domain/section_extraction_test.clj')
+          text = tests.read_text()
+          replacements = {
+              '(is (= 0 (:section/ordinal (second sections))))':
+              '(is (= 1 (:section/ordinal (second sections))))',
+              '(is (= 0 (:section/ordinal (nth sections 2))))':
+              '(is (= 2 (:section/ordinal (nth sections 2))))',
+          }
+          assert text.count('(is (= 0 (:section/ordinal (second sections))))') == 2
+          text = text.replace('(is (= 0 (:section/ordinal (second sections))))',
+                              '(is (= 1 (:section/ordinal (second sections))))')
+          assert text.count('(is (= 0 (:section/ordinal (nth sections 2))))') == 1
+          tests.write_text(text.replace('(is (= 0 (:section/ordinal (nth sections 2))))',
+                                        '(is (= 2 (:section/ordinal (nth sections 2))))'))
           PY
           git diff --check
       - name: Run verification
@@ -109,5 +195,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'fix: preserve section ordinals and atomic replay dedupe'
+          git commit -m 'fix: preserve sibling ordinals and atomic replay dedupe'
           git push origin HEAD:automation/pr1-unit-diagnostics-20260725
