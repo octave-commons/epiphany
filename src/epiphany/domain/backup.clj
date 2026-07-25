@@ -86,47 +86,68 @@
                     {:code :integrity/unsupported-version
                      :manifest-version (:version manifest)
                      :expected-version backup-manifest-version})))
+  ;; :collections and :content-hash are REQUIRED, not opt-out — a
+  ;; manifest missing either is itself evidence of tampering (no
+  ;; permissive legacy branch).
+  (when-not (map? (:collections manifest))
+    (throw (ex-info "Backup manifest is missing its :collections counts"
+                    {:code :integrity/corrupt
+                     :manifest-keys (sort (keys manifest))})))
+  (when-not (string? (:content-hash manifest))
+    (throw (ex-info "Backup manifest is missing its :content-hash"
+                    {:code :integrity/corrupt
+                     :manifest-keys (sort (keys manifest))})))
   (let [sorted-data (into (sorted-map) data)
         collection-counts (into {} (map (fn [[k v]] [k (count v)]) sorted-data))]
-    (when (:collections manifest)
-      (when-not (= (set (keys (:collections manifest))) (set (keys sorted-data)))
-        (throw (ex-info "Backup manifest collections do not match payload collections"
+    (when-not (= (set (keys (:collections manifest))) (set (keys sorted-data)))
+      (throw (ex-info "Backup manifest collections do not match payload collections"
+                      {:code :integrity/corrupt
+                       :manifest-collections (sort (keys (:collections manifest)))
+                       :payload-collections (sort (keys sorted-data))})))
+    (when-not (= (:collections manifest) collection-counts)
+      (throw (ex-info "Backup manifest counts do not match payload counts"
+                      {:code :integrity/corrupt
+                       :manifest-counts (:collections manifest)
+                       :payload-counts collection-counts})))
+    (let [actual-hash (sha256-base64 (pr-str sorted-data))]
+      (when-not (= (:content-hash manifest) actual-hash)
+        (throw (ex-info "Backup content hash mismatch -- file may be corrupted or hand-edited"
                         {:code :integrity/corrupt
-                         :manifest-collections (sort (keys (:collections manifest)))
-                         :payload-collections (sort (keys sorted-data))})))
-      (when-not (= (:collections manifest) collection-counts)
-        (throw (ex-info "Backup manifest counts do not match payload counts"
-                        {:code :integrity/corrupt
-                         :manifest-counts (:collections manifest)
-                         :payload-counts collection-counts}))))
-    (when (:content-hash manifest)
-      (let [actual-hash (sha256-base64 (pr-str sorted-data))]
-        (when-not (= (:content-hash manifest) actual-hash)
-          (throw (ex-info "Backup content hash mismatch -- file may be corrupted or hand-edited"
-                          {:code :integrity/corrupt
-                           :expected-hash (:content-hash manifest)
-                           :actual-hash actual-hash})))))
+                         :expected-hash (:content-hash manifest)
+                         :actual-hash actual-hash}))))
     (doseq [[collection-key records] sorted-data
             record records]
       (validate-record collection-key record))
     payload))
 
 (defn- read-backup-file
-  "Read and EDN-parse a backup file. A missing file is :source/unavailable;
-   an unparseable one is :integrity/corrupt. Never a bare reader exception."
+  "Read and EDN-parse a backup file. A missing or unreadable file is
+   :source/unavailable; an unparseable one is :integrity/corrupt.
+   Never a bare reader exception."
   [file-path]
-  (when-not (.exists (io/file file-path))
-    (throw (ex-info (str "Backup file not found: " file-path)
-                    {:code :source/unavailable
-                     :file file-path})))
-  (try
-    (edn/read-string (slurp file-path))
-    (catch Exception e
-      (throw (ex-info (str "Backup file is not parseable EDN (truncated or corrupted): " file-path)
-                      {:code :integrity/corrupt
-                       :file file-path
-                       :parse-error (.getMessage e)}
-                      e)))))
+  (let [file (io/file file-path)]
+    (when-not (.exists file)
+      (throw (ex-info (str "Backup file not found: " file-path)
+                      {:code :source/unavailable
+                       :file file-path})))
+    (when-not (.canRead file)
+      (throw (ex-info (str "Backup file is not readable: " file-path)
+                      {:code :source/unavailable
+                       :file file-path})))
+    (try
+      (edn/read-string (slurp file))
+      (catch java.io.IOException e
+        (throw (ex-info (str "Backup file could not be read: " file-path)
+                        {:code :source/unavailable
+                         :file file-path
+                         :io-error (.getMessage e)}
+                        e)))
+      (catch Exception e
+        (throw (ex-info (str "Backup file is not parseable EDN (truncated or corrupted): " file-path)
+                        {:code :integrity/corrupt
+                         :file file-path
+                         :parse-error (.getMessage e)}
+                        e))))))
 
 (defn export-to-file
   "Export all observations from the observations port to an EDN file.

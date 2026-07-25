@@ -3,6 +3,7 @@
    integrity outcomes, collection-name mapping, and the canonical
    export -> import -> export round trip."
   (:require [clojure.edn]
+            [clojure.java.io :as io]
             [clojure.string]
             [clojure.test :refer [deftest is testing]]
             [epiphany.domain.backup :as backup]
@@ -54,6 +55,22 @@
     nil
     (catch clojure.lang.ExceptionInfo e
       (ex-data e))))
+
+(defn- sha256-base64
+  [^String s]
+  (let [digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
+                        (.getBytes s "UTF-8"))]
+    (.encodeToString (java.util.Base64/getEncoder) digest)))
+
+(defn- retamper
+  "Rewrite a backup payload's data, refreshing the manifest hash so ONLY
+   the intended violation (record-level) can trip validation."
+  [payload new-data]
+  (let [sorted (into (sorted-map) new-data)]
+    {:manifest (assoc (:manifest payload)
+                      :collections (into {} (map (fn [[k v]] [k (count v)]) sorted))
+                      :content-hash (sha256-base64 (pr-str sorted)))
+     :data new-data}))
 
 ;; ---------------------------------------------------------------------------
 ;; Corruption fixtures: every one fails BEFORE any mutation
@@ -111,16 +128,12 @@
   (let [source (seed-port! (make-port))
         [file _text] (export-then-read source)
         payload (clojure.edn/read-string (slurp file))
-        broken (update-in payload [:data "repository-location" 0]
-                          dissoc :resource-id)
+        broken-data (update-in (:data payload) ["repository-location" 0]
+                               dissoc :resource-id)
         target (make-port)
         before ((:export-all target))]
-    ;; Rewrite the file with a record that fails its schema; refresh the
-    ;; manifest hash/counts so ONLY the schema violation can trip it.
-    (let [data (:data broken)
-          manifest (assoc (:manifest broken)
-                          :content-hash nil)]
-      (spit file (pr-str {:manifest (dissoc manifest :content-hash) :data data})))
+    ;; Refresh hash/counts so ONLY the schema violation can trip it.
+    (spit file (pr-str (retamper payload broken-data)))
     (let [error (import-error target file)]
       (is (= :integrity/corrupt (:code error)))
       (is (= before ((:export-all target)))
@@ -130,14 +143,38 @@
   (let [source (seed-port! (make-port))
         [file _text] (export-then-read source)
         payload (clojure.edn/read-string (slurp file))
-        broken (assoc-in payload [:data "repository-location" 0 :observation/schema-version] 99)
+        broken-data (assoc-in (:data payload)
+                              ["repository-location" 0 :observation/schema-version] 99)
         target (make-port)
         before ((:export-all target))]
-    (spit file (pr-str {:manifest (dissoc (:manifest broken) :content-hash)
-                        :data (:data broken)}))
+    (spit file (pr-str (retamper payload broken-data)))
     (let [error (import-error target file)]
       (is (= :integrity/unsupported-version (:code error)))
       (is (= before ((:export-all target)))))))
+
+(deftest missing-manifest-collections-is-corrupt-and-mutates-nothing
+  (testing "deleting :collections bypasses nothing — the field is required"
+    (let [source (seed-port! (make-port))
+          [file _text] (export-then-read source)
+          payload (clojure.edn/read-string (slurp file))
+          target (make-port)
+          before ((:export-all target))]
+      (spit file (pr-str (update payload :manifest dissoc :collections)))
+      (let [error (import-error target file)]
+        (is (= :integrity/corrupt (:code error)))
+        (is (= before ((:export-all target))))))))
+
+(deftest missing-manifest-content-hash-is-corrupt-and-mutates-nothing
+  (testing "deleting :content-hash bypasses nothing — the field is required"
+    (let [source (seed-port! (make-port))
+          [file _text] (export-then-read source)
+          payload (clojure.edn/read-string (slurp file))
+          target (make-port)
+          before ((:export-all target))]
+      (spit file (pr-str (update payload :manifest dissoc :content-hash)))
+      (let [error (import-error target file)]
+        (is (= :integrity/corrupt (:code error)))
+        (is (= before ((:export-all target))))))))
 
 (deftest unknown-collection-is-corrupt-and-mutates-nothing
   (let [source (seed-port! (make-port))
@@ -156,6 +193,18 @@
 (deftest missing-file-is-source-unavailable
   (let [error (import-error (make-port) "/nonexistent/path/backup.edn")]
     (is (= :source/unavailable (:code error)))))
+
+(deftest unreadable-file-is-source-unavailable-not-corrupt
+  (testing "an existing but unreadable file is :source/unavailable, never :integrity/corrupt"
+    (let [file (temp-file "epiphany-unreadable-backup")
+          f (io/file file)]
+      (spit file "{}")
+      (.setReadable f false false)
+      (try
+        (let [error (import-error (make-port) file)]
+          (is (= :source/unavailable (:code error))))
+        (finally
+          (.setReadable f true false))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Four outcomes stay distinct (never collapsible)

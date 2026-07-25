@@ -21,7 +21,7 @@
  epiphany.domain.backup
  {:quadrant :domain,
   :imports #{},
-  :dot-calls 6,
+  :dot-calls 8,
   :static-calls 0,
   :type-hints 1},
  epiphany.domain.benchmark
