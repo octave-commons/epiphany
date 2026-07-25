@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - automation/pr1-review-fixes-20260725
+  pull_request:
+    branches:
+      - triage/2026-07-21-assurance-fixes-launcher
 
 permissions:
   contents: write
