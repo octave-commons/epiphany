@@ -29,10 +29,10 @@
          overrides))
 
 (def ^:private test-uri
-  "MongoDB URI for integration tests. Credentials must come from environment."
+  "MongoDB URI for integration tests. Credentials and explicit localhost
+   opt-in must come from the environment."
   (or (System/getenv "EPIPHANY_TEST_MONGODB_URI")
-      (System/getenv "MONGODB_URI")
-      "mongodb://127.0.0.1:27017"))
+      (System/getenv "MONGODB_URI")))
 
 (def ^:private conn (atom nil))
 
@@ -55,11 +55,14 @@
 
 (use-fixtures :each
   (fn [f]
-    (try
-      (setup-db!)
-      (f)
-      (finally
-        (teardown-db!)))))
+    (if test-uri
+      (try
+        (setup-db!)
+        (f)
+        (finally
+          (teardown-db!)))
+      (binding [*out* *err*]
+        (println "SKIP Mongo integration test: set EPIPHANY_TEST_MONGODB_URI")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests
@@ -307,4 +310,3 @@
                           (:review-decision-collection @conn)
                           (:lineage-candidate-collection @conn)]]
         (is (contains? (index-names collection) "request_id_unique_v1"))))))
-

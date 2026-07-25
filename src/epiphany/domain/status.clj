@@ -150,8 +150,10 @@
                                          (conj (make-failure-record
                                                 (:checkpoint/error-message ckpt)
                                                 :resource-id resource-id)))
-                             :lag (when-let [ts (:observation/observed-at ckpt)]
-                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000))))
+                             :lag (when (:observation/observed-at ckpt)
+                                    (long (/ (- (System/currentTimeMillis)
+                                                (observed-at-ms ckpt))
+                                             1000))))
           (make-stage-status :extraction :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
@@ -223,8 +225,10 @@
                                          (conj (make-failure-record
                                                 (:checkpoint/error-message ckpt)
                                                 :resource-id resource-id)))
-                             :lag (when-let [ts (:observation/observed-at ckpt)]
-                                    (long (/ (- (System/currentTimeMillis) (.getTime ts)) 1000))))
+                             :lag (when (:observation/observed-at ckpt)
+                                    (long (/ (- (System/currentTimeMillis)
+                                                (observed-at-ms ckpt))
+                                             1000))))
           (make-stage-status :embedding :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]

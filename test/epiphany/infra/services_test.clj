@@ -1,15 +1,21 @@
 (ns epiphany.infra.services-test
   (:require [clojure.test :refer [deftest is testing]]
-            [epiphany.infra.services :as services]))
+            [epiphany.infra.services :as services])
+  (:import [java.net ServerSocket]))
 
 (deftest tcp-reachable-detects-open-port
-  (testing "detects MongoDB on localhost:27017"
-    (let [result (services/check-all {:mongodb {:port 27017}
-                                      :s3 {:port 99999}})]
-      ;; MongoDB should be available on this machine
-      (is (= :available (:status (first result))))
-      ;; Port 99999 should be unavailable
-      (is (= :unavailable (:status (second result)))))))
+  (testing "detects a deterministic local listener without requiring MongoDB"
+    (with-open [listener (ServerSocket. 0)]
+      (let [open-port (.getLocalPort listener)
+            result (services/check-all
+                    {:mongodb {:host "127.0.0.1"
+                               :port open-port
+                               :timeout-ms 100}
+                     :s3 {:host "127.0.0.1"
+                          :port 0
+                          :timeout-ms 100}})]
+        (is (= :available (:status (first result))))
+        (is (= :unavailable (:status (second result))))))))
 
 (deftest check-all-returns-vector-of-status-maps
   (let [results (services/check-all)]

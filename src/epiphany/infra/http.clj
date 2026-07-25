@@ -11,7 +11,6 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [epiphany.application.commands :as commands]
-            [epiphany.infra.adapters.ollama :as ollama]
             [epiphany.infra.profile :as profile]
             [epiphany.infra.workbench :as workbench]))
 
@@ -260,7 +259,11 @@
       (if (commands/rejected? decoded)
         (rejected->problem decoded)
         (encode-outcome (commands/execute {:search-ports adapters
-                                           :service-available? ollama/available?}
+                                           ;; The selected embeddings adapter is
+                                           ;; the availability boundary. A test
+                                           ;; double or local adapter must not be
+                                           ;; overridden by a global Ollama probe.
+                                           :service-available? (:service-available? adapters)}
                                           decoded)
                         fmt identity)))))
 
