@@ -250,7 +250,7 @@
 (defn- decision-time-ms
   [value]
   (cond
-    (instance? java.util.Date value) (.getTime ^java.util.Date value)
+    (instance? java.util.Date value) (inst-ms value)
     (number? value) (long value)
     :else Long/MIN_VALUE))
 

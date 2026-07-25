@@ -19,6 +19,12 @@
   []
   (java.util.UUID/randomUUID))
 
+(defn- ascii-bytes
+  "Encode the controlled UUID/scope derivation input without introducing a
+   Java string interop dependency into the domain layer."
+  [value]
+  (byte-array (map (comp byte int) (str value))))
+
 (defn derived-request-id
   "Derive a stable operation UUID from one caller request ID and a scope.
    This lets a compound command remain replay-safe without reusing one
@@ -26,7 +32,7 @@
   [request-id scope]
   (when request-id
     (java.util.UUID/nameUUIDFromBytes
-     (.getBytes (str request-id ":" scope) "UTF-8"))))
+     (ascii-bytes (str request-id ":" scope)))))
 
 (defn make-run-record
   "Construct an ingestion-run observation map.
