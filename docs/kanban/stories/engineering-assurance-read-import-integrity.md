@@ -5,13 +5,13 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001701", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784941593021-0.jxw4jihz5fhqp5n85nk"
+write-id: "1784942654730-0.y1l6x986xnb4rm8jlv"
 points: "5"
 verification: ["unit-test", "integration-test"]
 risk: "medium"
 title: "ENG-017F: Validate decoded and imported observation data"
 priority: "P1"
-status: "ready"
+status: "review"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001706"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -112,4 +112,17 @@ REWORK 2026-07-12: body rewritten to the story contract (original preserved in g
 HELD AT ACCEPTED 2026-07-12: dependency ENG-017E is accepted but not ready (CI service decision pending). Per the unblocked-slice rule (docs/process/design.md), the manifest/corruption-fixture portion is insulated from that question and could be split out if E stalls — record the cut as a child card rather than starting F whole. --tasks-dir docs/kanban
 
 TRIAGE 2026-07-25: accepted -> ready. Dependencies now done: ENG-017A (done), ENG-017E (done 2026-07-24, commit 91ab60f + review wave). Points 5 at cap, acceptance criteria present, design link present.
+
+IMPLEMENTED 2026-07-25 (commit 5d9f9e8).
+
+Delivered:
+- law/operations: collection-schemas — the logical export/import vocabulary ("repository-location" etc.) mapped to each collection's schema — plus expected-record-version. THE COLLECTION-NAME QUESTION, ANSWERED: the logical keys are the canonical backup/export vocabulary; physical Mongo collections are `<prefix><logical>-v1`; the two-way mapping is (a) logical->schema in law/operations/collection-schemas, (b) logical->physical in mongo connect!/import case; export-all keys == collection-schemas keys is now pinned by test (collection-vocabulary-is-explicit-and-consistent). inaccessible-sources reads the logical "repository-location" key from backup payloads — consistent with export-all, so it cannot silently inspect an empty list due to a naming mismatch (and the mapping is now test-pinned).
+- domain/backup: validate-record + validate-backup-payload — parse, format, version, collections, counts, content-hash, and per-record schema+version all validated BEFORE any mutation; read-backup-file gives missing file = :source/unavailable, truncated/unparseable = :integrity/corrupt, never a raw reader exception.
+- mongo: every read path (find/list/export) decodes through decode-validated — decode exceptions AND schema failures AND unknown versions become named integrity findings (:integrity/corrupt / :integrity/unsupported-version), never silently omitted, defaulted, or collapsed into an empty result. import-all validates the whole payload before any insert.
+- in-memory: import-all validates upfront (mutation-safety parity); export-all now returns vectors — it returned LISTS, which broke canonical payload equality against Mongo's vector shape (found via the round-trip test).
+- Tests: 7 corruption fixtures (truncate, edited count, flipped checksum, bumped manifest version, schema-violating record, unknown record version, unknown collection) each proven to fail BEFORE mutation with state-unchanged proof; 4-outcome distinctness; canonical export→import→export round trip (in-memory + real Mongo); seeded corrupt + future-version docs on real Mongo surface the named categories.
+
+Verification rows: corrupt backup fails pre-mutation (unit) ✓; malformed stored doc = integrity finding (integration) ✓; round trip preserves canonical data (integration) ✓; four outcomes distinct (unit) ✓.
+
+Gates: 723 tests, 1900 assertions, 0 failures (unit); 20 tests, 99 assertions, 2 failures (integration — both pre-existing baseline). Kondo 0 warnings on touched files.
 ---
