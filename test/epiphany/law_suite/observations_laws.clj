@@ -33,7 +33,8 @@
 
   `:skip` and `:pass` are genuinely distinguishable — a law whose
   required capability is not declared is reported as `:skip`, never as
-  a silent pass.")
+  a silent pass."
+  (:require [epiphany.law.operations :as operations]))
 
 ;; ---------------------------------------------------------------------------
 ;; Fixtures — one valid-record builder per write op
@@ -317,8 +318,13 @@
      :port         — a shared observations port map (used only when
                      :make-port is absent).
      :capabilities — a set of capability keywords declared by the adapter.
-     :ops          — write operations to judge (default: every op with a
-                     fixture in `op-fixtures`).
+     :ops          — write operations to judge (default: every registered
+                     write operation in law/operations).
+
+   Registered write ops WITHOUT a fixture are not silently skipped —
+   they produce a :fail outcome naming the missing fixture, so a new
+   write op can never drift past the harness unnoticed (ENG-017N
+   review finding).
 
    Returns a map of [op law] -> outcome map. Every applicable law is
    present in the result:
@@ -336,11 +342,19 @@
   [{:keys [capabilities ops] :as args}]
   (let [caps (or capabilities #{})
         provider (resolve-port-provider args)
-        judged-ops (or ops (keys op-fixtures))]
+        judged-ops (or ops (operations/registered-write-operations))]
     (into {}
           (concat
            (for [op judged-ops
+                 :when (nil? (get op-fixtures op))]
+             [[op :fixture-present]
+              {:outcome :fail
+               :detail (str "registered write op " op
+                            " has no law-suite fixture — the harness would "
+                            "silently skip it")}])
+           (for [op judged-ops
                  :let [fixture (get op-fixtures op)]
+                 :when fixture
                  {:keys [law capability run]} universal-laws]
              [[op law]
               (if (and capability (not (contains? caps capability)))
@@ -348,7 +362,7 @@
                 (run (provider) op fixture))])
            (for [op judged-ops
                  :let [fixture (get op-fixtures op)]
-                 :when (not= :none (:idempotency fixture))
+                 :when (and fixture (not= :none (:idempotency fixture)))
                  {:keys [law capability run]} idempotency-laws]
              [[op law]
               (if (and capability (not (contains? caps capability)))

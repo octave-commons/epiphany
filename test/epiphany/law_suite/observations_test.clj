@@ -49,6 +49,23 @@
       (testing "the export/import round-trip holds"
         (is (= :pass (:outcome (get outcomes [:record-repository-location! :export-import-round-trip]))))))))
 
+(deftest fixtureless-registered-op-fails-loudly
+  (testing "a registered write op with no fixture is a :fail, never a silent skip (ENG-017N review)"
+    (let [outcomes (laws/observations-laws
+                    {:make-port make-reference-port
+                     :capabilities #{:schema-validation :idempotency :export-import}
+                     :ops [:record-future-unfixtured-op!]})]
+      (is (= :fail (:outcome (get outcomes [:record-future-unfixtured-op! :fixture-present]))))
+      (is (string? (:detail (get outcomes [:record-future-unfixtured-op! :fixture-present]))))))
+  (testing "the default judged ops are exactly the registered write operations"
+    (let [outcomes (laws/observations-laws
+                    {:make-port make-reference-port
+                     :capabilities #{:schema-validation :idempotency :export-import}})]
+      (is (every? (fn [[op _law]]
+                    (contains? (set (keys laws/op-fixtures)) op))
+                  (keys outcomes))
+          "today every registered op has a fixture — no :fixture-present failures"))))
+
 ;; ---------------------------------------------------------------------------
 ;; Permissive fixture adapter (bare swap!, like pre-ENG-017C).
 
