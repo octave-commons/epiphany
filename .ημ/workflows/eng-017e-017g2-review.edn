@@ -1,0 +1,75 @@
+{:workflow/id :eng-017e-017g2-review
+ :workflow/version 1
+
+ :meta {:name "eng-017e-017g2-review"
+        :description "Adversarial review of ENG-017E (Mongo contract alignment) and ENG-017G2 (CLI/HTTP decoder seam) before promotion."
+        :phases [{:title "Review" :detail "3 lenses per card"}
+                 {:title "Verify" :detail "2 skeptic votes per finding, quorum 2"}]}
+
+ :run {:model "kimi-for-coding/k3"
+       :dir "/home/err/spaces/epiphany"
+       :agent-timeout-ms 900000
+       :max-concurrency 3}
+
+ :vars
+ {:repo "/home/err/spaces/epiphany"
+  :cards
+  [{:key "eng-017e"
+    :path "/home/err/spaces/epiphany/docs/kanban/stories/engineering-assurance-mongo-contract-alignment.md"
+    :context "The change under review is commit 91ab60f (ENG-017E: align Mongo observations with the shared contract laws). Run `git show 91ab60f` and read it. Key files: src/epiphany/infra/adapters/mongo.clj (validate-write!, validated-insert!, normalized outcomes, full-map idempotency equality, export-all .into fix, conditional request_id, .get list decodes, checkpoint OID decode), test/epiphany/law_suite/observations_mongo_test.clj (per-law isolated prefixes). Also in blast radius: 2573e7e touched mongo.clj decode fns for ENG-003G blockers. Gates: clojure -M:integration-test => 17 tests, 53 assertions, only 2 pre-existing baseline failures (integration_suite_test.clj, verified on stash); unit 707/1839/0. Deferrals: read-path/decode validation is ENG-017F scope; CI service topology is ENG-017J scope (recorded on card). NOTE: integration tests need MongoDB — it IS running on this machine (see test/epiphany/infra/adapters/mongo_test.clj for the URI); you may run `clojure -M:integration-test`."}
+   {:key "eng-017g2"
+    :path "/home/err/spaces/epiphany/docs/kanban/stories/eng-017g2-shared-cli-http-command-vocabulary-decoder-seam.md"
+    :context "The change under review is commit 7977f2a (ENG-017G2: shared CLI/HTTP command-vocabulary decoder seam). Run `git show 7977f2a` and read it. Key files: src/epiphany/law/commands.clj, src/epiphany/application/commands.clj, rewired handlers in src/epiphany/infra/main.clj (run-register/run-search/run-status/run-inbox-decide) and src/epiphany/infra/http.clj (search/register/status/review-decisions), test/epiphany/application/commands_test.clj, extended test/epiphany/parity/cli_http_test.clj. Documented behavior changes the reviewer must not re-litigate: CLI status :local now reports cross-stage status (was surface-specific error); CLI inbox decide requires an existing candidate (phantom decisions now impossible). Documented deferrals: show/diff/trace/inbox-list/export/ingest are single-surface CLI per AC2 (their own cards own their wiring); htmx/workbench routes are HTTP-only UI. Retargeting CLI adapter construction onto profile/resolve-adapters is ENG-017N scope, not this card. Gates: clojure -M:unit-test => 707 tests, 1839 assertions, 0 failures; boundary-check clean."}]
+  :lenses
+  [{:key "correctness"
+    :prompt "Hunt for real correctness bugs: logic errors, broken edge cases, error paths that swallow or misreport failures, idempotency/parity leaks, wrong port-fn calling conventions. For eng-017e also probe the Mongo outcome categories against test/epiphany/law_suite/observations_laws.clj expectations; for eng-017g2 probe decode/execute/encode for inputs that could diverge between surfaces."}
+   {:key "architecture-law"
+    :prompt "Audit against the repo constitution (AGENTS.md, ADR-000/001/004, four-quadrant namespace law, STYLE.md): layering direction (law <- nothing, domain pure, application -> law+domain, infra -> anything), schema-before-adapter, no silent fallback, UNAVAILABLE semantics. Cite the rule each finding violates; flag only violations introduced by the commit under review."}
+   {:key "dod-coverage"
+    :prompt "Verify every acceptance criterion on the card against the actual code and tests. For each item, name the exact test or evidence that satisfies it, or flag it unmet."}]}
+
+ :schemas
+ {:findings {:type "object"
+             :additionalProperties false
+             :properties {:findings {:type "array"
+                                     :items {:type "object"
+                                             :additionalProperties false
+                                             :properties {:title {:type "string"}
+                                                          :file {:type "string"}
+                                                          :detail {:type "string" :description "What is wrong / unmet, with concrete evidence (line refs, failing scenario)"}
+                                                          :severity {:type "string" :enum ["blocker" "should-fix" "nit"]}}
+                                             :required ["title" "file" "detail" "severity"]}}
+                          :dodVerdict {:type "string" :description "For dod-coverage lens only: per-DoD-item evidence table as text; empty string otherwise"}}
+             :required ["findings" "dodVerdict"]}
+  :verdict {:type "object"
+            :additionalProperties false
+            :properties {:refuted {:type "boolean" :description "true if the finding is wrong, already handled, out of scope for the card, or not worth acting on"}
+                         :reason {:type "string"}}
+            :required ["refuted" "reason"]}}
+
+ :stages
+ [{:stage/id :review
+   :stage/kind :map-agent
+   :stage/phase "Review"
+   :stage/items {:cartesian [{:bind :card :from [:vars :cards]}
+                             {:bind :lens :from [:vars :lenses]}]}
+   :stage/agent "ultra-reviewer"
+   :stage/schema :findings
+   :stage/label "review:{card/key}:{lens/key}"
+   :stage/prompt "You are reviewing a change in the repo ({repo}) against its kanban card.\n\nCard: read {card/path} in full (including comment history — earlier reviews may have already fixed things; do not re-report fixed items).\nRepo rules: read {repo}/AGENTS.md if present.\n{card/context}\n\nYour lens: {lens/prompt}\n\nRead the actual source files (and tests) relevant to your lens. Report ONLY findings that would matter to a maintainer deciding whether to promote this card. Do not report style preferences the repo doesn't legislate. If the dod-coverage lens, also fill dodVerdict with the per-item evidence table."}
+
+  {:stage/id :verify
+   :stage/kind :vote-fan-out
+   :stage/phase "Verify"
+   :stage/over :review
+   :stage/finding-path [:findings]
+   :stage/agent "ultra-skeptic"
+   :stage/schema :verdict
+   :stage/votes 2
+   :stage/quorum 2
+   :stage/label "verify:{finding/title|40}"
+   :stage/prompt "A code reviewer claims the following about the repo ({repo}), card {card/path}:\n\nTITLE: {finding/title}\nFILE: {finding/file}\nCLAIM: {finding/detail}\nSEVERITY CLAIMED: {finding/severity}\n\nSkeptic pass #{vote/n}: try to REFUTE this. Read the actual code and card (including comment history — the card may already document this as an accepted tradeoff or fixed item). Refute if: the claim is factually wrong, the behavior is deliberate and documented, it is out of the card's delivered scope, or it is too minor to gate a promotion. Default to refuted=true if uncertain."}
+
+  {:stage/id :return
+   :stage/kind :return
+   :stage/return {:confirmed :surviving :all :flat}}]}
