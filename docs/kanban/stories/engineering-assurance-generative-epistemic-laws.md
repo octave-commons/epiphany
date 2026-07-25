@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001709"
-title: "ENG-017I: Add generative and epistemic verification laws"
-status: "accepted"
-type: "story"
-priority: "P1"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 5
-labels: ["quality", "property-testing", "metamorphic", "epistemic", "phase-1"]
 category: "stories"
+labels: ["quality", "property-testing", "metamorphic", "epistemic", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001704", "01900d7c-7f3a-7e8b-9c4d-000000001706"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784944961355-0.zfvzyyqi4fsekbvrk2"
+points: "5"
 verification: ["unit-test"]
 risk: "medium"
+title: "ENG-017I: Add generative and epistemic verification laws"
+priority: "P1"
+status: "ready"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001709"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017I: Add generative and epistemic verification laws
@@ -108,4 +109,6 @@ written to match a hardcoded placeholder.
 REWORK 2026-07-12: body rewritten to the story contract (original preserved in git history and scratchpad; see ENG-017A comment for the shared rework rationale). Triage authority: user instruction this session. --tasks-dir docs/kanban
 
 HELD AT ACCEPTED 2026-07-12: dependencies ENG-017D (ready) and ENG-017F (accepted, not ready). Promote when F meets the gate. --tasks-dir docs/kanban
+
+TRIAGE 2026-07-25: accepted -> ready. Dependencies now done: ENG-017D (done), ENG-017F (done 2026-07-25, commits 5d9f9e8 + 69670ea + clean review wave). Points 5 at cap, acceptance criteria present, design link present.
 ---

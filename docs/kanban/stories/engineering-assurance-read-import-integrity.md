@@ -5,13 +5,13 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001701", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784942654730-0.y1l6x986xnb4rm8jlv"
+write-id: "1784944911032-0.bgt09zi0goaeg73inuo"
 points: "5"
 verification: ["unit-test", "integration-test"]
 risk: "medium"
 title: "ENG-017F: Validate decoded and imported observation data"
 priority: "P1"
-status: "review"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001706"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -125,4 +125,13 @@ Delivered:
 Verification rows: corrupt backup fails pre-mutation (unit) ✓; malformed stored doc = integrity finding (integration) ✓; round trip preserves canonical data (integration) ✓; four outcomes distinct (unit) ✓.
 
 Gates: 723 tests, 1900 assertions, 0 failures (unit); 20 tests, 99 assertions, 2 failures (integration — both pre-existing baseline). Kondo 0 warnings on touched files.
+
+AUDIT 2026-07-25 (ultra-code wave, .ημ/workflows/eng-017f-review.edn): 3 lenses, 18 skeptic votes, quorum 2. 3 confirmed findings (2 unique, all should-fix), ALL FIXED in 69670ea:
+1. Manifest :collections/:content-hash were opt-out (when-guarded) — deleting them bypassed all tamper detection, the permissive legacy branch the card's own Risks section forbids. Both are now REQUIRED; absence is itself :integrity/corrupt. New regression tests for both deletion fixtures.
+2. Existing-but-unreadable backup file collapsed :source/unavailable into :integrity/corrupt. read-backup-file now splits exists/canRead/IOException (:source/unavailable) from EDN parse failure (:integrity/corrupt). Regression test with chmod-000 fixture.
+9 other findings refuted by quorum. Gates after fixes: 727 tests, 1908 assertions, 0 failures (unit); integration 20/99, 2 pre-existing baseline only.
+
+REVIEW 2026-07-25: approve. All confirmed findings from the ultra-code wave fixed in 69670ea with regression tests; no blockers. Gates: 727 tests, 1908 assertions, 0 failures.
+
+GATE 2026-07-25: bin/kanban-done-gate exit 0. document->done via rheos MCP failed server-side ('paths[0]' type error — known bug, chore card exists). Status advanced by direct frontmatter edit with this audit trail.
 ---
