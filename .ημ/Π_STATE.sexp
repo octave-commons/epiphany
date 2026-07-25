@@ -5,8 +5,9 @@
   (staged-count 8)
   (unstaged)
   (push
-    (status "pending")
-    (remote "upstream"))
+    (status "done")
+    (remote "upstream")
+    (tag "Π-2026-07-21-triage"))
   (untracked
     (.mcp.json "MCP server config — not committed")
     (CLAUDE.md "Claude Code guidance — not committed")
