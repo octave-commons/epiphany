@@ -9,12 +9,10 @@
             [epiphany.infra.profile :as profile]
             [epiphany.infra.http :as http]
             [epiphany.infra.git :as git]
-            [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
             [epiphany.infra.adapters.lucene :as lucene]
             [epiphany.infra.adapters.ollama :as ollama]
             [epiphany.infra.repository-identity :as repository-identity]
-            [epiphany.infra.repository-metadata-file :as repository-metadata-file]
             [epiphany.application.registration :as registration]
             [epiphany.application.commands :as commands]
             [epiphany.domain.ingestion :as ingestion]
@@ -100,7 +98,9 @@
                   (case profile
                     :local
                     (commands/execute
-                     {:adapters (in-memory/make {:common-git-dir-fn resolve-common-git-dir})}
+                     {:adapters (profile/resolve-adapters
+                                 {:profile :local
+                                  :common-git-dir-fn resolve-common-git-dir})}
                      decoded)
 
                     :services
@@ -110,15 +110,14 @@
                                    (throw (ex-info
                                            (str "Cannot connect to MongoDB: " (.getMessage e))
                                            {:code :unavailable
-                                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))
-                          obs-adapter (mongo/make-observations-adapter conn)]
+                                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
                       (try
                         (commands/execute
-                         {:adapters {:git {:common-git-directory resolve-common-git-dir}
-                                     :repository-metadata {:read (fn [_] nil)
-                                                           :write (fn [_ _id] nil)
-                                                           :list-repositories (fn [] [])}
-                                     :observations obs-adapter}}
+                         {:adapters (profile/resolve-adapters
+                                     {:profile :services
+                                      :mongo-conn conn
+                                      :common-git-dir-fn resolve-common-git-dir
+                                      :index-dir default-index-dir})}
                          decoded)
                         (finally
                           (mongo/disconnect! conn)))))
@@ -172,11 +171,14 @@
 (defn- make-status-adapters
   "Build the adapters query-status needs for `profile`, plus a cleanup fn.
    Returns {:adapters ... :cleanup (fn [] ...)}. Throws UNAVAILABLE when
-   :services Mongo is unreachable."
+   :services Mongo is unreachable. Composed through profile/resolve-adapters
+   so the ENG-017B validating wrapper is live on CLI paths (ENG-017N)."
   [profile]
   (case profile
     :local
-    {:adapters (merge (in-memory/make {:common-git-dir-fn resolve-common-git-dir})
+    {:adapters (merge (profile/resolve-adapters
+                       {:profile :local
+                        :common-git-dir-fn resolve-common-git-dir})
                       (make-durable-index-ports default-index-dir))
      :cleanup (fn [] nil)}
 
@@ -188,12 +190,11 @@
                            (str "Cannot connect to MongoDB: " (.getMessage e))
                            {:code :unavailable
                             :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
-      {:adapters (merge {:git {:common-git-directory resolve-common-git-dir}
-                         :repository-metadata {:read (fn [_] nil)
-                                               :write (fn [_ _id] nil)
-                                               :list-repositories (fn [] [])}
-                         :observations (mongo/make-observations-adapter conn)}
-                        (make-durable-index-ports default-index-dir))
+      {:adapters (profile/resolve-adapters
+                  {:profile :services
+                   :mongo-conn conn
+                   :common-git-dir-fn resolve-common-git-dir
+                   :index-dir default-index-dir})
        :cleanup (fn [] (mongo/disconnect! conn))})))
 
 (defn- run-status
@@ -436,14 +437,18 @@
 
 (defn- make-ingest-adapters
   "Build the registration/observation adapter map for `profile`, plus the
-   durable index ports. For :services the repository-metadata port is the
-   real Git-local repository.edn file (ADR-001), so resource-ids are stable
-   across runs. Hands the map to `f`, cleaning up any Mongo connection."
+   durable index ports, composed through profile/resolve-adapters so the
+   ENG-017B validating wrapper is live (ENG-017N). The durable Lucene index
+   overrides the profile's index port deliberately — the index is a
+   rebuildable projection shared across profiles (ENG-003G). Hands the map
+   to `f`, cleaning up any Mongo connection."
   [profile index-dir f]
   (let [index-ports (make-durable-index-ports index-dir)]
     (case profile
       :local
-      (f (merge (in-memory/make {:common-git-dir-fn resolve-common-git-dir})
+      (f (merge (profile/resolve-adapters
+                 {:profile :local
+                  :common-git-dir-fn resolve-common-git-dir})
                 index-ports))
 
       :services
@@ -455,12 +460,11 @@
                              {:code :unavailable
                               :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
         (try
-          (f (merge {:git {:common-git-directory resolve-common-git-dir}
-                     :repository-metadata {:read repository-metadata-file/read!
-                                           :write repository-metadata-file/write!
-                                           :list-repositories (fn [] [])}
-                     :observations (mongo/make-observations-adapter conn)}
-                    index-ports))
+          (f (profile/resolve-adapters
+              {:profile :services
+               :mongo-conn conn
+               :common-git-dir-fn resolve-common-git-dir
+               :index-dir index-dir}))
           (finally
             (mongo/disconnect! conn)))))))
 
@@ -632,19 +636,9 @@
       (try
         (let [adapters (case profile
                          :local
-                         (merge (in-memory/make {:common-git-dir-fn
-                                                 (fn [path]
-                                                   (let [{:keys [exit out err]}
-                                                         (clojure.java.shell/sh
-                                                          "git" "-C" path "rev-parse"
-                                                          "--path-format=absolute"
-                                                          "--git-common-dir")]
-                                                     (if (zero? exit)
-                                                       (string/trim out)
-                                                       (throw (ex-info
-                                                               (str "Not a Git repository: " path)
-                                                               {:repository-path path
-                                                                :git-error (string/trim err)})))))})
+                         (merge (profile/resolve-adapters
+                                 {:profile :local
+                                  :common-git-dir-fn resolve-common-git-dir})
                                 (make-durable-index-ports default-index-dir))
 
                          :services
@@ -654,26 +648,12 @@
                                         (throw (ex-info
                                                 (str "Cannot connect to MongoDB: " (.getMessage e))
                                                 {:code :unavailable
-                                                 :hint "Start MongoDB with: docker compose up -d mongodb"}))))
-                               git-resolve (fn [path]
-                                             (let [{:keys [exit out err]}
-                                                   (clojure.java.shell/sh
-                                                    "git" "-C" path "rev-parse"
-                                                    "--path-format=absolute"
-                                                    "--git-common-dir")]
-                                               (if (zero? exit)
-                                                 (string/trim out)
-                                                 (throw (ex-info
-                                                         (str "Not a Git repository: " path)
-                                                         {:repository-path path
-                                                          :git-error (string/trim err)})))))
-                               obs-adapter (mongo/make-observations-adapter conn)]
-                           (merge {:git {:common-git-directory git-resolve}
-                                   :repository-metadata {:read (fn [_] nil)
-                                                         :write (fn [_ _id] nil)
-                                                         :list-repositories (fn [] [])}
-                                   :observations obs-adapter}
-                                  (make-durable-index-ports default-index-dir))))]
+                                                 :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+                           (profile/resolve-adapters
+                            {:profile :services
+                             :mongo-conn conn
+                             :common-git-dir-fn resolve-common-git-dir
+                             :index-dir default-index-dir})))]
            (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))
           (http/start-server! adapters port)
@@ -803,13 +783,15 @@
    ["-h" "--help" "Show diff help and exit."]])
 
 (defn- with-observations-adapter
-  "Construct an observations-port adapter for `profile` and hand it to `f`,
-   cleaning up any Mongo connection afterward. Mirrors run-register's
-   per-profile adapter construction."
+  "Construct a validation-wrapped observations-port adapter for `profile`
+   (composed through profile/resolve-adapters, ENG-017N) and hand it to
+   `f`, cleaning up any Mongo connection afterward."
   [profile f]
   (case profile
     :local
-    (f (:observations (in-memory/make {:common-git-dir-fn resolve-common-git-dir})))
+    (f (:observations (profile/resolve-adapters
+                       {:profile :local
+                        :common-git-dir-fn resolve-common-git-dir})))
 
     :services
     (let [conn (try
@@ -820,7 +802,11 @@
                            {:code :unavailable
                             :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
       (try
-        (f (mongo/make-observations-adapter conn))
+        (f (:observations (profile/resolve-adapters
+                           {:profile :services
+                            :mongo-conn conn
+                            :common-git-dir-fn resolve-common-git-dir
+                            :index-dir default-index-dir})))
         (finally (mongo/disconnect! conn))))))
 
 (defn- seed-candidate!

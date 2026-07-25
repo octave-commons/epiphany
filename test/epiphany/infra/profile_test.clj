@@ -75,6 +75,24 @@
     (is (= :unavailable (:code (ex-data ex))))
     (is (= :services (:profile (ex-data ex))))))
 
+(deftest services-profile-composes-real-adapters
+  ;; Construction is I/O-free at this point: the Mongo adapter closes over
+  ;; the conn map, Lucene creates only its index dir, Ollama only builds a
+  ;; client. A fake conn map is therefore enough to prove composition.
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-profile-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        adapters (profile/resolve-adapters {:profile :services
+                                            :mongo-conn {:fake true}
+                                            :common-git-dir-fn fake-common-git-dir
+                                            :index-dir index-dir})]
+    (is (= #{:git :repository-metadata :observations :index :embeddings}
+           (set (keys adapters))))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"Schema validation failed"
+         ((:record-repository-location! (:observations adapters))
+          {:not-a-valid-observation true}))
+        "the :services observations port is the validating wrapper")))
+
 ;; ---------------------------------------------------------------------------
 ;; Composition with application layer (bootstrap test)
 

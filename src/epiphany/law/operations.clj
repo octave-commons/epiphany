@@ -140,10 +140,48 @@
 
 (def port-write-operations
   "Set of write-operation keywords derived from the observations-port
-  schema in `law/ports`. Computed by classifying every declared port
-  entry with `write-operation?`, so adding a new write to the port
-  schema without a matching registry entry turns the completeness
-  suite red by construction (never a hand-maintained parallel copy)."
+   schema in `law/ports`. Computed by classifying every declared port
+   entry with `write-operation?`, so adding a new write to the port
+   schema without a matching registry entry turns the completeness
+   suite red by construction (never a hand-maintained parallel copy)."
   (into #{}
         (filter write-operation?)
+        (map-schema-entry-keys ports/observations-port-schema)))
+
+;; ---------------------------------------------------------------------------
+;; Classification-completeness guard (ENG-017N item 2)
+;;
+;; `write-operation?` classifies BY NAME. A future durable write named
+;; outside the convention (`:append!`, `:save-observation!`) would slip
+;; past BOTH the registry and the ENG-017B wrapper unnoticed — they share
+;; this oracle. The guard: every port entry must classify as exactly one
+;; of write / read / destructive; anything else is a visible failure.
+
+(def destructive-port-operations
+  "Port operations that destroy durable state without writing records.
+   Explicit, exhaustive, and reviewed by hand — a new entry here is a
+   deliberate act, never a naming accident."
+  #{:clear-all!})
+
+(defn read-operation?
+  "True when `op` names a non-mutating read on the observations port:
+   :find-*, :list-*, or :export-all. Pure classification over the
+   operation keyword's name — no I/O."
+  [op]
+  (and (keyword? op)
+       (let [n (name op)]
+         (or (str/starts-with? n "find-")
+             (str/starts-with? n "list-")
+             (= n "export-all")))))
+
+(defn unclassified-port-operations
+  "Port-schema operations matching NO class — write, read, or
+   destructive. Must be empty: an unclassified operation escapes every
+   registry, wrapper, and audit built on this oracle."
+  []
+  (into #{}
+        (remove (fn [op]
+                  (or (write-operation? op)
+                      (read-operation? op)
+                      (contains? destructive-port-operations op))))
         (map-schema-entry-keys ports/observations-port-schema)))

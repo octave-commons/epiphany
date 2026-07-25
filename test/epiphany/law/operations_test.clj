@@ -23,6 +23,27 @@
           (str "Registry entries not in port writes: " extra)))))
 
 ;; ---------------------------------------------------------------------------
+;; Classification-completeness guard (ENG-017N)
+
+(deftest no-port-operation-is-unclassified
+  (testing "every observations-port operation classifies as write, read, or destructive"
+    (is (empty? (operations/unclassified-port-operations))
+        (str "Unclassified port operations (escapes registry + wrapper): "
+             (operations/unclassified-port-operations)))))
+
+(deftest classifier-guard-has-teeth
+  (testing "a non-conforming name (e.g. :append!) classifies as nothing"
+    (is (not (operations/write-operation? :append!)))
+    (is (not (operations/read-operation? :append!)))
+    (is (not (contains? operations/destructive-port-operations :append!)))
+    (testing "and conventional names classify correctly"
+      (is (operations/write-operation? :record-foo!))
+      (is (operations/read-operation? :find-foo))
+      (is (operations/read-operation? :list-foo))
+      (is (operations/read-operation? :export-all))
+      (is (contains? operations/destructive-port-operations :clear-all!)))))
+
+;; ---------------------------------------------------------------------------
 ;; Schema resolution
 
 (deftest every-registered-schema-resolves

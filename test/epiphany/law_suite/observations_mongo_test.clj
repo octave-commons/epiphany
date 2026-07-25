@@ -64,22 +64,27 @@
     :capabilities all-capabilities}))
 
 (deftest ^:integration mongo-adapter-passes-all-laws
-  (testing "the Mongo adapter passes the identical ENG-017D law suite the reference adapter passes"
+  (testing "the Mongo adapter passes the identical ENG-017D law suite the reference adapter passes, for every write op"
     (let [outcomes (run-mongo-laws)]
       (is (empty? (laws/failed-laws outcomes))
           (str "no law may fail for the Mongo adapter; failures: "
                (pr-str (select-keys outcomes (laws/failed-laws outcomes)))))
       (is (empty? (laws/skipped-laws outcomes))
           "with every capability declared, no law may be skipped")
-      (testing "every registered law is present and passing"
-        (doseq [law [:valid-write-accepted
+      (testing "universal laws hold for every registered write op"
+        (doseq [op (keys laws/op-fixtures)
+                law [:valid-write-accepted
                      :invalid-write-rejected
-                     :rejection-leaves-state-unchanged
-                     :idempotent-replay-stable
-                     :changed-content-replay-conflicts
-                     :export-import-round-trip]]
-          (is (= :pass (:outcome (get outcomes law)))
-              (str "law " law " must pass, got " (pr-str (get outcomes law)))))))))
+                     :rejection-leaves-state-unchanged]]
+          (is (= :pass (:outcome (get outcomes [op law])))
+              (str "law " [op law] " must pass, got " (pr-str (get outcomes [op law]))))))
+      (testing "idempotency laws hold for request-id-bearing record kinds"
+        (doseq [op [:record-repository-location!
+                    :record-review-decision!
+                    :record-lineage-candidate!]
+                law [:idempotent-replay-stable :changed-content-replay]]
+          (is (= :pass (:outcome (get outcomes [op law])))
+              (str "law " [op law] " must pass, got " (pr-str (get outcomes [op law])))))))))
 
 (deftest ^:integration mongo-and-reference-adapters-report-identical-outcomes
   (testing "differential requirement: in-memory and Mongo agree on every shared law's outcome category"

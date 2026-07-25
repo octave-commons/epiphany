@@ -4,7 +4,9 @@
             [clojure.string :as string]
             [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing]]
+            [epiphany.application.validation :as validation]
             [epiphany.infra.main :as main]
+            [epiphany.infra.profile :as profile]
             [epiphany.domain.export :as export]))
 
 (deftest help-identifies-the-canonical-executable
@@ -264,6 +266,32 @@
         (is (zero? exit))
         (is (string/includes? out "u.md")
             "body text after non-ASCII characters must be searchable")))))
+
+;; ---------------------------------------------------------------------------
+;; Show subcommand
+
+(deftest cli-paths-compose-observations-through-validating-wrapper
+  (testing "CLI-built observations ports are the ENG-017B validating wrapper (ENG-017N)"
+    (let [orig @#'validation/validating-observations-port
+          calls (atom 0)]
+      (with-redefs [validation/validating-observations-port
+                    (fn [port] (swap! calls inc) (orig port))]
+        (main/run ["register" "-p" "local" "."])
+        (is (pos? @calls) "register must compose through profile/resolve-adapters")
+        (reset! calls 0)
+        (main/run ["inbox" "decide" (str (random-uuid)) "accepted"])
+        (is (pos? @calls) "inbox decide must compose through profile/resolve-adapters")
+        (reset! calls 0)
+        (main/run ["status" "-p" "local" "-r" (str (random-uuid))])
+        (is (pos? @calls) "status must compose through profile/resolve-adapters")))))
+
+(deftest cli-constructed-port-rejects-invalid-write-at-wrapper
+  (testing "a CLI-constructed :local observations port rejects an invalid write with the shared category"
+    (let [adapters (profile/resolve-adapters {:profile :local
+                                              :common-git-dir-fn (fn [p] (str p "/.git"))})]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"Schema validation failed"
+           ((:record-ingestion-run! (:observations adapters)) {:not :valid}))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Show subcommand
