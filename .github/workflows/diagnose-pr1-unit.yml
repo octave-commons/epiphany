@@ -38,34 +38,33 @@ jobs:
 
           section = Path('src/epiphany/domain/section_extraction.clj')
           text = section.read_text()
-          old = '{:keys [heading body _ordinal]}'
-          new = '{:keys [heading body ordinal]}'
-          assert text.count(old) == 1, text.count(old)
-          text = text.replace(old, new)
-          old = '(or _ordinal 0)'
-          new = '(or ordinal 0)'
-          assert text.count(old) == 1, text.count(old)
-          section.write_text(text.replace(old, new))
+          assert text.count('{:keys [heading body _ordinal]}') == 1
+          text = text.replace('{:keys [heading body _ordinal]}',
+                              '{:keys [heading body ordinal]}')
+          assert text.count('(or _ordinal 0)') == 1
+          section.write_text(text.replace('(or _ordinal 0)', '(or ordinal 0)'))
 
           memory = Path('src/epiphany/infra/adapters/in_memory.clj')
           text = memory.read_text()
-          old = '''  (fn [observation]
-            (validate-write! op observation)
-            (when-not (some #(= (:observation/id observation)
-                                (:observation/id %))
-                            @records)
-              (swap! records conj observation))
-            nil))'''
-          new = '''  (fn [observation]
-            (validate-write! op observation)
-            (swap! records
-                   (fn [current]
-                     (if (some #(= (:observation/id observation)
-                                    (:observation/id %))
-                               current)
-                       current
-                       (conj current observation))))
-            nil))'''
+          old = '\n'.join([
+              '  (fn [observation]',
+              '    (validate-write! op observation)',
+              '    (when-not (some #(= (:observation/id observation)',
+              '                        (:observation/id %))',
+              '                    @records)',
+              '      (swap! records conj observation))',
+              '    nil))'])
+          new = '\n'.join([
+              '  (fn [observation]',
+              '    (validate-write! op observation)',
+              '    (swap! records',
+              '           (fn [current]',
+              '             (if (some #(= (:observation/id observation)',
+              '                            (:observation/id %))',
+              '                       current)',
+              '               current',
+              '               (conj current observation))))',
+              '    nil))'])
           assert text.count(old) == 1, text.count(old)
           memory.write_text(text.replace(old, new))
           PY
