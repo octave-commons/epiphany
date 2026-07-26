@@ -19,6 +19,21 @@
   []
   (java.util.UUID/randomUUID))
 
+(defn- ascii-bytes
+  "Encode the controlled UUID/scope derivation input without introducing a
+   Java string interop dependency into the domain layer."
+  [value]
+  (byte-array (map (comp byte int) (str value))))
+
+(defn derived-request-id
+  "Derive a stable operation UUID from one caller request ID and a scope.
+   This lets a compound command remain replay-safe without reusing one
+   idempotency key for several records in the same collection."
+  [request-id scope]
+  (when request-id
+    (java.util.UUID/nameUUIDFromBytes
+     (ascii-bytes (str request-id ":" scope)))))
+
 (defn make-run-record
   "Construct an ingestion-run observation map.
 
@@ -32,11 +47,13 @@
      :observed-at       — timestamp (default: now)
      :adapter-version   — adapter version string
      :schema-version    — schema version int (default: 1)
+     :observation-id    — observation UUID (default: fresh UUID)
      :request-id        — optional request UUID"
   [{:keys [resource-id repo-path selected-refs commit-count failure-count
-           failures observed-at adapter-version schema-version request-id]}]
+           failures observed-at adapter-version schema-version observation-id
+           request-id]}]
   (cond-> {:observation/type           :ingestion/run-completed
-           :observation/id             (make-run-id)
+           :observation/id             (or observation-id (make-run-id))
            :observation/observed-at    (or observed-at (java.util.Date.))
            :observation/adapter-version (or adapter-version "0.1.0")
            :observation/schema-version (or schema-version 1)
@@ -72,12 +89,15 @@
      :observed-at            — timestamp (default: now)
      :adapter-version        — adapter version string
      :schema-version         — schema version int (default: 1)
+     :observation-id         — observation UUID (defaults to request-id or fresh UUID)
      :request-id             — optional request UUID"
   [{:keys [resource-id projection-name projection-version ingestion-run-id
            status last-processed-oid processed-count error-message
-           observed-at adapter-version schema-version request-id]}]
+           observed-at adapter-version schema-version observation-id request-id]}]
   (cond-> {:observation/type           :projection/checkpoint-recorded
-           :observation/id             (java.util.UUID/randomUUID)
+           :observation/id             (or observation-id
+                                           request-id
+                                           (java.util.UUID/randomUUID))
            :observation/observed-at    (or observed-at (java.util.Date.))
            :observation/adapter-version (or adapter-version "0.1.0")
            :observation/schema-version (or schema-version 1)
@@ -114,9 +134,10 @@
    Note: this function does NOT yet construct revision-at-path
    observations — that is a separate projection step (ENG-001F).
    This run records the traversal metadata only."
-  [{:keys [git observations]} {:keys [resource-id repository-path selected-refs]
+  [{:keys [git observations]} {:keys [resource-id repository-path selected-refs request-id]
                                 :as _command}]
-  (let [run-id (make-run-id)
+  (let [run-id (or (derived-request-id request-id "ingestion-run")
+                   (make-run-id))
         ;; Walk the commit graph
         walk-result ((:reachable-commits git) repository-path selected-refs)
         {:keys [commits failures commit-count failure-count]} walk-result
@@ -131,7 +152,8 @@
                      :commit-count   commit-count
                      :failure-count  failure-count
                      :failures       failures
-                     :request-id     run-id})]
+                     :observation-id run-id
+                     :request-id     request-id})]
 
     ;; Record the ingestion run
     ((:record-ingestion-run! observations) run-record)
@@ -146,7 +168,10 @@
                        :ingestion-run-id    run-id
                        :status              :completed
                        :last-processed-oid  last-oid
-                       :processed-count     commit-count})]
+                       :processed-count     commit-count
+                       :request-id          (derived-request-id
+                                             request-id
+                                             "checkpoint:ingestion-traversal")})]
       ((:record-checkpoint! observations) checkpoint))
 
     run-record))

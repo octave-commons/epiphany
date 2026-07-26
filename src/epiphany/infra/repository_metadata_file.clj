@@ -24,6 +24,12 @@
         (spit file (repository-identity/write-repository-metadata requested-metadata))
         path))))
 
-(defn read! [common-git-dir]
-  (repository-identity/read-repository-metadata
-   (slurp (metadata-path common-git-dir))))
+(defn read!
+  "Read the Git-local repository.edn metadata. Returns nil when the file
+   does not exist yet — a missing file means 'never registered', not an
+   error (registration/register! falls through to write! on nil)."
+  [common-git-dir]
+  (let [file (io/file (metadata-path common-git-dir))]
+    (when (.exists file)
+      (repository-identity/read-repository-metadata
+       (slurp file)))))

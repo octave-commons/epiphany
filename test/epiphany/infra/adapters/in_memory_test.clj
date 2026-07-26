@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.domain.review :as review]
+            [epiphany.domain.candidates :as candidates]
             [epiphany.law.registry :as registry]))
 
 (defn- fake-common-git-dir [path]
@@ -84,6 +85,73 @@
 (deftest in-memory-require-common-git-dir-fn
   (is (thrown? clojure.lang.ExceptionInfo
               (in-memory/make {}))))
+
+;; ---------------------------------------------------------------------------
+;; Rebuildable index behavior
+
+(deftest in-memory-index-stats-are-resource-scoped
+  (let [index (:index (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        other-resource-id (random-uuid)]
+    ((:index-sections! index)
+     {:resource-id resource-id
+      :extraction/sections [{:section/ordinal 0} {:section/ordinal 1}]})
+    ((:index-sections! index)
+     {:resource-id other-resource-id
+      :extraction/sections [{:section/ordinal 0}]})
+    (is (= {:document-count 2} ((:index-stats index) resource-id)))
+    (is (= {:document-count 1} ((:index-stats index) other-resource-id)))))
+
+(deftest in-memory-embedding-replay-is-idempotent
+  (let [index (:index (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        embedding {:resource-id resource-id
+                   :embedding/path-raw "docs/a.md"
+                   :embedding/commit-oid "1111111111111111111111111111111111111111"
+                   :embedding/heading-path ["A"]
+                   :embedding/ordinal 0
+                   :embedding/model "test"
+                   :embedding-version 1
+                   :embedding/vector [1.0 0.0]}]
+    ((:index-embeddings! index) [embedding])
+    ((:index-embeddings! index) [embedding])
+    (is (= 1
+           (count ((:knn-search index)
+                   {:vector [1.0 0.0] :k 10 :embedding-version 1}))))))
+
+(deftest ingestion-run-and-checkpoint-replays-are-idempotent
+  (let [observations (:observations
+                      (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+        run-id (random-uuid)
+        run {:observation/type :ingestion/run-completed
+             :observation/id run-id
+             :observation/observed-at (java.util.Date.)
+             :observation/adapter-version "test"
+             :observation/schema-version 1
+             :resource-id resource-id
+             :ingestion/repo-path {:path/raw "/repo"
+                                   :path/source :filesystem-argument
+                                   :path/comparison :exact}
+             :ingestion/selected-refs ["HEAD"]
+             :ingestion/commit-count 0
+             :ingestion/failure-count 0
+             :ingestion/failures []}
+        checkpoint {:observation/type :projection/checkpoint-recorded
+                    :observation/id (random-uuid)
+                    :observation/observed-at (java.util.Date.)
+                    :observation/adapter-version "test"
+                    :observation/schema-version 1
+                    :resource-id resource-id
+                    :checkpoint/projection-name "embedding"
+                    :checkpoint/projection-version 1
+                    :checkpoint/ingestion-run-id run-id
+                    :checkpoint/status :completed
+                    :checkpoint/processed-count 0}]
+    ((:record-ingestion-run! observations) run)
+    ((:record-ingestion-run! observations) run)
+    ((:record-checkpoint! observations) checkpoint)
+    ((:record-checkpoint! observations) checkpoint)
+    (let [snapshot ((:export-all observations))]
+      (is (= 1 (count (get snapshot "ingestion-run"))))
+      (is (= 1 (count (get snapshot "projection-checkpoint")))))))
 
 ;; ---------------------------------------------------------------------------
 ;; ENG-017C: Contract enforcement
@@ -197,3 +265,85 @@
       ((:record-review-decision! src) rec)
       ((:import-all dst) ((:export-all src)))
       (is (= [rec] ((:list-review-decisions dst) resource-id))))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-005G: Lineage-candidate store (append-only, idempotent, queryable)
+
+(def ^:private oid-a "1111111111111111111111111111111111111111")
+(def ^:private oid-b "2222222222222222222222222222222222222222")
+
+(defn- lineage-candidate-observation
+  "Build a valid observation/lineage-candidate-v1 record via the real
+   domain builder, so the test exercises the production path."
+  [& {:keys [relation confidence generator-version request-id candidate-id generated-at]
+      :or {relation :continues confidence 0.7 generator-version "gen-v1"}}]
+  (let [c (candidates/make-candidate
+           relation
+           (candidates/make-span {:path-raw "docs/a.md" :heading-path ["A"] :commit-oid oid-a})
+           (candidates/make-span {:path-raw "docs/b.md" :heading-path ["B"] :commit-oid oid-b})
+           :confidence confidence
+           :generator-version generator-version
+           :request-id (or request-id (random-uuid))
+           :candidate-id (or candidate-id (random-uuid))
+           :generated-at (or generated-at (java.util.Date.)))]
+    (candidates/candidate->observation c {:resource-id resource-id :adapter-version "test"})))
+
+(deftest lineage-candidate-recorded-and-listed
+  (testing "a recorded candidate is queryable by resource and by candidate id"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          cid (random-uuid)
+          rec (lineage-candidate-observation :candidate-id cid)]
+      (is (nil? ((:record-lineage-candidate! obs) rec)) "first write returns nil (success)")
+      (is (= [rec] ((:list-lineage-candidates obs) resource-id)))
+      (is (= rec ((:find-lineage-candidate-by-id obs) cid)))
+      (is (nil? ((:find-lineage-candidate-by-id obs) (random-uuid)))
+          "an unknown candidate id resolves to nil"))))
+
+(deftest lineage-candidate-idempotent-by-request-id
+  (testing "a retry carrying the same request-id does not duplicate the candidate"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          rid (random-uuid)
+          rec (lineage-candidate-observation :request-id rid)]
+      ((:record-lineage-candidate! obs) rec)
+      (is (nil? ((:record-lineage-candidate! obs) rec)) "replay returns nil")
+      (is (= 1 (count ((:list-lineage-candidates obs) resource-id)))
+          "the candidate appears exactly once after a retry"))))
+
+(deftest lineage-candidate-invalid-record-rejected
+  (testing "a schema-invalid record throws and leaves state byte-identical"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          before ((:export-all obs))]
+      (is (thrown? clojure.lang.ExceptionInfo
+                   ((:record-lineage-candidate! obs) (invalid-record))))
+      (is (= before ((:export-all obs))) "state is byte-identical after a rejected write")
+      (is (empty? ((:list-lineage-candidates obs) resource-id))))))
+
+(deftest lineage-candidates-queryable-by-every-dimension
+  (testing "domain filters work over the durable list (AC3: id, relation, generator, confidence, time)"
+    (let [obs (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          now (java.util.Date.)
+          earlier (java.util.Date. (- (.getTime now) 3600000))
+          cid (random-uuid)]
+      ((:record-lineage-candidate! obs)
+       (lineage-candidate-observation :candidate-id cid :relation :continues
+                                      :generator-version "gen-v1" :confidence 0.9 :generated-at now))
+      ((:record-lineage-candidate! obs)
+       (lineage-candidate-observation :relation :refines
+                                      :generator-version "gen-v2" :confidence 0.3 :generated-at earlier))
+      (let [all ((:list-lineage-candidates obs) resource-id)]
+        (is (= 2 (count all)))
+        (is (= 1 (count (candidates/by-candidate-id all cid))))
+        (is (= 1 (count (candidates/by-relation all :continues))))
+        (is (= 1 (count (candidates/by-generator-version all "gen-v2"))))
+        (is (= 1 (count (candidates/by-confidence-band all 0.8 1.0))))
+        (is (= 1 (count (candidates/by-time-range all earlier now)))
+            "half-open [earlier, now) includes only the earlier candidate")))))
+
+(deftest lineage-candidates-survive-export-import
+  (testing "lineage candidates round-trip through export-all/import-all"
+    (let [src (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          dst (:observations (in-memory/make {:common-git-dir-fn fake-common-git-dir}))
+          rec (lineage-candidate-observation :relation :possibly-supersedes)]
+      ((:record-lineage-candidate! src) rec)
+      ((:import-all dst) ((:export-all src)))
+      (is (= [rec] ((:list-lineage-candidates dst) resource-id))))))

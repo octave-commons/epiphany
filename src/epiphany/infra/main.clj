@@ -9,16 +9,28 @@
             [epiphany.infra.profile :as profile]
             [epiphany.infra.http :as http]
             [epiphany.infra.git :as git]
-            [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
+            [epiphany.infra.adapters.lucene :as lucene]
+            [epiphany.infra.adapters.ollama :as ollama]
+            [epiphany.infra.repository-identity :as repository-identity]
             [epiphany.application.registration :as registration]
-            [epiphany.domain.hybrid-search :as hs]
+            [epiphany.application.commands :as commands]
+            [epiphany.domain.ingestion :as ingestion]
+            [epiphany.domain.extraction-projection :as extraction]
+            [epiphany.domain.revision-at-path :as revision-at-path]
+            [epiphany.domain.markdown-selection :as markdown-selection]
             [epiphany.domain.evidence :as evidence]
             [epiphany.domain.diff :as diff]
-            [epiphany.domain.lineage-trace :as lineage-trace])
+            [epiphany.domain.lineage-trace :as lineage-trace]
+            [epiphany.domain.candidates :as candidates]
+            [epiphany.domain.inbox :as inbox]
+            [epiphany.domain.status :as status]
+            [epiphany.domain.export :as export])
   (:gen-class))
 
 (def version "0.1.0")
+
+(declare resolve-common-git-dir make-durable-index-ports default-index-dir)
 
 ;; ---------------------------------------------------------------------------
 ;; Global options (before subcommand)
@@ -75,75 +87,63 @@
       :else
       (let [repository-path (first arguments)
             request-id (:request-id options)
-            result
-            (try
-              (case profile
-                :local
-                (let [git-resolve (fn [path]
-                                    (let [{:keys [exit out err]}
-                                          (clojure.java.shell/sh
-                                           "git" "-C" path "rev-parse"
-                                           "--path-format=absolute"
-                                          "--git-common-dir")]
-                                      (if (zero? exit)
-                                        (string/trim out)
-                                        (throw (ex-info
-                                                (str "Not a Git repository: " path)
-                                                {:repository-path path
-                                                 :git-error (string/trim err)})))))
-                      adapters (in-memory/make {:common-git-dir-fn git-resolve})]
-                  (registration/register! adapters
-                                          (cond-> {:repository-path repository-path}
-                                            request-id (assoc :request-id request-id))))
+            candidate (cond-> {:command/name :command/register
+                               :repository-path repository-path}
+                        request-id (assoc :request-id request-id))
+            decoded (commands/decode candidate)]
+        (if (commands/rejected? decoded)
+          {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
+          (let [result
+                (try
+                  (case profile
+                    :local
+                    (commands/execute
+                     {:adapters (profile/resolve-adapters
+                                 {:profile :local
+                                  :common-git-dir-fn resolve-common-git-dir})}
+                     decoded)
 
-                :services
-                (let [conn (try
-                             (mongo/connect!)
-                             (catch Exception e
-                               (throw (ex-info
-                                       (str "Cannot connect to MongoDB: " (.getMessage e))
-                                       {:code :unavailable
-                                        :hint "Start MongoDB with: docker compose up -d mongodb"}))))
-                      git-resolve (fn [path]
-                                    (let [{:keys [exit out err]}
-                                          (clojure.java.shell/sh
-                                           "git" "-C" path "rev-parse"
-                                           "--path-format=absolute"
-                                           "--git-common-dir")]
-                                      (if (zero? exit)
-                                        (string/trim out)
-                                        (throw (ex-info
-                                                (str "Not a Git repository: " path)
-                                                {:repository-path path
-                                                 :git-error (string/trim err)})))))
-                      obs-adapter (mongo/make-observations-adapter conn)]
-                  (try
-                    (let [adapters {:git {:common-git-directory git-resolve}
-                                   :repository-metadata {:read (fn [_] nil)
-                                                        :write (fn [_ _id] nil)}
-                                   :observations obs-adapter}]
-                      (registration/register! adapters
-                                              (cond-> {:repository-path repository-path}
-                                                request-id (assoc :request-id request-id))))
-                    (finally
-                      (mongo/disconnect! conn)))))
+                    :services
+                    (let [conn (try
+                                 (mongo/connect!)
+                                 (catch Exception e
+                                   (throw (ex-info
+                                           (str "Cannot connect to MongoDB: " (.getMessage e))
+                                           {:code :unavailable
+                                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+                      (try
+                        (commands/execute
+                         {:adapters (profile/resolve-adapters
+                                     {:profile :services
+                                      :mongo-conn conn
+                                      :common-git-dir-fn resolve-common-git-dir
+                                      :index-dir default-index-dir})}
+                         decoded)
+                        (finally
+                          (mongo/disconnect! conn)))))
 
-              (catch clojure.lang.ExceptionInfo e
-                (let [data (ex-data e)]
+                  (catch clojure.lang.ExceptionInfo e
+                    (let [data (ex-data e)]
+                      {:exit 1
+                       :out (str "Error: " (.getMessage e)
+                                 (when (:git-error data)
+                                   (str "\n  Git error: " (:git-error data)))
+                                 (when (:code data)
+                                   (str "\n  Code: " (name (:code data))))
+                                 (when (:hint data)
+                                   (str "\n  Hint: " (:hint data))))}))
+                  (catch Exception e
+                    {:exit 1 :out (str "Error: " (.getMessage e))}))]
+            (if (:exit result)
+              result
+              (let [category (:outcome/category result)]
+                (if (= :accepted category)
+                  {:exit 0
+                   :out (format-register-result (assoc (:outcome/payload result) :profile profile))}
                   {:exit 1
-                   :out (str "Error: " (.getMessage e)
-                             (when (:git-error data)
-                               (str "\n  Git error: " (:git-error data)))
-                             (when (:code data)
-                               (str "\n  Code: " (name (:code data))))
-                             (when (:hint data)
-                               (str "\n  Hint: " (:hint data))))}))
-              (catch Exception e
-                {:exit 1 :out (str "Error: " (.getMessage e))}))]
-        (if (:exit result)
-          result
-          {:exit 0
-           :out (format-register-result (assoc result :profile profile))})))))
+                   :out (str "Error: " (:detail (:outcome/payload result))
+                             (when (= :unavailable category)
+                               "\n  Code: unavailable"))})))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Status subcommand
@@ -155,22 +155,6 @@
     :default :local
     :parse-fn keyword]
    ["-h" "--help" "Show status help and exit."]])
-
-(defn- format-run
-  "Format a single ingestion run for display."
-  [run]
-  (str "  Run " (:observation/id run)
-       "\n    Refs:      " (string/join ", " (:ingestion/selected-refs run))
-       "\n    Commits:   " (:ingestion/commit-count run)
-       "\n    Failures:  " (:ingestion/failure-count run)
-       (when (seq (:ingestion/failures run))
-         (str "\n    Errors:    "
-              (string/join ", "
-                           (map (fn [f]
-                                  (str (:failure/reason f)
-                                       (when (:failure/message f)
-                                         (str " (" (:failure/message f) ")"))))
-                                (:ingestion/failures run)))))))
 
 (defn format-checkpoint
   "Format a single checkpoint for display."
@@ -184,8 +168,40 @@
        (when (:checkpoint/error-message ckpt)
          (str "\n    Error:     " (:checkpoint/error-message ckpt)))))
 
+(defn- make-status-adapters
+  "Build the adapters query-status needs for `profile`, plus a cleanup fn.
+   Returns {:adapters ... :cleanup (fn [] ...)}. Throws UNAVAILABLE when
+   :services Mongo is unreachable. Composed through profile/resolve-adapters
+   so the ENG-017B validating wrapper is live on CLI paths (ENG-017N)."
+  [profile]
+  (case profile
+    :local
+    {:adapters (merge (profile/resolve-adapters
+                       {:profile :local
+                        :common-git-dir-fn resolve-common-git-dir})
+                      (make-durable-index-ports default-index-dir))
+     :cleanup (fn [] nil)}
+
+    :services
+    (let [conn (try
+                 (mongo/connect!)
+                 (catch Exception e
+                   (throw (ex-info
+                           (str "Cannot connect to MongoDB: " (.getMessage e))
+                           {:code :unavailable
+                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+      {:adapters (profile/resolve-adapters
+                  {:profile :services
+                   :mongo-conn conn
+                   :common-git-dir-fn resolve-common-git-dir
+                   :index-dir default-index-dir})
+       :cleanup (fn [] (mongo/disconnect! conn))})))
+
 (defn- run-status
-  "Execute the status subcommand. Returns {:exit int, :out string}."
+  "Execute the status subcommand via the ENG-017G2 seam. Both surfaces
+   answer query/status through the shared cross-stage query
+   (status/query-status) — :local now reports an empty-stage status
+   instead of a surface-specific error. Returns {:exit int, :out string}."
   [args]
   (let [{:keys [options errors summary _arguments]}
         (cli/parse-opts args status-options)
@@ -207,29 +223,18 @@
         (if-not resource-id
           {:exit 1 :out "Error: --resource-id required.\nUsage: ep status --resource-id <uuid>"}
           (try
-            (case profile
-              :local
-              {:exit 1 :out "Error: :local profile does not persist data. Use --profile :services."}
-
-              :services
-              (let [conn (try
-                           (mongo/connect!)
-                           (catch Exception e
-                             (throw (ex-info
-                                     (str "Cannot connect to MongoDB: " (.getMessage e))
-                                     {:code :unavailable
-                                      :hint "Start MongoDB with: docker compose up -d mongodb"}))))
-                    obs-adapter (mongo/make-observations-adapter conn)]
-                (try
-                  (let [runs ((:list-ingestion-runs obs-adapter) resource-id)
-                        output (if (empty? runs)
-                                 (str "No ingestion runs found for " resource-id)
-                                 (str "Ingestion runs for " resource-id ":\n"
-                                      (string/join "\n\n" (map format-run runs))))]
-                    {:exit 0 :out output})
-                  (finally
-                    (mongo/disconnect! conn)))))
-
+            (let [{:keys [adapters cleanup]} (make-status-adapters profile)
+                  decoded (commands/decode {:command/name :query/status
+                                            :resource-id resource-id})]
+              (try
+                (if (commands/rejected? decoded)
+                  {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
+                  (let [outcome (commands/execute {:adapters adapters} decoded)]
+                    (if (= :accepted (:outcome/category outcome))
+                      {:exit 0 :out (status/format-status (:outcome/payload outcome))}
+                      {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome)))})))
+                (finally
+                  (cleanup))))
             (catch clojure.lang.ExceptionInfo e
               (let [data (ex-data e)]
                 {:exit 1
@@ -242,14 +247,35 @@
               {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
 ;; ---------------------------------------------------------------------------
+;; Shared Git evidence helpers (show / diff / trace / ingest / search)
+
+(defn- resolve-common-git-dir
+  "Resolve a repository path's common Git directory via `git rev-parse`."
+  [repository-path]
+  (let [{:keys [exit out err]}
+        (shell/sh "git" "-C" repository-path "rev-parse"
+                  "--path-format=absolute" "--git-common-dir")]
+    (if (zero? exit)
+      (string/trim out)
+      (throw (ex-info (str "Not a Git repository: " repository-path)
+                      {:repository-path repository-path
+                       :git-error (string/trim err)})))))
+
+;; ---------------------------------------------------------------------------
 ;; Search subcommand
+
+(def default-index-dir
+  "Default on-disk Lucene index directory for the local corpus.
+   The index is a rebuildable projection (ADR-000); it never lives inside
+   a repository's Git dir (ADR-001)."
+  (str (System/getProperty "user.home") "/.epiphany/index"))
 
 (def search-options
   [["-m" "--mode MODE" "Search mode: lexical, semantic, hybrid"
-    :id :mode
-    :default :hybrid
-    :parse-fn keyword
-    :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
+     :id :mode
+     :default :hybrid
+     :parse-fn keyword
+     :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
    ["-l" "--limit N" "Max results"
     :id :limit
     :default 20
@@ -268,12 +294,15 @@
    [nil "--embedding-version VER" "Embedding model version for semantic search"
     :id :embedding-version
     :parse-fn #(Integer/parseInt %)]
-   ["-v" "--verbose" "Show diagnostics (profile, versions)"
-    :id :verbose]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
-    :id :profile
-    :default :local
-    :parse-fn keyword]
+    ["-v" "--verbose" "Show diagnostics (profile, versions)"
+     :id :verbose]
+    [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
+     :id :index-dir
+     :default default-index-dir]
+    ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+     :id :profile
+     :default :local
+     :parse-fn keyword]
    ["-h" "--help" "Show search help and exit."
     :id :help]])
 
@@ -316,35 +345,29 @@
   [results]
   (json/write-str results :key-fn (fn [k] (subs (str k) 1))))
 
-(defn- build-search-request
-  "Build a hybrid search request map from CLI options."
-  [query opts]
-  (cond-> {:query query
-           :mode (:mode opts)
-           :limit (:limit opts)}
-    (:path-prefix opts)
-    (assoc-in [:filters :path-prefix] (:path-prefix opts))
+(defn- make-durable-index-ports
+  "Construct the :index (on-disk Lucene) and :embeddings (Ollama HTTP)
+   ports shared by search, ingest, and serve. The Lucene index is
+   local-first and durable; Ollama is only contacted by semantic/hybrid
+   queries and explicit --embed ingestion."
+  [index-dir]
+  {:index      (lucene/make-index-adapter
+                {:index-dir (java.nio.file.Paths/get index-dir (into-array String []))})
+   :embeddings (ollama/make-embeddings-adapter {})})
 
-    (:ref opts)
-    (assoc-in [:filters :ref] (:ref opts))
-
-    (:embedding-version opts)
-    (assoc :embedding-version (:embedding-version opts))))
-
-(defn- make-search-adapters
-  "Create in-memory adapters for search (no persistence needed)."
-  [profile]
-  (case profile
-    :local
-    (in-memory/make {:common-git-dir-fn (constantly "/tmp")})
-
-    :services
-    (throw (ex-info "Search --profile :services requires running services."
+(defn- require-ollama!
+  "Throw UNAVAILABLE when a semantic/hybrid operation needs Ollama and the
+   local service is unreachable. Never falls back to another mode."
+  [operation]
+  (when-not (ollama/available?)
+    (throw (ex-info (str operation " requires the local Ollama service.")
                     {:code :unavailable
-                     :hint "Start MongoDB and Ollama with: docker compose up -d"}))))
+                     :hint "Start Ollama on localhost:11434, or use --mode lexical."}))))
 
 (defn- run-search
-  "Execute the search subcommand. Returns {:exit int, :out string}."
+  "Execute the search subcommand via the ENG-017G2 seam: decode the argv
+   into the shared query/search command map, execute, encode.
+   Returns {:exit int, :out string}."
   [args]
   (let [{:keys [options errors summary arguments]}
         (cli/parse-opts args search-options)
@@ -365,28 +388,283 @@
       {:exit 1 :out "Error: search query required.\nUsage: ep search [options] <query>"}
 
       :else
-      (let [query (string/join " " arguments)
-            request (build-search-request query options)]
-        (try
-          (let [adapters (make-search-adapters profile)
-                results (hs/search adapters request)
-                fmt (:format options)
-                output (case fmt
-                         :edn  (format-results-edn results)
-                         :json (format-results-json results)
-                         :text (format-results-text results (:verbose options) profile))]
-            {:exit 0 :out output})
+      (let [candidate (cond-> {:command/name :query/search
+                               :query (string/join " " arguments)
+                               :mode (:mode options)
+                               :limit (:limit options)}
+                        (:embedding-version options)
+                        (assoc :embedding-version (:embedding-version options))
+                        (:path-prefix options)
+                        (assoc-in [:filters :path-prefix] (:path-prefix options))
+                        (:ref options)
+                        (assoc-in [:filters :ref] (:ref options)))
+            decoded (commands/decode candidate)]
+        (if (commands/rejected? decoded)
+          {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
+          (try
+            (let [outcome (commands/execute {:search-ports (make-durable-index-ports (:index-dir options))
+                                             :service-available? ollama/available?}
+                                            decoded)
+                  category (:outcome/category outcome)]
+              (if (= :accepted category)
+                (let [results (:outcome/payload outcome)
+                      fmt (:format options)
+                      output (case fmt
+                               :edn  (format-results-edn results)
+                               :json (format-results-json results)
+                               :text (format-results-text results (:verbose options) profile))]
+                  {:exit 0 :out output})
+                {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
+                                   (when (= :unavailable category)
+                                     "\n  Code: unavailable\n  Hint: Start Ollama on localhost:11434, or use --mode lexical."))}))
+            (catch clojure.lang.ExceptionInfo e
+              {:exit 1 :out (str "Error: " (.getMessage e))})
+            (catch Exception e
+              {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
-          (catch clojure.lang.ExceptionInfo e
-            (let [data (ex-data e)]
-              {:exit 1
-               :out (str "Error: " (.getMessage e)
-                         (when (:code data)
-                           (str "\n  Code: " (name (:code data))))
-                         (when (:hint data)
-                           (str "\n  Hint: " (:hint data))))}))
-          (catch Exception e
-            {:exit 1 :out (str "Error: " (.getMessage e))}))))))
+;; ---------------------------------------------------------------------------
+;; Ingest subcommand
+
+(def ingest-options
+  [["-r" "--request-id UUID" "Idempotency ID for replaying the complete ingest command"
+    :id :request-id
+    :parse-fn #(java.util.UUID/fromString %)]
+   ["-p" "--profile PROFILE" "Profile for durable observations: :local (in-memory, one-shot) or :services (MongoDB, incremental)"
+    :id :profile
+    :default :services
+    :parse-fn keyword]
+   [nil "--refs REFS" "Comma-separated Git refs to ingest"
+    :id :refs
+    :default "HEAD"]
+   [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
+    :id :index-dir
+    :default default-index-dir]
+   [nil "--embed" "Also embed extracted sections via Ollama and index KNN vectors"
+    :id :embed
+    :default false]
+   ["-h" "--help" "Show ingest help and exit."
+    :id :help]])
+
+(defn- make-ingest-adapters
+  "Build the registration/observation adapter map for `profile`, plus the
+   durable index ports, composed through profile/resolve-adapters so the
+   ENG-017B validating wrapper is live (ENG-017N). The durable Lucene index
+   overrides the profile's index port deliberately — the index is a
+   rebuildable projection shared across profiles (ENG-003G). Hands the map
+   to `f`, cleaning up any Mongo connection."
+  [profile index-dir f]
+  (let [index-ports (make-durable-index-ports index-dir)]
+    (case profile
+      :local
+      (f (merge (profile/resolve-adapters
+                 {:profile :local
+                  :common-git-dir-fn resolve-common-git-dir})
+                index-ports))
+
+      :services
+      (let [conn (try
+                   (mongo/connect!)
+                   (catch Exception e
+                     (throw (ex-info
+                             (str "Cannot connect to MongoDB: " (.getMessage e))
+                             {:code :unavailable
+                              :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+        (try
+          (f (profile/resolve-adapters
+              {:profile :services
+               :mongo-conn conn
+               :common-git-dir-fn resolve-common-git-dir
+               :index-dir index-dir}))
+          (finally
+            (mongo/disconnect! conn)))))))
+
+(defn- project-revision-at-path!
+  "Project revision-at-path observations for every commit reachable from
+   `refs`, skipping identities already recorded for `resource-id`.
+   Returns the count of newly recorded observations."
+  [observations repository-path resource-id refs]
+  (let [existing (into #{}
+                       (map revision-at-path/observation-id-key)
+                       ((:list-revision-at-path-by-resource observations) resource-id))
+        {:keys [commits]} (git/reachable-commits repository-path refs)
+        new-observations
+        (into []
+              (comp
+               (mapcat
+                (fn [commit]
+                  (let [commit-oid (:commit/oid commit)
+                        tree-entries (:entries (git/commit-tree-entries
+                                                repository-path commit-oid))
+                        entries (markdown-selection/select-markdown
+                                 commit-oid tree-entries)
+                        parent-oid (first (:commit/parent-oids commit))
+                        parent-entries (when parent-oid
+                                         (:entries (git/commit-tree-entries
+                                                    repository-path parent-oid)))
+                        selected-parent-entries
+                        (when parent-oid
+                          (markdown-selection/select-markdown
+                           parent-oid parent-entries))]
+                    (revision-at-path/revisions-for-commit
+                     entries
+                     {:resource-id resource-id
+                      :commit-oid commit-oid
+                      :tree-oid (:commit/tree-oid commit)
+                      :parent-commit-oid parent-oid
+                      :parent-entries parent-entries
+                      :selected-parent-entries selected-parent-entries
+                      :observed-at (java.util.Date.)}))))
+               (remove #(contains? existing (revision-at-path/observation-id-key %))))
+              commits)]
+    (doseq [observation new-observations]
+      ((:record-revision-at-path! observations) observation))
+    (count new-observations)))
+
+(defn- hydrate-extraction-content
+  "Rehydrate one durable extraction from its canonical Git blob. Extraction
+   observations deliberately omit source bodies; embedding must recover the
+   exact historical blob before applying the recorded byte spans."
+  [repository-path extraction]
+  (let [blob-oid (:extraction/blob-oid extraction)
+        blob-result (git/read-blob repository-path blob-oid)]
+    (when-let [failure (:blob/failure blob-result)]
+      (throw (ex-info "Cannot rehydrate extraction source for embedding"
+                      {:code :blob-unreadable
+                       :blob-oid blob-oid
+                       :failure failure})))
+    (assoc extraction :extraction/content (:blob/content blob-result))))
+
+(defn- embed-extractions!
+  "Embed every recorded section extraction for `resource-id` via the
+   :embeddings port and idempotently index the resulting vectors. Historical
+   source bodies are rehydrated from Git before section spans are sliced.
+   Returns the count of embedding records indexed."
+  [adapters repository-path resource-id ingestion-run-id request-id]
+  (let [observations (:observations adapters)
+        checkpoint (fn [status processed-count error-message]
+                     (ingestion/make-checkpoint-record
+                      (cond-> {:resource-id resource-id
+                               :projection-name "embedding"
+                               :projection-version 1
+                               :ingestion-run-id ingestion-run-id
+                               :status status
+                               :processed-count processed-count
+                               :request-id
+                               (ingestion/derived-request-id
+                                request-id
+                                (str "checkpoint:embedding:" (name status)))}
+                        error-message
+                        (assoc :error-message error-message))))]
+    (try
+      (let [revisions ((:list-revision-at-path-by-resource observations) resource-id)
+            extractions (into []
+                              (mapcat #((:list-section-extractions-by-revision observations)
+                                        (:revision-at-path/id %)))
+                              revisions)
+            hydrated (mapv #(hydrate-extraction-content repository-path %) extractions)
+            embeddings-port (:embeddings adapters)
+            embedding-version ((:embedding-version embeddings-port))
+            embeddings (mapv #(assoc %
+                                     :resource-id resource-id
+                                     :embedding-version embedding-version)
+                             ((:embed-sections! embeddings-port) hydrated))]
+        ((:index-embeddings! (:index adapters)) embeddings)
+        ((:record-checkpoint! observations)
+         (checkpoint :completed (count embeddings) nil))
+        (count embeddings))
+      (catch Exception error
+        ((:record-checkpoint! observations)
+         (checkpoint :failed 0 (.getMessage error)))
+        (throw error)))))
+
+(defn- run-ingest
+  "Execute the ingest subcommand: register, walk commits, project
+   revision-at-path observations, extract sections into the durable Lucene
+   index, and optionally embed them. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary arguments]}
+        (cli/parse-opts args ingest-options)
+        profile (:profile options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep ingest [options] <path>\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep ingest [options] <path>\n\n" summary)}
+
+      (empty? arguments)
+      {:exit 1 :out "Error: repository path required.\nUsage: ep ingest [options] <path>"}
+
+      (not (profile/valid-profile? profile))
+      {:exit 1 :out (str "Error: invalid profile " (pr-str profile)
+                         ". Valid: " (pr-str profile/valid-profiles))}
+
+      :else
+      (try
+        (let [repository-path (first arguments)
+              request-id (or (:request-id options) (random-uuid))
+              _ (resolve-common-git-dir repository-path)
+              _ (when (:embed options)
+                  (require-ollama! "Embedding ingestion"))]
+          (make-ingest-adapters
+           profile (:index-dir options)
+           (fn [adapters]
+             (let [{:keys [resource-id]}
+                   (registration/register!
+                    adapters
+                    {:repository-path repository-path
+                     :request-id (ingestion/derived-request-id
+                                  request-id "registration")})
+                   observations (:observations adapters)
+                   refs (string/split (:refs options) #",")
+                   run-record (ingestion/run-ingestion
+                               {:git {:reachable-commits
+                                      (fn [path refs'] (git/reachable-commits path refs'))}
+                                :observations observations}
+                               {:resource-id resource-id
+                                :repository-path repository-path
+                                :selected-refs refs
+                                :request-id request-id})
+                   revision-count (project-revision-at-path!
+                                   observations repository-path resource-id refs)
+                   projection (extraction/run-extraction-projection
+                               {:git {:read-blob (fn [_ oid] (git/read-blob repository-path oid))}
+                                :observations observations
+                                :index (:index adapters)}
+                               {:resource-id resource-id
+                                :ingestion-run-id (:observation/id run-record)
+                                :repository-path repository-path
+                                :request-id request-id})
+                   embedded (when (:embed options)
+                              (embed-extractions! adapters repository-path resource-id
+                                                  (:observation/id run-record) request-id))]
+               {:exit 0
+                :out (string/join
+                      \newline
+                      (cond-> [(str "Ingested: " repository-path)
+                               (str "  Request ID:          " request-id)
+                               (str "  Resource ID:         " resource-id)
+                               (str "  Commits traversed:   " (:ingestion/commit-count run-record))
+                               (str "  Revisions observed:  " revision-count)
+                               (str "  Revisions scanned:   " (:projection/revisions-scanned projection))
+                               (str "  Sections extracted:  " (:projection/sections-extracted projection))
+                               (str "  Extraction failures: " (count (:projection/failures projection)))
+                               (str "  Index dir:           " (:index-dir options))]
+                        embedded
+                        (conj (str "  Embeddings indexed:  " embedded))))}))))
+        (catch clojure.lang.ExceptionInfo e
+          (let [data (ex-data e)]
+            {:exit 1
+             :out (str "Error: " (.getMessage e)
+                       (when (:git-error data)
+                         (str "\n  Git error: " (:git-error data)))
+                       (when (:code data)
+                         (str "\n  Code: " (name (:code data))))
+                       (when (:hint data)
+                         (str "\n  Hint: " (:hint data))))}))
+        (catch Exception e
+          {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Serve subcommand
@@ -427,19 +705,10 @@
       (try
         (let [adapters (case profile
                          :local
-                         (in-memory/make {:common-git-dir-fn
-                                          (fn [path]
-                                            (let [{:keys [exit out err]}
-                                                  (clojure.java.shell/sh
-                                                   "git" "-C" path "rev-parse"
-                                                   "--path-format=absolute"
-                                                   "--git-common-dir")]
-                                              (if (zero? exit)
-                                                (string/trim out)
-                                                (throw (ex-info
-                                                        (str "Not a Git repository: " path)
-                                                        {:repository-path path
-                                                         :git-error (string/trim err)})))))})
+                         (merge (profile/resolve-adapters
+                                 {:profile :local
+                                  :common-git-dir-fn resolve-common-git-dir})
+                                (make-durable-index-ports default-index-dir))
 
                          :services
                          (let [conn (try
@@ -448,34 +717,19 @@
                                         (throw (ex-info
                                                 (str "Cannot connect to MongoDB: " (.getMessage e))
                                                 {:code :unavailable
-                                                 :hint "Start MongoDB with: docker compose up -d mongodb"}))))
-                               git-resolve (fn [path]
-                                             (let [{:keys [exit out err]}
-                                                   (clojure.java.shell/sh
-                                                    "git" "-C" path "rev-parse"
-                                                    "--path-format=absolute"
-                                                    "--git-common-dir")]
-                                               (if (zero? exit)
-                                                 (string/trim out)
-                                                 (throw (ex-info
-                                                         (str "Not a Git repository: " path)
-                                                         {:repository-path path
-                                                          :git-error (string/trim err)})))))
-                               obs-adapter (mongo/make-observations-adapter conn)]
-                           {:git {:common-git-directory git-resolve}
-                            :repository-metadata {:read (fn [_] nil)
-                                                  :write (fn [_ _id] nil)}
-                            :observations obs-adapter}))]
-          (println (str "Epiphany workbench starting on http://localhost:" port))
+                                                 :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+                           (profile/resolve-adapters
+                            {:profile :services
+                             :mongo-conn conn
+                             :common-git-dir-fn resolve-common-git-dir
+                             :index-dir default-index-dir})))]
+           (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))
           (http/start-server! adapters port)
           ;; Block until interrupted
           (.addShutdownHook (Runtime/getRuntime)
                             (Thread. (fn []
-                                       (println "\nShutting down...")
-                                       (when (= :services profile)
-                                         ;; TODO: disconnect mongo
-                                         ))))
+                                       (println "\nShutting down..."))))
           (.join (Thread/currentThread))
           {:exit 0 :out ""})
 
@@ -492,18 +746,6 @@
 
 ;; ---------------------------------------------------------------------------
 ;; Shared Git evidence helpers (show / diff / trace)
-
-(defn- resolve-common-git-dir
-  "Resolve a repository path's common Git directory via `git rev-parse`."
-  [repository-path]
-  (let [{:keys [exit out err]}
-        (shell/sh "git" "-C" repository-path "rev-parse"
-                  "--path-format=absolute" "--git-common-dir")]
-    (if (zero? exit)
-      (string/trim out)
-      (throw (ex-info (str "Not a Git repository: " repository-path)
-                      {:repository-path repository-path
-                       :git-error (string/trim err)})))))
 
 (defn- resolve-commit-oid
   "Resolve a ref, short OID, or HEAD-relative expression to a full commit OID."
@@ -527,7 +769,8 @@
   [repository-path]
   {:read-blob (fn [_ oid] (git/read-blob repository-path oid))
    :commit-tree-entries (fn [_ commit-oid] (git/commit-tree-entries repository-path commit-oid))
-   :reachable-commits (fn [_ refs] (git/reachable-commits repository-path refs))})
+   :reachable-commits (fn [_ refs] (git/reachable-commits repository-path refs))
+   :read-commit (fn [_ commit-oid] (git/read-commit repository-path commit-oid))})
 
 (defn- resolve-evidence-request
   "Parse a section expression and resolve its commit-oid (ref/short-oid/HEAD)
@@ -598,7 +841,65 @@
     :default :text
     :parse-fn keyword
     :validate [#{:text :edn} "Must be text or edn"]]
+   [nil "--seed-candidate RELATION" "Seed a provisional lineage candidate from this comparison (relation type)"
+    :parse-fn keyword
+    :validate [candidates/relation-types
+               (str "Must be one of: " (string/join ", " (map name candidates/relation-types)))]]
+   ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-h" "--help" "Show diff help and exit."]])
+
+(defn- with-observations-adapter
+  "Construct a validation-wrapped observations-port adapter for `profile`
+   (composed through profile/resolve-adapters, ENG-017N) and hand it to
+   `f`, cleaning up any Mongo connection afterward."
+  [profile f]
+  (case profile
+    :local
+    (f (:observations (profile/resolve-adapters
+                       {:profile :local
+                        :common-git-dir-fn resolve-common-git-dir})))
+
+    :services
+    (let [conn (try
+                 (mongo/connect!)
+                 (catch Exception e
+                   (throw (ex-info
+                           (str "Cannot connect to MongoDB: " (.getMessage e))
+                           {:code :unavailable
+                            :hint "Start MongoDB with: docker compose up -d mongodb"}))))]
+      (try
+        (f (:observations (profile/resolve-adapters
+                           {:profile :services
+                            :mongo-conn conn
+                            :common-git-dir-fn resolve-common-git-dir
+                            :index-dir default-index-dir})))
+        (finally (mongo/disconnect! conn))))))
+
+(defn- seed-candidate!
+  "Seed a provisional lineage candidate relating `left` to `right` (parsed
+   section expressions) under `relation`, durably recorded through the
+   observations port for `repo`/`profile`. Returns the candidate map (the
+   candidate is always PROVISIONAL — it is never auto-accepted; a human
+   reviews it via the ENG-005A decision events)."
+  [repo profile relation left right]
+  (let [{:keys [resource-id]} (repository-identity/resolve-repository repo)
+        source-span (candidates/make-span {:path-raw (:path left)
+                                            :heading-path (:heading left)
+                                            :commit-oid (:commit-oid left)})
+        target-span (candidates/make-span {:path-raw (:path right)
+                                            :heading-path (:heading right)
+                                            :commit-oid (:commit-oid right)})
+        candidate (candidates/make-candidate relation source-span target-span
+                                             :confidence 1.0
+                                             :generator-version "ep-diff-v1")
+        observation (candidates/candidate->observation
+                     candidate {:resource-id resource-id :adapter-version "0.1.0"})]
+    (with-observations-adapter profile
+      (fn [obs-adapter] ((:record-lineage-candidate! obs-adapter) observation)))
+    candidate))
 
 (defn- run-diff
   "Execute the diff subcommand. Returns {:exit int, :out string}."
@@ -624,15 +925,22 @@
               right (resolve-evidence-request repo right-expr)
               result (diff/compare-evidence {:git (make-evidence-git-port repo)}
                                             {:left left :right right})
-              output (case (:format options)
-                       :edn (pr-str result)
-                       (str (diff/format-diff-text (:diff/lines result)
-                                                   (str "--- " left-expr)
-                                                   (str "+++ " right-expr))
-                            "\n\n"
-                            ;; Continuity is display-only context — never folded into the diff above.
-                            "Continuity (not part of the diff): " (pr-str (:diff/continuity result))
-                            "\nSummary: " (pr-str (:diff/summary result))))]
+              seeded (when (and (:seed-candidate options)
+                                (nil? (:diff/failure result)))
+                       (seed-candidate! repo (:profile options) (:seed-candidate options) left right))
+              output (str (case (:format options)
+                            :edn (pr-str result)
+                            (str (diff/format-diff-text (:diff/lines result)
+                                                        (str "--- " left-expr)
+                                                        (str "+++ " right-expr))
+                                 "\n\n"
+                                 ;; Continuity is display-only context — never folded into the diff above.
+                                 "Continuity (not part of the diff): " (pr-str (:diff/continuity result))
+                                 "\nSummary: " (pr-str (:diff/summary result))))
+                          (when seeded
+                            (str "\n\nSeeded candidate " (:lineage-candidate/id seeded)
+                                 " [" (name (:lineage-candidate/relation seeded)) ", provisional]"
+                                 " — review with the ENG-005A decision events before treating it as established.")))]
           {:exit (if (:diff/failure result) 1 0) :out output})
         (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
         (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
@@ -677,6 +985,15 @@
     (sort-by (fn [s] (.getTime ^java.util.Date (or (:timestamp s) (java.util.Date. 0))))
              revisions)))
 
+(defn- section->show-expr
+  "Build the `ep show` section expression for a trace node's section,
+   so its exact historical evidence is one command away."
+  [section]
+  (let [heading (:heading-path section)]
+    (str (:path-raw section)
+         (when (seq heading) (str "#" (string/join ">" heading)))
+         "@" (:commit-oid section))))
+
 (defn- format-trace-text
   [trace]
   (let [nodes (:trace/nodes trace)
@@ -687,7 +1004,8 @@
                       (map-indexed (fn [i n]
                                      (let [s (:node/section n)]
                                        (str "  " i ". " (:path-raw s) " @ " (:commit-oid s)
-                                            (when (:timestamp s) (str "  (" (:timestamp s) ")")))))
+                                            (when (:timestamp s) (str "  (" (:timestamp s) ")"))
+                                            "\n     ep show " (section->show-expr s))))
                                    nodes))
          "\n\nEdges:\n"
          (if (seq edges)
@@ -737,6 +1055,235 @@
         (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
 
 ;; ---------------------------------------------------------------------------
+;; Inbox subcommand
+
+(defn- split-csv [s] (when (seq s) (remove empty? (string/split s #","))))
+
+(defn- parse-relation-list [s]
+  (some->> (split-csv s) (mapv keyword)))
+
+(defn- parse-uuid-list [s]
+  (some->> (split-csv s) (mapv #(java.util.UUID/fromString %))))
+
+(defn- parse-confidence-band [s]
+  (when (seq s)
+    (let [[low high] (string/split s #",")]
+      [(when (seq low) (Double/parseDouble low))
+       (when (seq high) (Double/parseDouble high))])))
+
+(defn- parse-instant [s]
+  (when (seq s) (java.util.Date/from (java.time.Instant/parse s))))
+
+(def inbox-options
+  [repo-option
+   [nil "--also-repo PATHS" "Additional repository paths (comma-separated) whose candidates join this repo's family view"]
+   [nil "--relation RELATIONS" "Comma-separated relation types to include"]
+   [nil "--confidence-band LOW,HIGH" "Confidence range, e.g. 0.7,1.0"]
+   [nil "--generator VERSIONS" "Comma-separated generator versions to include"]
+   [nil "--after INSTANT" "ISO-8601 instant; only candidates generated at/after this time"]
+   [nil "--before INSTANT" "ISO-8601 instant; only candidates generated before this time"]
+   [nil "--repository-family UUIDS" "Comma-separated resource-id UUIDs narrowing a merged multi-repo view"]
+   [nil "--limit N" "Max items" :default 50 :parse-fn #(Integer/parseInt %)]
+   [nil "--sort SORT" "confidence (default) or evidence"
+    :default :confidence
+    :parse-fn keyword
+    :validate [#{:confidence :evidence} "Must be confidence or evidence"]]
+   [nil "--include-suppressed" "Also show rejected/do-not-suggest candidates"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-f" "--format FORMAT" "Output format: text or edn"
+    :default :text
+    :parse-fn keyword
+    :validate [#{:text :edn} "Must be text or edn"]]
+   ["-h" "--help" "Show inbox help and exit."]])
+
+(def inbox-decide-options
+  [repo-option
+   [nil "--request-id UUID" "Idempotent request ID (UUID format)"
+    :parse-fn #(java.util.UUID/fromString %)]
+   [nil "--reason TEXT" "Human-readable reason for the decision"]
+   [nil "--relabel-to RELATION" "New relation type (for relabel decisions)"
+    :parse-fn keyword]
+   [nil "--annotation TEXT" "Free-text annotation (for annotated decisions)"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-h" "--help" "Show inbox decide help and exit."]])
+
+(defn- resource-ids-for-repos [repo-paths]
+  (mapv #(:resource-id (repository-identity/resolve-repository %)) repo-paths))
+
+(defn- fetch-candidates-and-decisions [resource-ids profile]
+  (with-observations-adapter profile
+    (fn [obs-adapter]
+      (let [list-candidates (:list-lineage-candidates obs-adapter)
+            list-decisions (:list-review-decisions obs-adapter)]
+        {:candidates (vec (mapcat list-candidates resource-ids))
+         :decisions (vec (mapcat list-decisions resource-ids))}))))
+
+(defn- format-inbox-item-text [idx item]
+  (let [c (:inbox/candidate item)]
+    (str "  " idx ". " (:lineage-candidate/id c)
+         " [" (name (:lineage-candidate/relation c)) ", "
+         (name (:inbox/decision-status item)) ", confidence="
+         (:lineage-candidate/confidence c) "]"
+         "\n     " (:inbox/evidence-summary item)
+         "\n     source: " (get-in c [:lineage-candidate/source :span/path-raw]
+                                    (get-in c [:lineage-candidate/source :section/path-raw]))
+         " -> target: " (get-in c [:lineage-candidate/target :span/path-raw]
+                                 (get-in c [:lineage-candidate/target :section/path-raw])))))
+
+(defn- format-inbox-text [items]
+  (if (empty? items)
+    "No unreviewed candidates."
+    (str (count items) " item(s):\n\n"
+         (string/join "\n\n" (map-indexed format-inbox-item-text items)))))
+
+(defn- run-inbox-list
+  [args]
+  (let [{:keys [options errors summary]} (cli/parse-opts args inbox-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep inbox [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep inbox [options]\n\n" summary)}
+
+      :else
+      (try
+        (let [repo-paths (cons (:repo options) (split-csv (:also-repo options)))
+              resource-ids (resource-ids-for-repos repo-paths)
+              {:keys [candidates decisions]} (fetch-candidates-and-decisions resource-ids (:profile options))
+              filters (cond-> {}
+                        (:relation options) (assoc :relation-types (parse-relation-list (:relation options)))
+                        (:confidence-band options) (assoc :confidence-band (parse-confidence-band (:confidence-band options)))
+                        (:generator options) (assoc :generators (split-csv (:generator options)))
+                        (or (:after options) (:before options))
+                        (assoc :date-range [(parse-instant (:after options)) (parse-instant (:before options))])
+                        (:repository-family options) (assoc :repository-families (parse-uuid-list (:repository-family options))))
+              items (inbox/build-inbox candidates decisions filters
+                                       {:limit (:limit options)
+                                        :sort (:sort options)
+                                        :include-suppressed? (boolean (:include-suppressed options))})
+              output (case (:format options)
+                       :edn (pr-str items)
+                       (format-inbox-text items))]
+          {:exit 0 :out output})
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+(defn- run-inbox-decide
+  "Record a review decision via the ENG-017G2 seam. Parity with the HTTP
+   surface: the candidate must EXIST (the decision targets it), and the
+   decision is recorded under the candidate's own resource-id — a decision
+   can no longer be recorded against a phantom candidate."
+  [args]
+  (let [{:keys [options errors summary arguments]} (cli/parse-opts args inbox-decide-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep inbox decide <candidate-id> <decision> [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep inbox decide <candidate-id> <decision> [options]\n\n" summary)}
+
+      (not= 2 (count arguments))
+      {:exit 1 :out "Error: candidate id and decision required.\nUsage: ep inbox decide <candidate-id> <decision> [options]"}
+
+      :else
+      (let [[candidate-id-str decision-str] arguments
+            request-id (or (:request-id options) (random-uuid))
+            candidate (cond-> {:command/name :command/review-decision
+                               :candidate-id (try (java.util.UUID/fromString candidate-id-str)
+                                                  (catch IllegalArgumentException _ candidate-id-str))
+                               :decision (keyword decision-str)
+                               :request-id request-id}
+                        (:reason options) (assoc :reason (:reason options))
+                        (:relabel-to options) (assoc :relabel-to (:relabel-to options))
+                        (:annotation options) (assoc :annotation (:annotation options)))
+            decoded (commands/decode candidate)]
+        (if (commands/rejected? decoded)
+          {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
+          (try
+            (with-observations-adapter
+             (:profile options)
+             (fn [obs-adapter]
+               (let [outcome (commands/execute {:adapters {:observations obs-adapter}} decoded)
+                     category (:outcome/category outcome)]
+                 (if (= :accepted category)
+                   {:exit 0 :out (str "Recorded " decision-str " for candidate " candidate-id-str ".")}
+                   {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
+                                      (when (= :unavailable category)
+                                        "\n  Code: unavailable"))}))))
+            (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+            (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))))
+
+(defn- run-inbox
+  "Execute the inbox subcommand. `ep inbox [options]` lists the review
+   queue; `ep inbox decide <candidate-id> <decision> [options]` records a
+   decision in one action, per the AC's keyboard-efficient-triage bullet."
+  [args]
+  (if (= "decide" (first args))
+    (run-inbox-decide (rest args))
+    (run-inbox-list args)))
+
+;; ---------------------------------------------------------------------------
+;; Export subcommand
+
+(def export-options
+  [repo-option
+   [nil "--also-repo PATHS" "Additional repository paths (comma-separated) to include candidates/decisions from"]
+   [nil "--label TEXT" "Human-readable packet label" :default "Evidence Packet"]
+   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+    :default :local
+    :parse-fn keyword
+    :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
+   ["-f" "--format FORMAT" "Output format: markdown, edn, or json"
+    :default :markdown
+    :parse-fn keyword
+    :validate [#{:markdown :edn :json} "Must be markdown, edn, or json"]]
+   [nil "--out FILE" "Write the packet to FILE instead of stdout"]
+   ["-h" "--help" "Show export help and exit."]])
+
+(defn- run-export
+  "Execute the export subcommand. Returns {:exit int, :out string}."
+  [args]
+  (let [{:keys [options errors summary]} (cli/parse-opts args export-options)]
+    (cond
+      errors
+      {:exit 1
+       :out (string/join \newline (concat errors ["" (str "Usage: ep export [options]\n\n" summary)]))}
+
+      (:help options)
+      {:exit 0 :out (str "Usage: ep export [options]\n\n" summary)}
+
+      :else
+      (try
+        (let [repo-paths (cons (:repo options) (split-csv (:also-repo options)))
+              resource-ids (resource-ids-for-repos repo-paths)
+              {:keys [candidates decisions]} (fetch-candidates-and-decisions resource-ids (:profile options))
+              packet (-> (export/make-packet :resource-id (first resource-ids)
+                                             :label (:label options)
+                                             :generator-version "ep-export-v1")
+                         (export/populate-from-reviewed-lineage-candidates
+                          candidates decisions)
+                         (export/add-content-hash))
+              output (case (:format options)
+                       :edn (export/packet->edn packet)
+                       :json (export/packet->json packet)
+                       (export/packet->markdown packet))]
+          (if (:out options)
+            (do (spit (:out options) output)
+                {:exit 0 :out (str "Wrote " (:out options) ".")})
+            {:exit 0 :out output}))
+        (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
+        (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+;; ---------------------------------------------------------------------------
 ;; Top-level dispatch
 
 (defn- usage [options-summary]
@@ -749,11 +1296,14 @@
     ""
     "Commands:"
     "  register    Register a local Git repository"
+    "  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene"
     "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
     "  show        Open exact historical evidence for a section expression"
     "  diff        Compare two historical section expressions"
     "  trace       Trace a section's Git-history lineage chronology"
+    "  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision"
+    "  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions"
     "  serve       Start the workbench HTTP server"
     ""
     "Global Options:"
@@ -792,11 +1342,14 @@
             cmd-args (rest arguments)]
         (case command
           "register" (run-register cmd-args)
+          "ingest"   (run-ingest cmd-args)
           "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
           "show"     (run-show cmd-args)
           "diff"     (run-diff cmd-args)
           "trace"    (run-trace cmd-args)
+          "inbox"    (run-inbox cmd-args)
+          "export"   (run-export cmd-args)
           "serve"    (run-serve cmd-args)
           {:exit 1
            :out (str "Unknown command: " command "\n\n" (usage summary))})))))

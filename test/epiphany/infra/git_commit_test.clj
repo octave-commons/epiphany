@@ -25,7 +25,7 @@
   [parent-dir]
   (let [repo-dir (io/file parent-dir "fixture-repo")]
     ;; init
-    (sh! "git" "init" (.getPath repo-dir))
+    (sh! "git" "init" "-b" "main" (.getPath repo-dir))
     (sh! "git" "-C" (.getPath repo-dir) "config" "user.email" "test@example.invalid")
     (sh! "git" "-C" (.getPath repo-dir) "config" "user.name" "Epiphany Test")
 
@@ -225,3 +225,34 @@
         result (git/read-blob @fixture-repo-dir fake-oid)]
     (is (nil? (:blob/content result)))
     (is (= "blob-not-found" (:failure/reason (:blob/failure result))))))
+
+;; ---- read-commit tests (ENG-004A: single-commit lookup for evidence
+;;      provenance -- author/committer/parent-oids without walking history) ----
+
+(defn- commit-oid-for [message-text]
+  (:commit/oid (first (filter #(= message-text (:commit/message-text %))
+                              (:commits (git/reachable-commits @fixture-repo-dir
+                                                               #{"refs/heads/main"
+                                                                 "refs/heads/feature-branch"}))))))
+
+(deftest read-commit-returns-real-author-and-committer
+  (let [oid (commit-oid-for "second commit")
+        result (git/read-commit @fixture-repo-dir oid)]
+    (is (nil? (:failure result)))
+    (is (= "Bob" (get-in result [:commit :commit/author :person/name])))
+    (is (= "bob@example.invalid" (get-in result [:commit :commit/author :person/email])))
+    (is (some? (get-in result [:commit :commit/committer :person/name])))))
+
+(deftest read-commit-returns-parent-oids
+  (let [initial-oid (commit-oid-for "initial commit")
+        second-oid (commit-oid-for "second commit")
+        initial-result (git/read-commit @fixture-repo-dir initial-oid)
+        second-result (git/read-commit @fixture-repo-dir second-oid)]
+    (is (empty? (get-in initial-result [:commit :commit/parent-oids])))
+    (is (= [initial-oid] (get-in second-result [:commit :commit/parent-oids])))))
+
+(deftest read-commit-missing-oid-reports-failure-not-exception
+  (let [fake-oid "0000000000000000000000000000000000000000"
+        result (git/read-commit @fixture-repo-dir fake-oid)]
+    (is (nil? (:commit result)))
+    (is (= "commit-unreadable" (:failure/reason (:failure result))))))

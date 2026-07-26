@@ -31,17 +31,20 @@
 
   ;; Full suite — the green baseline.
   :test {:extra-paths ["test" "tools"]
-         :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+         :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                      org.clojure/test.check {:mvn/version "1.1.1"}}
          :main-opts ["-m" "kaocha.runner"]}
 
   ;; No Docker, no network.
   :unit-test {:extra-paths ["test" "tools"]
-              :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+              :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                           org.clojure/test.check {:mvn/version "1.1.1"}}
               :main-opts ["-m" "kaocha.runner" "unit"]}
 
   ;; Needs local services (real UNAVAILABLE semantics arrive with US-000C).
   :integration-test {:extra-paths ["test" "tools"]
-                     :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
+                     :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
+                                  org.clojure/test.check {:mvn/version "1.1.1"}}
                      :main-opts ["-m" "kaocha.runner" "integration"]}
 
   ;; nREPL for editor attach; production code only, no external services.
@@ -74,13 +77,35 @@
             :main-opts ["-m" "noahtheduke.splint" "-o" "simple" "src" "test" "dev"]}
 
    ;; Coverage reporting.
-   :coverage {:extra-paths ["test"]
+   :coverage {:extra-paths ["test" "tools"]
               :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                            cloverage/cloverage {:mvn/version "1.2.4"}}
               :main-opts ["-m" "cloverage.coverage"
                           "-p" "src"
                           "-s" "test"
+                          ;; Coverage is hermetic: service-backed namespaces run
+                          ;; under :integration-test, never against ambient CI.
+                          "-t" "^(?!epiphany\\.infra\\.adapters\\.(?:mongo|ollama)-test$)(?!epiphany\\.law-suite\\.observations-mongo-test$)(?!epiphany\\.integration-suite-test$).*"
                           "-e" "epiphany\\.integration.*"
                           "-o" "target/coverage"
                           "--codecov"
-                          "--text"]}}}
+                          "--text"]}
+
+   ;; ENG-017J: CI assurance evidence artifact (revision-bound EDN).
+   :assurance-evidence {:extra-paths ["tools"]
+                        :main-opts ["-m" "epiphany.assurance-evidence"]}
+
+   ;; ENG-017J mutation pilot (boundary-critical namespaces only, heretic.edn).
+   :heretic {:extra-paths ["test"]
+             :classpath-overrides {org.clojure/clojure nil}
+             :extra-deps {io.github.parenstech/heretic {:git/sha "45ed7c7deffd5fee1b3050efa7396d0113b30a4f"}
+                          com.github.flow-storm/clojure {:mvn/version "1.12.5"}}
+             :jvm-opts ["-Dclojure.storm.instrumentEnable=true"
+                        "-Dclojure.storm.instrumentOnlyPrefixes=epiphany"]
+             :main-opts ["-m" "heretic.core"]}
+   ;; Child classpath for heretic's sandboxed mutant runs (no :main-opts —
+   ;; the sandbox driver supplies -e).
+   :heretic-child {:extra-paths ["test"]
+                   :classpath-overrides {org.clojure/clojure nil}
+                   :extra-deps {io.github.parenstech/heretic {:git/sha "45ed7c7deffd5fee1b3050efa7396d0113b30a4f"}
+                                com.github.flow-storm/clojure {:mvn/version "1.12.5"}}}}}

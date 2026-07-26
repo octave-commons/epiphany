@@ -109,7 +109,10 @@
 
 (defn filter-by-status
   "Filter edges by status. When observed-only?, only :observed edges remain.
-   When provisional-rejected is :exclude, rejected edges are removed."
+   When provisional-rejected is :exclude, the non-established candidate edges
+   — both :provisional and :rejected — are removed, leaving only :observed and
+   :accepted edges. (The flag's purpose per the AC is to exclude provisional
+   candidates; rejected edges are audit-only and excluded with them.)"
   ([edges]
    edges)
   ([edges observed-only?]
@@ -119,7 +122,7 @@
   ([edges observed-only? provisional-rejected]
    (let [filtered (filter-by-status edges observed-only?)]
      (if (= :exclude provisional-rejected)
-       (filter #(not= :rejected (:edge/status %)) filtered)
+       (remove #(contains? #{:provisional :rejected} (:edge/status %)) filtered)
        filtered))))
 
 ;; ---------------------------------------------------------------------------
@@ -187,5 +190,5 @@
       :trace/edges filtered-edges
       :trace/filter (cond
                       observed-only? :observed-only
-                      (= :exclude provisional-rejected) :no-rejected
+                      (= :exclude provisional-rejected) :no-provisional
                       :else :all)})))

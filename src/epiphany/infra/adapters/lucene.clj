@@ -9,25 +9,27 @@
   Two document types coexist in the same index:
 
   Section documents (doc_type=section):
-    - heading_path, path_raw, body_text, commit_oid, blob_oid,
+    - resource_id, heading_path, path_raw, body_text, commit_oid, blob_oid,
       extractor_version, section_level, section_ordinal
 
   Embedding documents (doc_type=embedding):
-    - embedding_path_raw, embedding_commit_oid, embedding_heading_path,
+    - resource_id, embedding_identity, embedding_path_raw,
+      embedding_commit_oid, embedding_heading_path,
       embedding_level, embedding_ordinal, embedding_model,
       embedding_version (stored int for filtering), knn_vector (KNN float)
 
   Uses StandardAnalyzer for text analysis — sufficient for English
   prose and code comments. Unicode paths are stored verbatim."
   (:require [clojure.edn :as edn]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [epiphany.shape.markdown :as md])
   (:import [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.document Document Field$Store TextField StringField
                                        KnnFloatVectorField]
            [org.apache.lucene.index IndexWriter IndexWriterConfig IndexWriterConfig$OpenMode
                                     DirectoryReader Term VectorSimilarityFunction]
            [org.apache.lucene.queryparser.classic QueryParser]
-           [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery BooleanQuery
+           [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery
                                       BooleanQuery$Builder BooleanClause$Occur]
            [org.apache.lucene.store FSDirectory]
            [java.nio.file Files Path]))
@@ -37,16 +39,50 @@
 
 (def ^:private current-index-version
   "Bump when the index schema (fields, analyzers) changes."
-  2)
+  4)
+
+(defn- require-resource-id
+  [record]
+  (or (:resource-id record)
+      (throw (ex-info "Indexed records require :resource-id"
+                      {:code :invalid-index-record}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Document construction — sections
 
+(defn- section-body-text
+  "Recover a section's body text by slicing the source content with the
+   section's recorded span. Spans are UTF-8 BYTE offsets; slicing goes
+   through shape.markdown/slice, which converts to char offsets — raw
+   subs would corrupt or drop non-ASCII content. Returns nil when the
+   extraction record carries no content (older callers) — the index then
+   falls back to heading-path + path only."
+  [extraction section]
+  (when-let [content (:extraction/content extraction)]
+    (let [start (:section/body-span-start-byte section)
+          end   (:section/body-span-end-byte section)]
+      (when (and start end)
+        (md/slice content {:span/start-byte start :span/end-byte end})))))
+
+(defn- section-identity
+  "Stable identity for one extracted section. Replays replace the exact
+   resource/commit/path/ordinal/extractor projection rather than appending."
+  [extraction section]
+  (pr-str [(require-resource-id extraction)
+           (:extraction/commit-oid extraction)
+           (:extraction/path-raw extraction)
+           (:section/ordinal section)
+           (:extraction/extractor-version extraction)]))
+
 (defn- section->doc
   "Convert a section extraction record + section map into a Lucene Document."
   [extraction section]
-  (let [doc (Document.)]
+  (let [resource-id (require-resource-id extraction)
+        identity (section-identity extraction section)
+        doc (Document.)]
     (.add doc (StringField. "doc_type" "section" Field$Store/YES))
+    (.add doc (StringField. "section_identity" identity Field$Store/NO))
+    (.add doc (StringField. "resource_id" (str resource-id) Field$Store/YES))
     (.add doc (StringField. "path_raw"
                             (:extraction/path-raw extraction)
                             Field$Store/YES))
@@ -71,7 +107,7 @@
     (.add doc (TextField. "body_text"
                           (str/join " " (concat (:section/heading-path section)
                                                 [(:extraction/path-raw extraction)]
-                                                (when-let [body (:section/body section)]
+                                                (when-let [body (section-body-text extraction section)]
                                                   [body])))
                           Field$Store/YES))
     doc))
@@ -85,13 +121,32 @@
 ;; ---------------------------------------------------------------------------
 ;; Document construction — embeddings
 
+(defn- embedding-identity
+  "Stable identity for replacing one resource's exact section/model vector
+   during replay. Heading text is intentionally excluded: commit/path/
+   ordinal already identify the historical section, while model+version
+   identify the projection."
+  [embedding]
+  (pr-str [(require-resource-id embedding)
+           (:embedding/commit-oid embedding)
+           (:embedding/path-raw embedding)
+           (:embedding/ordinal embedding)
+           (:embedding/model embedding)
+           (or (:embedding/model-digest embedding)
+               (:embedding-version embedding))
+           (:embedding-version embedding)]))
+
 (defn- embedding->doc
   "Convert an embedding record into a Lucene Document with a KNN vector field."
   [embedding]
-  (let [vector (:embedding/vector embedding)
+  (let [resource-id (require-resource-id embedding)
+        identity (embedding-identity embedding)
+        vector (:embedding/vector embedding)
         float-vec (float-array vector)
         doc (Document.)]
     (.add doc (StringField. "doc_type" "embedding" Field$Store/YES))
+    (.add doc (StringField. "resource_id" (str resource-id) Field$Store/YES))
+    (.add doc (StringField. "embedding_identity" identity Field$Store/NO))
     (.add doc (StringField. "embedding_path_raw"
                             (:embedding/path-raw embedding)
                             Field$Store/YES))
@@ -110,6 +165,8 @@
     (.add doc (StringField. "embedding_model"
                             (:embedding/model embedding)
                             Field$Store/YES))
+    (when-let [digest (:embedding/model-digest embedding)]
+      (.add doc (StringField. "embedding_model_digest" digest Field$Store/YES)))
     (.add doc (StringField. "embedding_version"
                             (str (:embedding-version embedding))
                             Field$Store/YES))
@@ -121,12 +178,30 @@
 ;; ---------------------------------------------------------------------------
 ;; Index writer management
 
+(declare read-version-file index-empty?)
+
 (defn- open-writer
-  "Open or create an IndexWriter at the given directory path."
+  "Open or create an IndexWriter at the given directory path. Refuse to
+   append to a non-empty index whose sidecar is missing, corrupt, or stale."
+  [^Path dir]
+  (let [stored (read-version-file dir)
+        stored-version (when (map? stored) (:index/version stored))]
+    (when (and (not (index-empty? dir))
+               (not= current-index-version stored-version))
+      (throw (ex-info "Lucene index schema version mismatch; rebuild required"
+                      {:code :index-version-mismatch
+                       :expected current-index-version
+                       :actual stored-version})))
+    (let [analyzer (StandardAnalyzer.)
+          config (IndexWriterConfig. analyzer)]
+      (.setOpenMode config IndexWriterConfig$OpenMode/CREATE_OR_APPEND)
+      (IndexWriter. (FSDirectory/open dir) config))))
+
+(defn- open-rebuild-writer
   [^Path dir]
   (let [analyzer (StandardAnalyzer.)
         config (IndexWriterConfig. analyzer)]
-    (.setOpenMode config IndexWriterConfig$OpenMode/CREATE_OR_APPEND)
+    (.setOpenMode config IndexWriterConfig$OpenMode/CREATE)
     (IndexWriter. (FSDirectory/open dir) config)))
 
 (defn- write-version-file!
@@ -147,12 +222,13 @@
         (catch Exception _ :integrity/corrupt-version-file)))))
 
 (defn- index-empty?
-  "Check if the Lucene index directory has any segment files."
+  "Return true when the directory has no Lucene index or zero live documents."
   [^Path index-dir]
-  (let [dir (java.io.File. (.toString index-dir))
-        segment-files (filter #(.startsWith (.getName %) "segments_")
-                               (.listFiles dir))]
-    (empty? segment-files)))
+  (with-open [directory (FSDirectory/open index-dir)]
+    (if-not (DirectoryReader/indexExists directory)
+      true
+      (with-open [reader (DirectoryReader/open directory)]
+        (zero? (.numDocs reader))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Query helpers
@@ -166,6 +242,10 @@
   "Build a TermQuery for filtering by embedding_version."
   [version]
   (TermQuery. (Term. "embedding_version" (str version))))
+
+(defn- resource-id-query
+  [resource-id]
+  (TermQuery. (Term. "resource_id" (str resource-id))))
 
 ;; ---------------------------------------------------------------------------
 ;; Port implementation
@@ -182,10 +262,14 @@
 
   {:index-sections!
    (fn [extraction-record]
-     (let [docs (extraction-record->docs extraction-record)]
+     (let [sections (:extraction/sections extraction-record)
+           docs (extraction-record->docs extraction-record)]
        (with-open [writer (open-writer index-dir)]
-         (doseq [^Document doc docs]
-           (.addDocument writer doc))
+         (doseq [[section ^Document doc] (map vector sections docs)]
+           (.updateDocument writer
+                            (Term. "section_identity"
+                                   (section-identity extraction-record section))
+                            doc))
          (.commit writer)))
      (write-version-file! index-dir)
      nil)
@@ -216,11 +300,14 @@
 
    :index-embeddings!
    (fn [embedding-records]
-     (let [docs (mapv embedding->doc embedding-records)]
-       (with-open [writer (open-writer index-dir)]
-         (doseq [^Document doc docs]
-           (.addDocument writer doc))
-         (.commit writer)))
+     (with-open [writer (open-writer index-dir)]
+       (doseq [embedding embedding-records]
+         (.updateDocument writer
+                          (Term. "embedding_identity"
+                                 (embedding-identity embedding))
+                          (embedding->doc embedding)))
+       (.commit writer))
+     (write-version-file! index-dir)
      nil)
 
    :knn-search
@@ -249,6 +336,18 @@
                         :result/embedding-version (.get doc "embedding_version")}))
                    (.-scoreDocs hits)))))))
 
+   :index-stats
+   (fn [resource-id]
+     (if (index-empty? index-dir)
+       {:document-count 0}
+       (with-open [reader (DirectoryReader/open (FSDirectory/open index-dir))]
+         (let [searcher (IndexSearcher. reader)
+               query (-> (BooleanQuery$Builder.)
+                         (.add (doc-type-query "section") BooleanClause$Occur/FILTER)
+                         (.add (resource-id-query resource-id) BooleanClause$Occur/FILTER)
+                         .build)]
+           {:document-count (.count searcher query)}))))
+
    :index-version
    (fn []
      (let [result (read-version-file index-dir)]
@@ -259,10 +358,7 @@
 
    :rebuild-index!
    (fn [records]
-     (with-open [writer (open-writer index-dir)]
-       (.deleteAll writer)
-       (.commit writer))
-     (with-open [writer (open-writer index-dir)]
+     (with-open [writer (open-rebuild-writer index-dir)]
        (doseq [record records]
          (let [docs (extraction-record->docs record)]
            (doseq [^Document doc docs]
@@ -273,8 +369,7 @@
 
    :clear-index!
    (fn []
-     (with-open [writer (open-writer index-dir)]
-       (.deleteAll writer)
+     (with-open [writer (open-rebuild-writer index-dir)]
        (.commit writer))
      (let [version-file (.resolve index-dir "index-version.edn")]
        (when (.exists (.toFile version-file))

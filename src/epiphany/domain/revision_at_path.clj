@@ -118,12 +118,28 @@
 
 (defn revisions-for-commit
   "Construct revision-at-path observations for all selected entries
-  in a single commit, compared against its parent tree.
+  in a single commit, compared against its parent tree, including delete
+  observations for selected parent paths absent from the child.
 
   `entries` — vector of selection/entry maps for this commit
-  `context` — map with :resource-id, :tree-oid, :parent-commit-oid,
-              :parent-entries, :observed-at (as in `revision-at-path`)
+  `context` — map with :resource-id, :commit-oid, :tree-oid,
+              :parent-commit-oid, :parent-entries,
+              :selected-parent-entries, :observed-at
 
   Returns a vector of observation maps."
-  [entries context]
-  (mapv #(revision-at-path % context) entries))
+  [entries {:keys [commit-oid parent-commit-oid selected-parent-entries]
+            :as context}]
+  (let [present-paths (into #{} (map :entry/path-raw) entries)
+        current (mapv #(revision-at-path % context) entries)
+        deleted (when parent-commit-oid
+                  (into []
+                        (comp
+                         (remove #(contains? present-paths (:entry/path-raw %)))
+                         (map (fn [parent-entry]
+                                (-> (revision-at-path
+                                     (assoc parent-entry :entry/commit-oid commit-oid)
+                                     (assoc context
+                                            :parent-blob-oid (:entry/blob-oid parent-entry)))
+                                    (assoc :revision/evidence :delete)))))
+                        selected-parent-entries))]
+    (into current deleted)))

@@ -5,13 +5,13 @@ dependency: ["01900d7c-7f3a-7e8b-9c4d-000000001702", "01900d7c-7f3a-7e8b-9c4d-00
 phase: "1"
 type: "story"
 adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-write-id: "1784568573871-0.mrkwpbkiifk3gv2xpzj"
+write-id: "1784689132299-0.008dvueow80vnoxgrlmby"
 points: "5"
 verification: ["unit-test"]
 risk: "medium"
 title: "ENG-017G: Normalize CLI and HTTP command contracts"
 priority: "P1"
-status: "in_progress"
+status: "done"
 id: "01900d7c-7f3a-7e8b-9c4d-000000001707"
 epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
 design: "docs/designs/verification-architecture.md"
@@ -139,4 +139,20 @@ Remaining scope, deliberately not attempted this pass:
 - `infra.main` shelling out to the real `git` binary via `clojure.java.shell/sh` for `--path-format=absolute --git-common-dir` (`run-register`, `run-serve`) rather than going through JGit — noticed while writing the parity test's `shell-git-resolve` helper (mirrors the same pattern). This looks like it conflicts with ADR-000/CLAUDE.md's "Git is read-only, never shelled out to" principle, but is out of scope for this card and not something to fix as a drive-by; flagging for its own card.
 
 Suite: `clojure -M:unit-test` → 600 tests, 1513 assertions, 0 failures. `clojure -M:lint`, `:boundary-check`, `:interop-inventory` all clean.
+
+SPLIT 2026-07-21 (board triage): per breakdown rule 7 and the implementer's own 2026-07-20 recommendation, this card is split. The boundary-hardening + observed-parity slice that LANDED (2026-07-20, suite green 600→608 tests) stays here: `:limit` bounded validation shared by CLI+HTTP, `wrap-exceptions` internal-error leak fix, and CLI/HTTP outcome-category parity regression tests for register/search (test/epiphany/parity/cli_http_test.clj). That slice is reviewable as this card's deliverable.
+
+Carved OUT to follow-up ENG-017G2 (Shared CLI/HTTP command-vocabulary decoder seam): the actual decode-cli/decode-http/execute/encode-cli/encode-http shared command-vocabulary seam from this card's Scope section (today CLI and HTTP each independently parse + build adapters + call the same app/domain fns — parity is observed and regression-tested, NOT guaranteed by construction), plus parity tests for the remaining commands (status, review-decisions). Also noted for their own cards (not this one): register-handler's own catch echoing raw ExceptionInfo messages when register! gains a non-input failure mode; and infra.main shelling out to the real `git` binary via clojure.java.shell/sh (run-register/run-serve) which conflicts with ADR-000's "Git is read-only, never shelled out to". No status change made by this triage; recommend this card proceed to independent review of the landed slice.
+
+KANBAN-SYNC RECOVERY 2026-07-21: this card's review disposition and done status from earlier today were lost to a board-sync race (a mid-session `git stash`/`git stash pop` used to compare cljfmt/interop deltas raced against this MCP server's concurrent writes to the on-disk story file). No code changed for this recovery — this card's landed slice was already committed prior to the sync issue and is unaffected: :limit bounded validation shared by CLI+HTTP, wrap-exceptions internal-error leak fix, and CLI/HTTP outcome-category parity regression tests (test/epiphany/parity/cli_http_test.clj), per the 2026-07-21 SPLIT comment already on this card (that comment's own content is intact below, since it predates the sync race).
+
+Restating the review disposition that was lost: an independent adversarial review confirmed this landed slice against the codebase (not just the card's own claims) — http.clj's max-search-limit/valid-limit? genuinely shared with the CLI's --limit validator (not a duplicated magic number); wrap-exceptions returns a fixed generic detail for unrecognized codes, logging real messages server-side only (one disclosed residual gap in register-handler's own catch, pinned by a test, not a hidden bypass); test/epiphany/parity/cli_http_test.clj has 7 real, non-tautological tests exercising actual CLI and HTTP paths for register/search. Suite was green (643 tests, 1655 assertions, 0 failures at the time, later grown as more same-session cards landed), clojure -M:lint 0 errors, clojure -M:boundary-check clean. Scope discipline confirmed: the SPLIT comment honestly carves the shared-decoder-seam work to ENG-017G2 without silent scope creep.
+
+Re-verifying now before re-affirming the transition.
+
+REVIEW 2026-07-21 (independent adversarial verification, restored after kanban-sync recovery above): APPROVE.
+
+Evidence gathered independently by the reviewing agent (re-recorded verbatim from its original report, lost to the sync race but preserved in this session's transcript): http.clj:200-207 defines max-search-limit (1000); main.clj:259-260 references http/max-search-limit directly (not a duplicated magic number) — genuinely shared bound, enforced pre-adapter in search-handler (http.clj:229-231). wrap-exceptions (http.clj:157-182) returns a fixed generic detail for unrecognized codes/bare exceptions, logging the real message server-side only. One disclosed residual gap: register-handler's own catch (http.clj:261-269) still echoes raw ExceptionInfo messages for unrecognized codes — but this is explicitly documented in the card comment and pinned by a test (register-unrecognized-ex-info-code-currently-echoes-message), not a hidden bypass. test/epiphany/parity/cli_http_test.clj — 7 real, non-tautological tests exercising actual CLI (main/run) and HTTP (http/create-handler) paths for register/search, asserting matching accepted/rejected outcome categories. git diff --stat HEAD on the reviewed files showed no uncommitted drift — working tree matched the reviewed commit. clojure -M:unit-test -> 643 tests, 1655 assertions, 0 failures (green at the time; higher than the card's own claimed 608 because work continued after, as expected). clojure -M:lint -> 0 errors. clojure -M:boundary-check -> clean. Scope discipline: SPLIT comment honestly carves the shared-decoder-seam work to ENG-017G2 and flags (without absorbing) two other pre-existing issues as follow-ups. No silent scope creep.
+
+Moving review -> document.
 ---

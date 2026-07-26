@@ -6,18 +6,24 @@
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
+(def ^:private test-resource-id
+  #uuid "10000000-0000-0000-0000-000000000001")
+
 (defn- temp-index-dir []
   (Files/createTempDirectory "lucene-knn-test" (into-array FileAttribute [])))
 
 (defn- make-test-record [source path commit-oid blob-oid]
   (let [doc (md/parse source)
         sections (se/extract-sections doc)]
-    (se/make-extraction-record sections
-                               #uuid "00000000-0000-0000-0000-000000000001"
-                               commit-oid path blob-oid source "test-v1")))
+    (assoc
+     (se/make-extraction-record sections
+                                #uuid "00000000-0000-0000-0000-000000000001"
+                                commit-oid path blob-oid source "test-v1")
+     :resource-id test-resource-id)))
 
 (defn- make-embedding [path heading-path vector model version]
-  {:embedding/path-raw path
+  {:resource-id test-resource-id
+   :embedding/path-raw path
    :embedding/commit-oid "commit1"
    :embedding/heading-path heading-path
    :embedding/level (count heading-path)

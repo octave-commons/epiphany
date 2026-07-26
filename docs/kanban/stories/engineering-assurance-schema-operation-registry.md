@@ -1,19 +1,20 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000001701"
-title: "ENG-017A: Define the schema operation registry"
-status: "in_progress"
-type: "story"
-priority: "P0"
-phase: 1
-epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
-design: "docs/designs/verification-architecture.md"
-adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
-points: 3
-labels: ["quality", "schemas", "contracts", "verification", "phase-1"]
 category: "stories"
+labels: ["quality", "schemas", "contracts", "verification", "phase-1"]
 dependency: ["01900d7c-7f3a-7e8b-9c4d-000000000000-b"]
+phase: "1"
+type: "story"
+adr: "docs/adrs/adr-004-contract-first-adversarial-verification.md"
+write-id: "1784664462798-0.jhw94gchp6jiadh1f5a"
+points: "3"
 verification: ["unit-test"]
 risk: "low"
+title: "ENG-017A: Define the schema operation registry"
+priority: "P0"
+status: "done"
+id: "01900d7c-7f3a-7e8b-9c4d-000000001701"
+epic: "01900d7c-7f3a-7e8b-9c4d-000000000001"
+design: "docs/designs/verification-architecture.md"
 ---
 
 # ENG-017A: Define the schema operation registry
@@ -165,4 +166,8 @@ REVIEW 2026-07-13: Implementation complete. Verification evidence: (1) every-por
 REVIEW 2026-07-13: request-changes. Tests pass (10/10 in the operations-test namespace, 554/554 full suite, 0 failures), the 5 named verification tests exist exactly as specified, and the diff is correctly scoped to law/ + test/law/ only. However, port-write-operations in operations.clj:109-117 is a hardcoded literal duplicating the op names from law/ports.clj rather than being derived from ports/observations-port-schema; the ports require is unused (dead import) and the docstring's claim that this set is 'derived from the port schema at compile time' is inaccurate. This means the completeness test does not actually demonstrate 'by construction' that adding an unregistered op to law/ports.clj turns the suite red -- it only detects drift against operations.clj's own private copy, which is exactly the false-green pattern this card exists to prevent. Please derive port-write-operations from ports/observations-port-schema so the acceptance criterion is genuinely enforced, then re-run and repost evidence. --tasks-dir docs/kanban
 
 REVIEW-FAIL 2026-07-13: completeness check quietly duplicates law/ports.clj's op list by hand instead of deriving it from the registry. AC claims it catches drift, but the hand-typed list can drift from the same source it's checking. Needs to derive the expected set from the registry itself, not a parallel hard-coded copy. --tasks-dir docs/kanban
+
+FIX 2026-07-21 (board triage): the 2026-07-13 REVIEW-FAIL is closed. Defect was `port-write-operations` being a hand-typed literal (with a false "Derived from the port schema" docstring), so the completeness test only detected drift against operations.clj's own private copy — the exact false-green this card exists to prevent. Fix: added pure classifier `write-operation?` + `map-schema-entry-keys`; `port-write-operations` is now `(into #{} (filter write-operation?) (map-schema-entry-keys ports/observations-port-schema))` — genuinely computed from law/ports.clj. Docstring rewritten to state the real derivation. Stays law-layer (data + pure derivation, no I/O). PROVEN by construction: temporarily injecting :record-fake-drift! into observations-port-schema (no registry entry) made every-port-write-is-registered fail RED with "Port write operations missing from registry: #{:record-fake-drift!}"; reverted. Evidence: clojure -M:unit-test → 612 tests / 1558 assertions / 0 failures (+4 tests over 608). Uncommitted in working tree. Independent review still applies; recommend review→ (re-verify the derivation + the red-on-drift demonstration). Moving in_progress→review.
+
+REVIEW 2026-07-21 (independent adversarial re-review of fix 6a3debe): APPROVE. Defect genuinely closed. (1) port-write-operations (operations.clj:141-149) is truly derived — (into #{} (filter write-operation?) (map-schema-entry-keys ports/observations-port-schema)); map-schema-entry-keys (132-139) reads the real [:map …] from law/ports; no hand-typed literal or fallback. (2) Docstring now accurately describes the derivation; the old false claim is gone. (3) RED-ON-DRIFT INDEPENDENTLY REPRODUCED: reviewer added [:record-xxx! :any] to observations-port-schema → every-port-write-is-registered went RED ("Port write operations missing from registry: #{:record-xxx!}") → reverted clean. The completeness test now checks the registry against the real port, not a copy of itself. (4) write-operation? sound for the current port (no read op named record-…!, :import-all handled explicitly). Suite 637/1638/0; focused operations-test 10/31/0. Follow-up (non-blocking, latent): write-operation? is a NAME-BASED classifier — a future durable write not named record-…! (e.g. :append!, :save-observation!) would be silently excluded from the derived set AND from 017B's eager check (shared oracle). Consistent with ADR-004's explicit-registration model, but a convention dependency worth a guard or a documented naming rule. Recommend advancing; final done disposition/authority per docs/process/review-and-acceptance.md.
 ---

@@ -71,6 +71,13 @@
     (is (= "abc123" (:checkpoint/last-processed-oid record)))
     (is (= "connection refused" (:checkpoint/error-message record)))))
 
+(deftest derived-request-ids-are-stable-and-scoped
+  (let [request-id (random-uuid)]
+    (is (= (ingestion/derived-request-id request-id "registration")
+           (ingestion/derived-request-id request-id "registration")))
+    (is (not= (ingestion/derived-request-id request-id "registration")
+              (ingestion/derived-request-id request-id "ingestion-run")))))
+
 (deftest run-ingestion-orchestrates-traversal
   (testing "run-ingestion walks commits, records run and checkpoint"
     (let [runs (atom [])
@@ -98,3 +105,33 @@
       (is (= 1 (count @checkpoints)))
       (is (= :completed (:checkpoint/status (first @checkpoints))))
       (is (= 2 (:checkpoint/processed-count (first @checkpoints)))))))
+
+(deftest run-ingestion-propagates-a-caller-request-id
+  (testing "one caller ID deterministically identifies the run and its checkpoint"
+    (let [request-id (random-uuid)
+          runs (atom [])
+          checkpoints (atom [])
+          ports {:git {:reachable-commits
+                       (fn [_ _]
+                         {:commits [{:commit/oid "aaa"}]
+                          :failures []
+                          :commit-count 1
+                          :failure-count 0})}
+                 :observations
+                 {:record-ingestion-run! (fn [record] (swap! runs conj record))
+                  :record-checkpoint! (fn [record] (swap! checkpoints conj record))}}
+          command {:resource-id (random-uuid)
+                   :repository-path "/repo"
+                   :selected-refs ["HEAD"]
+                   :request-id request-id}
+          first-run (ingestion/run-ingestion ports command)
+          second-run (ingestion/run-ingestion ports command)]
+      (is (= request-id (:observation/request-id first-run)))
+      (is (= (:observation/id first-run) (:observation/id second-run)))
+      (is (= (:observation/id first-run)
+             (:checkpoint/ingestion-run-id (first @checkpoints))))
+      (is (= (ingestion/derived-request-id
+              request-id "checkpoint:ingestion-traversal")
+             (:observation/request-id (first @checkpoints))))
+      (is (= (:observation/request-id (first @checkpoints))
+             (:observation/id (first @checkpoints)))))))

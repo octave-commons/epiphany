@@ -1,7 +1,14 @@
 (ns epiphany.infra.main-test
-  (:require [clojure.string :as string]
+  (:require [clojure.java.io]
+            [clojure.java.shell]
+            [clojure.string :as string]
+            [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing]]
-            [epiphany.infra.main :as main]))
+            [epiphany.application.validation :as validation]
+            [epiphany.infra.main :as main]
+            [epiphany.infra.git :as git]
+            [epiphany.infra.profile :as profile]
+            [epiphany.domain.export :as export]))
 
 (deftest help-identifies-the-canonical-executable
   (testing "--help succeeds and names both epiphany and its ep alias"
@@ -75,11 +82,12 @@
     (is (= 1 exit))
     (is (string/includes? out "invalid profile"))))
 
-(deftest status-local-profile-rejected
-  (testing "status with :local profile reports not supported"
+(deftest status-local-profile-reports-cross-stage-status
+  (testing "status with :local profile reports the shared cross-stage status (ENG-017G2 seam: no surface-specific rejection)"
     (let [{:keys [exit out]} (main/run ["status" "-p" :local "-r" (str (java.util.UUID/randomUUID))])]
-      (is (= 1 exit))
-      (is (string/includes? out "does not persist")))))
+      (is (zero? exit))
+      (is (string/includes? out "Resource:"))
+      (is (string/includes? out "Summary:")))))
 
 (deftest status-services-profile-requires-mongo
   (testing "status with :services fails when MongoDB is unavailable"
@@ -106,23 +114,35 @@
     (is (string/includes? out "--format"))))
 
 (deftest search-returns-zero-results-on-empty-index
-  (testing "search with in-memory adapters returns empty results"
-    (let [{:keys [exit out]} (main/run ["search" "architecture"])]
+  (testing "lexical search against a fresh durable index dir returns empty results"
+    (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                          "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+          {:keys [exit out]} (main/run ["search" "architecture" "--mode" "lexical"
+                                        "--index-dir" index-dir])]
       (is (zero? exit))
       (is (string/includes? out "0 results")))))
 
 (deftest search-text-format-default
-  (let [{:keys [exit out]} (main/run ["search" "test"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (string/includes? out "results"))))
 
 (deftest search-edn-format
-  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "edn"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "-f" "edn" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (or (= "()" out) (string/includes? out "[")))))
 
 (deftest search-json-format
-  (let [{:keys [exit out]} (main/run ["search" "test" "-f" "json"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "test" "-f" "json" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (= "[]" out))))
 
@@ -142,9 +162,198 @@
     (is (string/includes? out "invalid profile"))))
 
 (deftest search-verbose-mode
-  (let [{:keys [exit out]} (main/run ["search" "-v" "test"])]
+  (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                        "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+        {:keys [exit out]} (main/run ["search" "-v" "test" "--mode" "lexical"
+                                      "--index-dir" index-dir])]
     (is (zero? exit))
     (is (string/includes? out "Profile:"))))
+
+(deftest search-semantic-requires-ollama-or-fails-explicitly
+  (testing "semantic search never silently falls back to lexical"
+    (let [index-dir (str (java.nio.file.Files/createTempDirectory
+                          "epiphany-search-test" (make-array java.nio.file.attribute.FileAttribute 0)))
+          {:keys [exit out]} (main/run ["search" "test" "--mode" "semantic"
+                                        "--index-dir" index-dir])]
+      ;; With Ollama up this succeeds; with Ollama down it must exit 1 with
+      ;; an explicit UNAVAILABLE-style error — never a silent mode change.
+      (if (zero? exit)
+        (is (string/includes? out "results"))
+        (do (is (= 1 exit))
+            (is (string/includes? out "Ollama")))))))
+
+;; ---------------------------------------------------------------------------
+;; Ingest subcommand
+
+(defn- sh!
+  [& command]
+  (let [{:keys [exit out err]} (apply clojure.java.shell/sh command)]
+    (when-not (zero? exit)
+      (throw (ex-info "Fixture command failed" {:command command :err err})))
+    out))
+
+(defn- temp-dir
+  [prefix]
+  (str (java.nio.file.Files/createTempDirectory
+        prefix (make-array java.nio.file.attribute.FileAttribute 0))))
+
+(defn- fixture-markdown-repo
+  "Create a temp Git repository containing one Markdown file with a unique
+   heading. Returns the repository path."
+  []
+  (let [repo (temp-dir "epiphany-ingest-test")]
+    (sh! "git" "init" repo)
+    (sh! "git" "-C" repo "config" "user.email" "test@example.invalid")
+    (sh! "git" "-C" repo "config" "user.name" "Epiphany Test")
+    (spit (clojure.java.io/file repo "notes.md")
+          "# Zqxwv Archaeology\n\nContinuity is not identity.\n")
+    (sh! "git" "-C" repo "add" "notes.md")
+    (sh! "git" "-C" repo "commit" "-m" "add notes")
+    repo))
+
+(deftest ingest-requires-path
+  (let [{:keys [exit out]} (main/run ["ingest"])]
+    (is (= 1 exit))
+    (is (string/includes? out "repository path required"))))
+
+(deftest ingest-shows-help
+  (let [{:keys [exit out]} (main/run ["ingest" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep ingest"))
+    (is (string/includes? out "--index-dir"))
+    (is (string/includes? out "--request-id"))))
+
+(deftest ingest-rejects-invalid-profile
+  (let [{:keys [exit out]} (main/run ["ingest" "-p" "nope" "."])]
+    (is (= 1 exit))
+    (is (string/includes? out "invalid profile"))))
+
+(deftest ingest-fails-on-non-git-path
+  (let [{:keys [exit out]} (main/run ["ingest" (temp-dir "epiphany-not-git")
+                                      "-p" "local"
+                                      "--index-dir" (temp-dir "epiphany-idx")])]
+    (is (= 1 exit))
+    (is (string/includes? out "Not a Git repository"))))
+
+(deftest ingest-local-then-lexical-search-finds-section
+  (testing "ep ingest populates the durable Lucene index ep search reads"
+    (let [repo (fixture-markdown-repo)
+          index-dir (temp-dir "epiphany-idx")
+          ingest (main/run ["ingest" repo "-p" "local" "--index-dir" index-dir])]
+      (is (zero? (:exit ingest)) (:out ingest))
+      (is (string/includes? (:out ingest) "Sections extracted:"))
+      (let [{:keys [exit out]} (main/run ["search" "Zqxwv" "--mode" "lexical"
+                                          "--index-dir" index-dir])]
+        (is (zero? exit))
+        (is (string/includes? out "notes.md"))))))
+
+(deftest ingest-non-ascii-body-is-fully-searchable
+  (testing "non-ASCII Markdown extracts and indexes end-to-end (blocker regression, ENG-003G review)"
+    (let [repo (temp-dir "epiphany-ingest-unicode")
+          index-dir (temp-dir "epiphany-idx")]
+      (sh! "git" "init" repo)
+      (sh! "git" "-C" repo "config" "user.email" "test@example.invalid")
+      (sh! "git" "-C" repo "config" "user.name" "Epiphany Test")
+      (spit (clojure.java.io/file repo "u.md")
+            "# Café notes\n\nThe naïve zqxwvuniq body lives here.\n")
+      (sh! "git" "-C" repo "add" "u.md")
+      (sh! "git" "-C" repo "commit" "-m" "add unicode notes")
+      (let [ingest (main/run ["ingest" repo "-p" "local" "--index-dir" index-dir])]
+        (is (zero? (:exit ingest)) (:out ingest))
+        (is (string/includes? (:out ingest) "Sections extracted:  1")
+            (str "non-ASCII documents must not silently fail extraction: " (:out ingest)))
+        (is (string/includes? (:out ingest) "Extraction failures: 0")))
+      (let [{:keys [exit out]} (main/run ["search" "zqxwvuniq" "--mode" "lexical"
+                                          "--index-dir" index-dir])]
+        (is (zero? exit))
+        (is (string/includes? out "u.md")
+            "body text after non-ASCII characters must be searchable")))))
+
+(deftest embedding-rehydrates-historical-source-and-stamps-projection-identity
+  (testing "stored extraction metadata is joined back to its Git blob before embedding"
+    (let [resource-id (random-uuid)
+          revision-id (random-uuid)
+          ingestion-run-id (random-uuid)
+          request-id (random-uuid)
+          extraction {:resource-id resource-id
+                      :extraction/blob-oid "blob-1"
+                      :extraction/commit-oid "commit-1"
+                      :extraction/path-raw "notes.md"
+                      :extraction/sections []}
+          embedded-input (atom nil)
+          indexed (atom nil)
+          checkpoints (atom [])
+          adapters
+          {:observations
+           {:list-revision-at-path-by-resource
+            (fn [requested-resource-id]
+              (is (= resource-id requested-resource-id))
+              [{:revision-at-path/id revision-id}])
+            :list-section-extractions-by-revision
+            (fn [requested-revision-id]
+              (is (= revision-id requested-revision-id))
+              [extraction])
+            :record-checkpoint! (fn [checkpoint]
+                                  (swap! checkpoints conj checkpoint))}
+           :embeddings
+           {:embed-sections!
+            (fn [records]
+              (reset! embedded-input records)
+              [{:embedding/path-raw "notes.md"
+                :embedding/commit-oid "commit-1"
+                :embedding/heading-path ["Notes"]
+                :embedding/level 1
+                :embedding/ordinal 0
+                :embedding/model "test"
+                :embedding/vector [1.0 0.0]}])
+            :embedding-version (fn [] 17)}
+           :index
+           {:index-embeddings! (fn [records] (reset! indexed records))}}
+          embed! (ns-resolve 'epiphany.infra.main 'embed-extractions!)]
+      (with-redefs [git/read-blob
+                    (fn [repository-path blob-oid]
+                      (is (= "/repo" repository-path))
+                      (is (= "blob-1" blob-oid))
+                      {:blob/content "# Notes\n\nCanonical body.\n"})]
+        (is (= 1 (embed! adapters "/repo" resource-id
+                         ingestion-run-id request-id))))
+      (is (= "# Notes\n\nCanonical body.\n"
+             (:extraction/content (first @embedded-input))))
+      (is (= resource-id (:resource-id (first @indexed))))
+      (is (= 17 (:embedding-version (first @indexed))))
+      (is (= 1 (count @checkpoints)))
+      (is (= "embedding"
+             (:checkpoint/projection-name (first @checkpoints))))
+      (is (= :completed (:checkpoint/status (first @checkpoints))))
+      (is (= ingestion-run-id
+             (:checkpoint/ingestion-run-id (first @checkpoints))))
+      (is (uuid? (:observation/request-id (first @checkpoints)))))))
+
+;; ---------------------------------------------------------------------------
+;; Show subcommand
+
+(deftest cli-paths-compose-observations-through-validating-wrapper
+  (testing "CLI-built observations ports are the ENG-017B validating wrapper (ENG-017N)"
+    (let [orig @#'validation/validating-observations-port
+          calls (atom 0)]
+      (with-redefs [validation/validating-observations-port
+                    (fn [port] (swap! calls inc) (orig port))]
+        (main/run ["register" "-p" "local" "."])
+        (is (pos? @calls) "register must compose through profile/resolve-adapters")
+        (reset! calls 0)
+        (main/run ["inbox" "decide" (str (random-uuid)) "accepted"])
+        (is (pos? @calls) "inbox decide must compose through profile/resolve-adapters")
+        (reset! calls 0)
+        (main/run ["status" "-p" "local" "-r" (str (random-uuid))])
+        (is (pos? @calls) "status must compose through profile/resolve-adapters")))))
+
+(deftest cli-constructed-port-rejects-invalid-write-at-wrapper
+  (testing "a CLI-constructed :local observations port rejects an invalid write with the shared category"
+    (let [adapters (profile/resolve-adapters {:profile :local
+                                              :common-git-dir-fn (fn [p] (str p "/.git"))})]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"Schema validation failed"
+           ((:record-ingestion-run! (:observations adapters)) {:not :valid}))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Show subcommand
@@ -165,6 +374,14 @@
       (is (zero? exit))
       (is (string/includes? out "--- Source: AGENTS.md"))
       (is (string/includes? out "Epiphany")))))
+
+(deftest show-surfaces-commit-author-committer-and-parent
+  (testing "show against a real commit surfaces author/committer identity and parent OID(s), per AC1/AC3"
+    (let [{:keys [exit out]} (main/run ["show" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "Author:"))
+      (is (string/includes? out "Committer:"))
+      (is (string/includes? out "Parent(s):")))))
 
 (deftest show-reports-unavailable-for-missing-path
   (let [{:keys [exit out]} (main/run ["show" "no/such/path.md@HEAD"])]
@@ -193,6 +410,34 @@
       (is (string/includes? out "Continuity"))
       (is (string/includes? out "Summary")))))
 
+(deftest diff-seed-candidate-records-a-provisional-candidate
+  (testing "--seed-candidate durably records a provisional lineage candidate via the observations port"
+    (let [{:keys [exit out]} (main/run ["diff" "--seed-candidate" "continues"
+                                        "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
+      (is (zero? exit))
+      (is (string/includes? out "Seeded candidate "))
+      (is (string/includes? out "[continues, provisional]")))))
+
+(deftest diff-seed-candidate-rejects-invalid-relation
+  (let [{:keys [exit out]} (main/run ["diff" "--seed-candidate" "not-a-real-relation"
+                                      "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be one of"))))
+
+(deftest diff-does-not-seed-a-candidate-when-evidence-is-unavailable
+  (testing "a failed comparison cannot leave a durable provisional relation"
+    (let [seed-calls (atom 0)
+          seed-var (ns-resolve 'epiphany.infra.main 'seed-candidate!)]
+      (with-redefs-fn
+        {seed-var (fn [& _] (swap! seed-calls inc))}
+        (fn []
+          (let [{:keys [exit out]}
+                (main/run ["diff" "--seed-candidate" "continues"
+                           "definitely-missing.md@HEAD" "AGENTS.md@HEAD"])]
+            (is (= 1 exit))
+            (is (zero? @seed-calls))
+            (is (not (string/includes? out "Seeded candidate")))))))))
+
 ;; ---------------------------------------------------------------------------
 ;; Trace subcommand
 
@@ -211,7 +456,8 @@
     (let [{:keys [exit out]} (main/run ["trace" "AGENTS.md"])]
       (is (zero? exit))
       (is (string/includes? out "node(s)"))
-      (is (string/includes? out "observed")))))
+      (is (string/includes? out "observed"))
+      (is (string/includes? out "ep show AGENTS.md@")))))
 
 (deftest trace-observed-only-flag-is-accepted
   (let [{:keys [exit out]} (main/run ["trace" "--observed-only" "AGENTS.md"])]
@@ -222,3 +468,79 @@
   (let [{:keys [exit out]} (main/run ["trace" "no/such/path.md"])]
     (is (= 1 exit))
     (is (string/includes? out "no revisions found"))))
+
+;; ---------------------------------------------------------------------------
+;; Inbox subcommand
+
+(deftest inbox-shows-help
+  (let [{:keys [exit out]} (main/run ["inbox" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep inbox"))))
+
+(deftest inbox-empty-store-reports-no-candidates
+  (let [{:keys [exit out]} (main/run ["inbox"])]
+    (is (zero? exit))
+    (is (string/includes? out "No unreviewed candidates."))))
+
+(deftest inbox-decide-shows-help
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep inbox decide"))
+    (is (string/includes? out "--request-id"))))
+
+(deftest inbox-decide-requires-candidate-id-and-decision
+  (let [{:keys [exit out]} (main/run ["inbox" "decide"])]
+    (is (= 1 exit))
+    (is (string/includes? out "candidate id and decision required"))))
+
+(deftest inbox-decide-rejects-invalid-decision-type
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "not-a-real-decision"])]
+    (is (= 1 exit))
+    (is (string/includes? out "review-decision"))
+    (is (string/includes? out "decision"))))
+
+(deftest inbox-decide-rejects-invalid-candidate-id
+  (let [{:keys [exit out]} (main/run ["inbox" "decide" "not-a-uuid" "accepted"])]
+    (is (= 1 exit))
+    (is (string/includes? out "review-decision"))
+    (is (string/includes? out "candidate-id"))))
+
+(deftest inbox-decide-rejects-invalid-request-id
+  (let [{:keys [exit out]} (main/run ["inbox" "decide"
+                                      (str (random-uuid)) "accepted"
+                                      "--request-id" "not-a-uuid"])]
+    (is (= 1 exit))
+    (is (string/includes? out "UUID"))))
+
+(deftest inbox-decide-rejects-phantom-candidate
+  (testing "a decision against a nonexistent candidate is rejected (ENG-017G2 parity with HTTP)"
+    (let [{:keys [exit out]} (main/run ["inbox" "decide" (str (random-uuid)) "rejected"])]
+      (is (= 1 exit))
+      (is (string/includes? out "No lineage candidate found")))))
+
+;; ---------------------------------------------------------------------------
+;; Export subcommand
+
+(deftest export-shows-help
+  (let [{:keys [exit out]} (main/run ["export" "--help"])]
+    (is (zero? exit))
+    (is (string/includes? out "Usage: ep export"))))
+
+(deftest export-produces-a-real-packet-with-content-hash
+  (testing "markdown export of an empty store still produces a real, tamper-evident packet"
+    (let [{:keys [exit out]} (main/run ["export"])]
+      (is (zero? exit))
+      (is (string/includes? out "# Evidence Packet"))
+      (is (string/includes? out "Content-hash:")))))
+
+(deftest export-edn-format-round-trips-through-content-hash-check
+  (testing "the EDN packet's content-hash is independently verifiable"
+    (let [{:keys [exit out]} (main/run ["export" "--format" "edn"])
+          packet (edn/read-string out)]
+      (is (zero? exit))
+      (is (export/content-hash-valid? packet)))))
+
+(deftest export-rejects-invalid-format
+  (let [{:keys [exit out]} (main/run ["export" "--format" "yaml"])]
+    (is (= 1 exit))
+    (is (string/includes? out "Must be markdown, edn, or json"))))

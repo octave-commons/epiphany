@@ -47,6 +47,18 @@
       (.findGitDir)
       .build))
 
+(defn resolve-commit-oid
+  "Resolve a ref, abbreviated OID, or rev expression to a full commit OID
+   through JGit. Throws when the expression does not name a commit."
+  [^String repository-path expr]
+  (with-open [repo (open-repository repository-path)
+              walk (RevWalk. repo)]
+    (if-let [oid (.resolve repo (str expr "^{commit}"))]
+      (.getName (.parseCommit walk oid))
+      (throw (ex-info (str "Could not resolve commit: " expr)
+                      {:repository-path repository-path
+                       :expression expr})))))
+
 (defn- resolve-ref-oid
   "Resolve a ref name to its target OID string. Returns nil on failure."
   [^org.eclipse.jgit.lib.Repository repo ^String ref-name]
@@ -199,6 +211,32 @@
          :failure    {:failure/oid    commit-oid-str
                       :failure/reason "commit-unreadable"
                       :failure/message (.getMessage e)}})
+      (finally
+        (.close walk)))))
+
+(defn read-commit
+  "Read one commit's metadata directly, identified by OID string --
+   author/committer identity and time, parent OIDs, tree OID, and message.
+   Unlike `reachable-commits`, this does not walk the commit graph; it
+   parses exactly the one commit named.
+
+   Returns a map:
+     :commit    — the commit map (see `rev-commit->commit-map`), or nil
+     :failure   — non-nil if the commit could not be read"
+  [^String repository-path commit-oid-str]
+  (let [repo (open-repository repository-path)
+        walk (RevWalk. repo)]
+    (try
+      (.setRetainBody walk true)
+      (let [oid (ObjectId/fromString commit-oid-str)
+            commit (.parseCommit walk oid)]
+        {:commit (rev-commit->commit-map commit)
+         :failure nil})
+      (catch Exception e
+        {:commit nil
+         :failure {:failure/oid commit-oid-str
+                   :failure/reason "commit-unreadable"
+                   :failure/message (.getMessage e)}})
       (finally
         (.close walk)))))
 

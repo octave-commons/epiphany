@@ -235,7 +235,49 @@
                  [:review-decision/reason {:optional true} [:string {:min 1}]]
                  [:review-decision/relabel-to {:optional true} :keyword]
                  [:review-decision/annotation {:optional true} [:string {:min 1}]]
-                 [:review-decision/suppressed {:optional true} :boolean]]))})
+                 [:review-decision/suppressed {:optional true} :boolean]]))
+
+    ;; The relation vocabulary a lineage candidate may carry. This is the
+    ;; SAME set of keywords `epiphany.domain.lineage/relation-types`
+    ;; produces — the vocabulary is reused by value, not forked. law is the
+    ;; lower layer so the enum is declared here; domain must stay in sync.
+    "lineage-candidate/relation"
+    [:enum :near-duplicate :continues :refines :references
+     :possibly-derived-from :possibly-supersedes :possible-contradiction]
+
+    ;; One of the two evidence endpoints a candidate relates: an exact
+    ;; observed path, its heading path within the document, and the Git
+    ;; commit the section was observed at. Paths preserved byte-for-byte.
+    "lineage-candidate/span"
+    [:map {:closed true}
+     [:span/path-raw [:ref "path/raw"]]
+     [:span/heading-path [:vector :string]]
+     [:span/commit-oid [:ref "git/oid"]]]
+
+    ;; A lineage-candidate observation: one durable, append-only record of
+    ;; a generated candidate relation between two evidence spans, at the
+    ;; PROVISIONAL tier. Generation is retrieval/heuristic/model output; a
+    ;; candidate is NEVER accepted or rejected by this record — promotion
+    ;; flows only through observation/review-decision-v1 events keyed on
+    ;; :lineage-candidate/id (see epiphany.domain.candidates/disposition).
+    ;; :observation/request-id is the idempotency key — a retry carrying
+    ;; the same request-id never appends a second candidate. The record is
+    ;; queryable by candidate id, relation, generator version, confidence
+    ;; band, and generation time from the :lineage-candidate/* payload.
+    "observation/lineage-candidate-v1"
+    (into [:map {:closed true}
+           [:observation/type [:= :lineage/candidate-generated]]
+           [:observation/request-id :uuid]]
+          (into observation-envelope-entries
+                [[:resource-id :uuid]
+                 [:lineage-candidate/id :uuid]
+                 [:lineage-candidate/relation [:ref "lineage-candidate/relation"]]
+                 [:lineage-candidate/generator-version [:string {:min 1}]]
+                 [:lineage-candidate/confidence [:double {:min 0.0 :max 1.0}]]
+                 [:lineage-candidate/source [:ref "lineage-candidate/span"]]
+                 [:lineage-candidate/target [:ref "lineage-candidate/span"]]
+                 [:lineage-candidate/tier [:= :provisional]]
+                 [:lineage-candidate/generated-at 'inst?]]))})
 
 (defn exact-path?
   "The `:path/comparison :exact` contract: a candidate string counts as

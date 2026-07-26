@@ -18,8 +18,12 @@
            :index-stats (constantly {:document-count 0})}
    :embeddings {:embed-query (constantly [0.1 0.2 0.3])}})
 
+(def mock-candidate-id #uuid "00000000-0000-0000-0000-0000000000c1")
+(def mock-candidate-resource-id #uuid "00000000-0000-0000-0000-00000000c1a5")
+
 (defn- mock-adapters []
-  (let [registered (atom nil)]
+  (let [registered (atom nil)
+        recorded-decisions (atom [])]
     {:git {:common-git-directory (fn [_] "/mock/.git")
            :repository (constantly ::mock-repo)
            :resolve-ref (constantly ["refs/heads/main"])}
@@ -29,7 +33,13 @@
      :observations {:find-by-request-id (constantly nil)
                     :record-repository-location! (fn [obs] (reset! registered obs))
                     :list-checkpoints (constantly [])
-                    :list-ingestion-runs (constantly [])}
+                    :list-ingestion-runs (constantly [])
+                    :find-lineage-candidate-by-id (fn [id]
+                                                     (when (= id mock-candidate-id)
+                                                       {:lineage-candidate/id mock-candidate-id
+                                                        :resource-id mock-candidate-resource-id}))
+                    :record-review-decision! (fn [obs] (swap! recorded-decisions conj obs) nil)
+                    :recorded-decisions recorded-decisions}
      :index {:search (constantly [])
              :index-stats (constantly {:document-count 0})}
      :embeddings {:embed (constantly [0.1 0.2 0.3])}}))
@@ -148,24 +158,87 @@
       (is (= 400 (:status resp))))))
 
 (deftest router-handles-review-decisions-post
-  (testing "Router handles POST /api/v1/review-decisions"
-    (let [app (http/make-router (mock-adapters))
+  (testing "Router handles POST /api/v1/review-decisions and durably records it"
+    (let [adapters (mock-adapters)
+          request-id (random-uuid)
+          app (http/make-router adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/review-decisions"
                      :body-params {:decision "accepted"
-                                   :candidate-id "cand-1"
+                                   :candidate-id (str mock-candidate-id)
+                                   :request-id (str request-id)
                                    :rationale "good"}
                      :headers {}})]
-      (is (= 201 (:status resp))))))
+      (is (= 201 (:status resp)))
+      (is (= 1 (count @(get-in adapters [:observations :recorded-decisions]))))
+      (is (= :accepted (:review-decision/decision
+                        (first @(get-in adapters [:observations :recorded-decisions])))))
+      (is (= request-id
+             (:observation/request-id
+              (first @(get-in adapters [:observations :recorded-decisions])))))
+      (is (= mock-candidate-resource-id
+             (:resource-id (first @(get-in adapters [:observations :recorded-decisions]))))))))
+
+(deftest router-forwards-review-decision-specific-fields
+  (testing "HTTP relabel and annotation fields reach durable review events"
+    (let [adapters (mock-adapters)
+          app (http/make-router adapters)
+          relabel-resp (app {:request-method :post
+                             :uri "/api/v1/review-decisions"
+                             :body-params {:decision "relabel"
+                                           :candidate-id (str mock-candidate-id)
+                                           :request-id (str (random-uuid))
+                                           :relabel-to "derives-from"}
+                             :headers {}})
+          annotation-resp (app {:request-method :post
+                                :uri "/api/v1/review-decisions"
+                                :body-params {:decision "annotated"
+                                              :candidate-id (str mock-candidate-id)
+                                              :request-id (str (random-uuid))
+                                              :annotation "human note"}
+                                :headers {}})
+          decisions @(get-in adapters [:observations :recorded-decisions])]
+      (is (= 201 (:status relabel-resp)))
+      (is (= 201 (:status annotation-resp)))
+      (is (= :derives-from (:review-decision/relabel-to (first decisions))))
+      (is (= "human note" (:review-decision/annotation (second decisions)))))))
 
 (deftest router-handles-review-decisions-missing-fields
   (testing "Router returns 400 for missing decision"
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/review-decisions"
-                     :body-params {:decision "" :candidate-id "c1" :rationale "r"}
+                     :body-params {:decision "" :candidate-id (str mock-candidate-id) :rationale "r"}
                      :headers {}})]
       (is (= 400 (:status resp))))))
+
+(deftest router-handles-review-decisions-invalid-decision-type
+  (testing "Router returns 400 for a decision type outside review-decision-types"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/review-decisions"
+                     :body-params {:decision "not-a-real-decision"
+                                   :candidate-id (str mock-candidate-id)}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest router-handles-review-decisions-non-uuid-candidate-id
+  (testing "Router returns 400 for a non-UUID candidate id"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/review-decisions"
+                     :body-params {:decision "accepted" :candidate-id "not-a-uuid"}
+                     :headers {}})]
+      (is (= 400 (:status resp))))))
+
+(deftest router-handles-review-decisions-unknown-candidate-id
+  (testing "Router returns 404 for a well-formed but nonexistent candidate id"
+    (let [app (http/make-router (mock-adapters))
+          resp (app {:request-method :post
+                     :uri "/api/v1/review-decisions"
+                     :body-params {:decision "accepted" :candidate-id (str (random-uuid))}
+                     :headers {}})]
+      (is (= 404 (:status resp))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Content negotiation tests
@@ -326,7 +399,7 @@
 
 (deftest unhandled-exception-does-not-leak-message
   (testing "a bare (non-ex-info) exception in a handler returns a generic detail, never its own message"
-    (let [sensitive-message "connection string: postgres://admin:hunter2@internal-db/prod"
+    (let [sensitive-message "SENSITIVE_TEST_MARKER_8f3c"
           leaky-adapters {:git {:common-git-directory (fn [_] (throw (RuntimeException. sensitive-message)))
                                 :repository (constantly ::mock-repo)
                                 :resolve-ref (constantly [])}
@@ -348,7 +421,7 @@
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 500 (:status resp)))
       (is (= "An internal error occurred." (:detail body)))
-      (is (not (.contains (:detail body) "hunter2"))))))
+      (is (not (.contains (:detail body) "SENSITIVE_TEST_MARKER_8f3c"))))))
 
 (deftest register-unrecognized-ex-info-code-currently-echoes-message
   (testing (str "DOCUMENTS CURRENT BEHAVIOR, not a desired contract: register-handler's own "

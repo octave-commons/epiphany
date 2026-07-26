@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# Short alias for epiphany. Delegates to bin/epiphany.
+# Epiphany launcher — runs the unified executable via the :run alias (ADR-003).
+# Resolves the repo root from this script's location and injects it as a
+# local dependency. The caller's working directory is intentionally
+# preserved so relative repository and output paths keep their CLI meaning.
 set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec "$script_dir/epiphany" "$@"
+repo_root="$(cd "$script_dir/.." && pwd)"
+exec clojure \
+  -Sdeps "{:deps {octave-commons/epiphany {:local/root \"$repo_root\"}}
+           :aliases {:run {:main-opts [\"-m\" \"epiphany.infra.main\"]}}}" \
+  -M:run "$@"

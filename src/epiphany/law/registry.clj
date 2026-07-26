@@ -4,7 +4,9 @@
   Merges every law namespace's schema map into one registry and exposes
   validators keyed by schema name. The registry itself is plain EDN data;
   `validator` is its executable form."
-  (:require [epiphany.law.git :as git]
+  (:require [epiphany.law.assurance :as assurance]
+            [epiphany.law.commands :as commands]
+            [epiphany.law.git :as git]
             [epiphany.law.markdown :as markdown]
             [epiphany.law.observation :as observation]
             [epiphany.law.ports :as ports]
@@ -14,7 +16,8 @@
 
 (def schemas
   "Registry data: schema name -> schema body, all EDN-serializable."
-  (merge git/schemas observation/schemas selection/schemas
+  (merge git/schemas observation/schemas selection/schemas commands/schemas
+         assurance/schemas
           {"git-port"                        ports/git-port-schema
            "repository-metadata-port"        ports/repository-metadata-port-schema
            "observations-port"               ports/observations-port-schema

@@ -9,3 +9,17 @@ data/
 !.claude/settings.json
 !.claude/hooks
 !.claude/hooks/**
+
+# Rheos kanban event ledger: a live, high-churn, append-only event log
+# written continuously by rheos.service as the board is used. Tracking it
+# put it in the blast radius of any full-tree `git stash`/`git stash pop` —
+# a stash taken while the service concurrently writes here can silently
+# clobber newer live writes on pop (this happened on 2026-07-21: several
+# cards' review dispositions were reverted this way, recovered by hand).
+# The story .md files under docs/kanban/stories/ stay tracked -- they're
+# real card content, not a log -- only the ledger is excluded.
+docs/kanban/.events/ledger.edn
+
+# Heretic mutation pilot working dirs
+.heretic/
+.heretic-sandbox/

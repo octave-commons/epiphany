@@ -64,7 +64,7 @@
   (testing "returns all candidates when none reviewed"
     (let [result (inbox/build-inbox all-candidates [])]
       (is (= 4 (count result)))
-      (is (every? #(= :unreviewed (:inbox/decision-status %)) result)))))
+      (is (every? #(= :provisional (:inbox/decision-status %)) result)))))
 
 (deftest build-inbox-excludes-reviewed-test
   (testing "excludes candidates with review decisions"
@@ -75,6 +75,51 @@
       (is (not (some #(= #uuid "00000000-0000-0000-0000-000000000001"
                          (:lineage-candidate/id (:inbox/candidate %)))
                      result))))))
+
+(deftest build-inbox-neutral-decisions-stay-in-queue-test
+  (testing "relabel/deferred/annotated decisions are neutral -- candidate stays unreviewed"
+    (let [decisions [(review/make-decision #uuid "00000000-0000-0000-0000-000000000001" :deferred)
+                     (review/make-decision #uuid "00000000-0000-0000-0000-000000000002" :annotated)]
+          result (inbox/build-inbox all-candidates decisions)]
+      (is (= 4 (count result)) "neutral decisions never remove a candidate from the queue")
+      (is (every? #(= :provisional (:inbox/decision-status %)) result)))))
+
+(deftest build-inbox-suppressed-excluded-by-default-test
+  (testing "rejected/do-not-suggest candidates are suppressed by default, distinct from merely decided"
+    (let [decisions [(review/make-decision #uuid "00000000-0000-0000-0000-000000000001" :rejected)
+                     (review/make-decision #uuid "00000000-0000-0000-0000-000000000002" :do-not-suggest)]
+          result (inbox/build-inbox all-candidates decisions)]
+      (is (= 2 (count result)))
+      (is (not (some #(#{#uuid "00000000-0000-0000-0000-000000000001"
+                         #uuid "00000000-0000-0000-0000-000000000002"}
+                       (:lineage-candidate/id (:inbox/candidate %)))
+                     result))))))
+
+(deftest build-inbox-include-suppressed-resurfaces-rejected-not-accepted-test
+  (testing ":include-suppressed? resurfaces rejected/do-not-suggest but never accepted"
+    (let [decisions [(review/make-decision #uuid "00000000-0000-0000-0000-000000000001" :accepted)
+                     (review/make-decision #uuid "00000000-0000-0000-0000-000000000002" :rejected)]
+          result (inbox/build-inbox all-candidates decisions {} {:include-suppressed? true})
+          ids (set (map (comp :lineage-candidate/id :inbox/candidate) result))]
+      (is (contains? ids #uuid "00000000-0000-0000-0000-000000000002")
+          "rejected resurfaces with include-suppressed?")
+      (is (not (contains? ids #uuid "00000000-0000-0000-0000-000000000001"))
+          "accepted is resolved, never resurfaces as suppressed")
+      (is (= :rejected (:inbox/decision-status
+                        (first (filter #(= #uuid "00000000-0000-0000-0000-000000000002"
+                                           (:lineage-candidate/id (:inbox/candidate %)))
+                                       result))))))))
+
+(deftest build-inbox-filter-by-repository-family-test
+  (testing "repository-family filter matches on the candidate's :resource-id"
+    (let [rid-a (random-uuid)
+          rid-b (random-uuid)
+          durable-1 (assoc candidate-1 :resource-id rid-a)
+          durable-2 (assoc candidate-2 :resource-id rid-b)
+          result (inbox/build-inbox [durable-1 durable-2] []
+                                    {:repository-families [rid-a]})]
+      (is (= 1 (count result)))
+      (is (= rid-a (:resource-id (:inbox/candidate (first result))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; build-inbox — filters

@@ -18,12 +18,15 @@
       :record-checkpoint! (fn [obs] (swap! calls conj [:record-checkpoint! obs]) nil)
       :record-section-extraction! (fn [obs] (swap! calls conj [:record-section-extraction! obs]) nil)
       :record-review-decision! (fn [obs] (swap! calls conj [:record-review-decision! obs]) nil)
+      :record-lineage-candidate! (fn [obs] (swap! calls conj [:record-lineage-candidate! obs]) nil)
       :list-ingestion-runs (fn [rid] (swap! calls conj [:list-ingestion-runs rid]) [])
       :list-checkpoints (fn [rid] (swap! calls conj [:list-checkpoints rid]) [])
       :list-revision-at-path-by-resource (fn [rid] (swap! calls conj [:list-revision-at-path-by-resource rid]) [])
       :list-section-extractions-by-revision (fn [rid] (swap! calls conj [:list-section-extractions-by-revision rid]) [])
       :list-review-decisions (fn [rid] (swap! calls conj [:list-review-decisions rid]) [])
       :list-review-decisions-by-candidate (fn [cid] (swap! calls conj [:list-review-decisions-by-candidate cid]) [])
+      :list-lineage-candidates (fn [rid] (swap! calls conj [:list-lineage-candidates rid]) [])
+      :find-lineage-candidate-by-id (fn [cid] (swap! calls conj [:find-lineage-candidate-by-id cid]) nil)
       :export-all (fn [] (swap! calls conj [:export-all]) {})
       :import-all (fn [data] (swap! calls conj [:import-all data]) nil)}
      calls]))
@@ -53,6 +56,31 @@
       (doseq [op operations/port-write-operations]
         (is (fn? (get wrapped op))
             (str "Operation " op " should be wrapped"))))))
+
+(deftest all-wrapped-ops-are-registry-driven
+  (testing "wrapped write ops are exactly the registered operations"
+    (let [[spy _] (spy-adapter)
+          wrapped (validation/validating-observations-port spy)]
+      (doseq [op (operations/registered-operations)]
+        (is (fn? (get wrapped op))
+            (str "Registered operation " op " should be wrapped"))))))
+
+;; ---------------------------------------------------------------------------
+;; Eager (wrap-time) failure for an unregistered write operation
+
+(deftest unregistered-write-op-fails-eagerly-at-wrap-time
+  (testing "a write-shaped op with no registry entry throws at COMPOSITION time"
+    (let [[spy _] (spy-adapter)
+          ;; :record-bogus! looks like a durable write but has no registry entry
+          port (assoc spy :record-bogus! (fn [_] nil))
+          ex   (try
+                 (validation/validating-observations-port port)
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? ex)
+          "wrapping must throw eagerly, not lazily on first call")
+      (is (= :unregistered-write-operation (:code (ex-data ex))))
+      (is (contains? (set (:operations (ex-data ex))) :record-bogus!)))))
 
 (deftest read-ops-pass-through-unwrapped
   (testing "read operations are not wrapped"

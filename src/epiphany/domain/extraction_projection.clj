@@ -46,7 +46,10 @@
    Otherwise returns the last-processed revision-at-path UUID."
   [observations ingestion-run-id]
   (let [checkpoints ((:list-checkpoints observations) ingestion-run-id)
-        completed (filter #(= :completed (:checkpoint/status %)) checkpoints)
+        completed (filter #(and (= projection-name
+                                   (:checkpoint/projection-name %))
+                                (= :completed (:checkpoint/status %)))
+                          checkpoints)
         latest (last (sort-by :checkpoint/processed-count completed))]
     (when latest
       {:last-processed-count (:checkpoint/processed-count latest)
@@ -62,13 +65,19 @@
      {:extraction/record     — the extraction observation (or nil on error)
       :extraction/error      — error map if extraction failed
       :extraction/revision-id — the revision-at-path ID (for logging)}"
-  [ports {:keys [resource-id revision-at-path/id revision/commit-oid
-                 revision/path-raw revision/blob-oid] :as revision}]
-  (let [git-fn   (get-in ports [:git :read-blob])
-        obs-fn   (:record-section-extraction! (:observations ports))
-        idx-fn   (:index-sections! (:index ports))]
-    (try
-      (let [blob-result (git-fn nil blob-oid)
+  ([ports revision]
+   (extract-revision ports nil revision))
+  ([ports request-id
+    {:keys [resource-id revision-at-path/id revision/commit-oid
+            revision/path-raw revision/blob-oid] :as _revision}]
+   (let [git-fn   (get-in ports [:git :read-blob])
+         obs-fn   (:record-section-extraction! (:observations ports))
+         idx-fn   (:index-sections! (:index ports))
+         write-id (ingestion/derived-request-id
+                   request-id
+                   (str "section-extraction:" id ":" extractor-version))]
+     (try
+       (let [blob-result (git-fn nil blob-oid)
             _          (when (:blob/failure blob-result)
                          (throw (ex-info "Blob not readable"
                                          {:code :blob-unreadable
@@ -79,25 +88,28 @@
             sections   (se/extract-sections parsed)
             record     (se/make-extraction-record
                         sections id commit-oid path-raw blob-oid blob extractor-version)
-            observation (assoc record
-                               :observation/type :section/extraction-completed
-                               :observation/id (java.util.UUID/randomUUID)
-                               :observation/observed-at (java.util.Date.)
-                               :observation/adapter-version "0.1.0"
-                               :observation/schema-version 1
-                               :resource-id resource-id)]
+             observation (cond-> (assoc record
+                                        :observation/type :section/extraction-completed
+                                        :observation/id (or write-id
+                                                            (java.util.UUID/randomUUID))
+                                        :observation/observed-at (java.util.Date.)
+                                        :observation/adapter-version "0.1.0"
+                                        :observation/schema-version 1
+                                        :resource-id resource-id)
+                           write-id
+                           (assoc :observation/request-id write-id))]
         (obs-fn observation)
         (when idx-fn
-          (idx-fn observation))
+          (idx-fn (assoc observation :extraction/content blob)))
         {:extraction/record     observation
          :extraction/error      nil
          :extraction/revision-id id})
-      (catch Exception e
-        {:extraction/record     nil
-         :extraction/error      {:failure/reason "extraction-failed"
-                                 :failure/message (.getMessage e)
-                                 :failure/revision-id id}
-         :extraction/revision-id id}))))
+       (catch Exception e
+         {:extraction/record     nil
+          :extraction/error      {:failure/reason "extraction-failed"
+                                  :failure/message (.getMessage e)
+                                  :failure/revision-id id}
+          :extraction/revision-id id})))))
 
 ;; ---------------------------------------------------------------------------
 ;; Projection runner
@@ -124,7 +136,7 @@
       :projection/checkpoints-recorded int
       :projection/failures            [{:failure/reason string, :failure/message string}]
       :projection/completed           boolean}"
-  [ports {:keys [resource-id ingestion-run-id repository-path]}]
+  [ports {:keys [resource-id ingestion-run-id request-id]}]
   (let [observations (:observations ports)
         ;; List all revisions for this resource
         all-revisions ((:list-revision-at-path-by-resource observations) resource-id)
@@ -150,15 +162,20 @@
       (if (empty? remaining)
         (let [;; Record final checkpoint
               _ (when (pos? processed)
-                   (let [checkpoint (ingestion/make-checkpoint-record
+                   (let [processed-count (+ (or (:last-processed-count resume-point) 0)
+                                            processed)
+                         checkpoint (ingestion/make-checkpoint-record
                                     {:resource-id         resource-id
                                      :projection-name     projection-name
                                      :projection-version  projection-version
                                      :ingestion-run-id    ingestion-run-id
                                      :status              :completed
-                                     :processed-count     (+ (or (:last-processed-count resume-point) 0)
-                                                             processed)
-                                     :last-processed-oid  (:revision/commit-oid (last to-process))})]
+                                     :processed-count     processed-count
+                                     :last-processed-oid  (:revision/commit-oid (last to-process))
+                                     :request-id          (ingestion/derived-request-id
+                                                           request-id
+                                                           (str "checkpoint:section-extraction:completed:"
+                                                                processed-count))})]
                     ((:record-checkpoint! observations) checkpoint)
                     (inc checkpoints)))]
           {:projection/revisions-scanned   (count all-revisions)
@@ -167,7 +184,7 @@
            :projection/failures            failures
            :projection/completed           true})
         (let [revision (first remaining)
-              result (extract-revision ports revision)
+              result (extract-revision ports request-id revision)
               error (:extraction/error result)
               new-failures (if error (conj failures error) failures)
               new-extracted (if (:extraction/record result) (inc extracted) extracted)
@@ -185,7 +202,12 @@
                                :status              :running
                                :processed-count     (+ (or (:last-processed-count resume-point) 0)
                                                        new-processed)
-                               :last-processed-oid  (:revision/commit-oid revision)})]
+                               :last-processed-oid  (:revision/commit-oid revision)
+                               :request-id          (ingestion/derived-request-id
+                                                     request-id
+                                                     (str "checkpoint:section-extraction:running:"
+                                                          (+ (or (:last-processed-count resume-point) 0)
+                                                             new-processed)))})]
               ((:record-checkpoint! observations) checkpoint)))
           (recur (rest remaining)
                  new-processed

@@ -8,7 +8,8 @@
   texts from root to this section, encoding the document hierarchy.
 
   No I/O. No Git. No storage. Pure data transformation."
-  (:require [epiphany.shape.markdown :as md]))
+  (:require [clojure.string :as string]
+            [epiphany.shape.markdown :as md]))
 
 (defn- heading-text
   "Extract a plain-text string from heading inlines."
@@ -16,7 +17,7 @@
   (->> inlines
        (map :inline/text)
        (apply str)
-       clojure.string/trim))
+       string/trim))
 
 (defn- make-section
   "Build a section map from a heading block, its body blocks, the
@@ -76,13 +77,14 @@
   [classified]
   (loop [remaining classified
          path-stack []    ;; root-first: [[level text] ...]
+         sibling-counts {}
          acc []]
     (if (empty? remaining)
       acc
       (let [{:keys [heading preamble?]} (first remaining)
             rest-secs (rest remaining)]
         (if preamble?
-          (recur rest-secs path-stack
+          (recur rest-secs path-stack sibling-counts
                  (conj acc [[] (assoc (first remaining) :heading-path [])]))
           (let [level (:heading/level heading)
                 text  (heading-text (:heading/inlines heading))
@@ -92,22 +94,24 @@
                           (if (and (seq stack) (>= (first (peek stack)) level))
                             (recur (pop stack))
                             stack))
+                parent-path (vec (map second trimmed))
+                sibling-key [parent-path level]
+                ordinal (get sibling-counts sibling-key 0)
                 new-stack (conj trimmed [level text])
-                full-path (vec (map second new-stack))
-                sibling-count (count (filter (fn [[l _]] (= l level))
-                                             path-stack))]
+                full-path (vec (map second new-stack))]
             (recur rest-secs new-stack
+                   (update sibling-counts sibling-key (fnil inc 0))
                    (conj acc [full-path
                               (assoc (first remaining)
                                      :heading-path full-path
-                                     :ordinal sibling-count)]))))))))
+                                     :ordinal ordinal)]))))))))
 (defn extract-sections
   "Extract heading-delimited sections from a parsed Markdown document."
   [parsed-doc]
   (let [blocks (:doc/body parsed-doc)
         classified (classify-blocks blocks)
         with-paths (build-heading-paths classified)]
-    (mapv (fn [[heading-path {:keys [heading body _ordinal]}]]
+    (mapv (fn [[heading-path {:keys [heading body ordinal]}]]
             (make-section (or heading
                               {:block/type :heading
                                :heading/level 0
@@ -118,19 +122,19 @@
                                             :span/end-line 1}})
                           body
                           heading-path
-                          (or _ordinal 0)))
+                          (or ordinal 0)))
           with-paths)))
 
 (defn section-content-hash
-  "Compute a SHA-256 of the section body's raw content bytes."
+  "Compute a SHA-256 of the section body's raw content bytes.
+   Spans are UTF-8 byte offsets; slicing goes through
+   shape.markdown/slice (byte->char conversion) — raw subs throws
+   StringIndexOutOfBoundsException on non-ASCII documents."
   [blob section]
-  (let [body-span (:section/body-span section)
-        start (:span/start-byte body-span)
-        end   (:span/end-byte body-span)
-        raw   (subs blob start end)]
-    (let [digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
-                          (.getBytes raw "UTF-8"))]
-      (.encodeToString (java.util.Base64/getEncoder) digest))))
+  (let [raw (md/slice blob (:section/body-span section))
+        digest (.digest (java.security.MessageDigest/getInstance "SHA-256")
+                        (.getBytes raw "UTF-8"))]
+    (.encodeToString (java.util.Base64/getEncoder) digest)))
 
 (defn make-extraction-record
   "Pure: construct an extraction observation map from extracted sections.

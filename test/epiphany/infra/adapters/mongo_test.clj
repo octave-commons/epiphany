@@ -3,6 +3,7 @@
    Requires a running MongoDB instance (localhost:27017).
    Tagged ^:integration so they only run with the :integration profile."
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
+            [epiphany.domain.backup :as backup]
             [epiphany.infra.adapters.mongo :as mongo])
   (:import [org.bson Document]))
 
@@ -28,8 +29,10 @@
          overrides))
 
 (def ^:private test-uri
-  "MongoDB URI with authentication for integration tests."
-  "mongodb://openplanner:GamG7Ly2g7eyMJoIa-4zS17eAUlWiUup@127.0.0.1:27017/openplanner?authSource=openplanner")
+  "MongoDB URI for integration tests. Credentials and explicit localhost
+   opt-in must come from the environment."
+  (or (System/getenv "EPIPHANY_TEST_MONGODB_URI")
+      (System/getenv "MONGODB_URI")))
 
 (def ^:private conn (atom nil))
 
@@ -52,11 +55,14 @@
 
 (use-fixtures :each
   (fn [f]
-    (try
-      (setup-db!)
-      (f)
-      (finally
-        (teardown-db!)))))
+    (if test-uri
+      (try
+        (setup-db!)
+        (f)
+        (finally
+          (teardown-db!)))
+      (binding [*out* *err*]
+        (println "SKIP Mongo integration test: set EPIPHANY_TEST_MONGODB_URI")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests
@@ -76,19 +82,21 @@
         (is (= rid (:observation/request-id found)))
         (is (= (:resource-id record) (:resource-id found)))
         (is (= (get-in record [:repository/path :path/raw])
-               (get-in found [:repository/path :path/raw])))))))
+               (get-in found [:repository/path :path/raw])))
+        (is (= [found] (mongo/list-repository-locations @conn))
+            "registration status reads the durable repository observations")))))
 
 (deftest ^:integration idempotent-insert-returns-existing
-  (testing "Inserting the same request-id twice returns :idempotent"
+  (testing "Inserting the same request-id twice is a stable no-op (nil), matching the reference adapter"
     (let [obs-adapter (mongo/make-observations-adapter @conn)
           rid         #uuid "22222222-3333-4444-5555-666666666666"
           record      (test-observation {:observation/request-id rid})]
-      (is (= :inserted ((:record-repository-location! obs-adapter) record)))
-      (is (= :idempotent ((:record-repository-location! obs-adapter) record)))
+      (is (nil? ((:record-repository-location! obs-adapter) record)))
+      (is (nil? ((:record-repository-location! obs-adapter) record)))
       (is (= record ((:find-by-request-id obs-adapter) rid))))))
 
-(deftest ^:integration idempotency-conflict-throws
-  (testing "Same request-id with different content throws :idempotency/conflict"
+(deftest ^:integration idempotency-conflict-returns-shared-category
+  (testing "Same request-id with different content returns {:code :idempotency-conflict}, matching the reference adapter"
     (let [obs-adapter (mongo/make-observations-adapter @conn)
           rid         #uuid "33333333-4444-5555-6666-777777777777"
           record-a    (test-observation {:observation/request-id rid
@@ -100,9 +108,11 @@
                                                            :path/source    :filesystem-argument
                                                            :path/comparison :exact}})]
       ((:record-repository-location! obs-adapter) record-a)
-      (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                            #"Idempotency conflict"
-                            ((:record-repository-location! obs-adapter) record-b))))))
+      (let [result ((:record-repository-location! obs-adapter) record-b)]
+        (is (= :idempotency-conflict (:code result)))
+        (is (= rid (:request-id result))))
+      (is (= record-a ((:find-by-request-id obs-adapter) rid))
+          "the stored fact must remain the original"))))
 
 (deftest ^:integration unicode-paths-preserved
   (testing "Unicode path strings are preserved byte-for-byte"
@@ -133,7 +143,7 @@
                                    (test-observation {:observation/request-id rid})))))
                             (range 10))
           results     (mapv deref threads)]
-      (is (every? #{:inserted} results)))))
+      (is (every? nil? results)))))
 
 (deftest ^:integration find-nonexistent-returns-nil
   (testing "Looking up a nonexistent request-id returns nil"
@@ -141,10 +151,10 @@
       (is (nil? ((:find-by-request-id obs-adapter) #uuid "99999999-0000-1111-2222-333333333333"))))))
 
 (deftest ^:integration validates-schema
-  (testing "Invalid observation is rejected with schema error"
+  (testing "Invalid observation is rejected with the shared schema-validation category"
     (let [obs-adapter (mongo/make-observations-adapter @conn)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                             #"Invalid repository-location observation"
+                             #"Schema validation failed for :record-repository-location!"
                              ((:record-repository-location! obs-adapter)
                               {:observation/type :repository/location-observed
                                ;; missing required fields
@@ -174,6 +184,7 @@
                        :ingestion/failures         [{:failure/reason "object-unreadable"
                                                       :failure/message "boom"}]}]
       ((:record-ingestion-run! obs-adapter) record)
+      ((:record-ingestion-run! obs-adapter) record)
       ;; Verify the run was recorded (find by _id)
       (let [coll (:ingestion-run-collection @conn)
             doc (-> (.find coll)
@@ -181,7 +192,9 @@
                     (.first))]
         (is (some? doc))
         (is (= 42 (.getLong doc "commit_count")))
-        (is (= 1 (.getLong doc "failure_count")))))))
+        (is (= 1 (.getLong doc "failure_count")))
+        (is (= 1 (.countDocuments coll (Document. "_id" (str rid))))
+            "a retried run record is not duplicated")))))
 
 (deftest ^:integration record-checkpoint
   (testing "Record a projection checkpoint"
@@ -201,10 +214,107 @@
                        :checkpoint/status           :completed
                        :checkpoint/processed-count  42}]
       ((:record-checkpoint! obs-adapter) record)
+      ((:record-checkpoint! obs-adapter) record)
       (let [coll (:projection-checkpoint-collection @conn)
             doc (-> (.find coll)
                     (.filter (Document. "projection_name" "revision-at-path"))
                     (.first))]
         (is (some? doc))
         (is (= 42 (.getLong doc "processed_count")))
-        (is (= "completed" (.getString doc "status")))))))
+        (is (= "completed" (.getString doc "status")))
+        (is (= 1 (.countDocuments coll (Document. "_id" (str (:observation/id record)))))
+            "a retried checkpoint is not duplicated")))))
+
+(deftest ^:integration checkpoint-without-request-id-round-trips
+  (testing "an absent optional request id remains absent when decoded"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)
+          run-id (random-uuid)
+          record {:observation/type :projection/checkpoint-recorded
+                  :observation/id (random-uuid)
+                  :observation/observed-at (java.util.Date.)
+                  :observation/adapter-version "0.1.0"
+                  :observation/schema-version 1
+                  :resource-id (random-uuid)
+                  :checkpoint/projection-name "section-extraction"
+                  :checkpoint/projection-version 1
+                  :checkpoint/ingestion-run-id run-id
+                  :checkpoint/status :completed
+                  :checkpoint/processed-count 1}]
+      ((:record-checkpoint! obs-adapter) record)
+      (let [decoded (first ((:list-checkpoints obs-adapter) run-id))]
+        (is (= record decoded))
+        (is (not (contains? decoded :observation/request-id)))))))
+
+;; ---------------------------------------------------------------------------
+;; ENG-017F: decode integrity — malformed stored documents are named
+;; integrity findings, never silently omitted or returned as empty.
+
+(defn- raw-location-doc
+  "A repository-location document built by hand (bypassing adapter
+   validation) with the given schema_version value."
+  [request-id schema-version]
+  (doto (Document.)
+    (.put "_id" (str (random-uuid)))
+    (.put "observation_type" "repository/location-observed")
+    (.put "request_id" (str request-id))
+    (.put "observation_id" (str (random-uuid)))
+    (.put "observed_at" (java.util.Date.))
+    (.put "adapter_version" "0.1.0")
+    (.put "schema_version" schema-version)
+    (.put "resource_id" (str (random-uuid)))
+    (.put "repository_path" "/x")
+    (.put "repository_path_source" "filesystem-argument")
+    (.put "common_git_dir" "/x/.git")
+    (.put "common_git_dir_source" "filesystem-argument")))
+
+(deftest ^:integration malformed-stored-doc-is-integrity-corrupt-not-empty
+  (testing "a stored doc that cannot be decoded is :integrity/corrupt, never []"
+    (let [rid (random-uuid)
+          coll (:repository-location-collection @conn)]
+      (.insertOne coll (raw-location-doc rid "not-a-number"))
+      (try
+        ((:find-by-request-id (mongo/make-observations-adapter @conn)) rid)
+        (is false "expected an integrity failure, got a clean result")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :integrity/corrupt (:code (ex-data e)))))))))
+
+(deftest ^:integration future-version-stored-doc-is-unsupported-version
+  (testing "a stored doc claiming an unknown future version is :integrity/unsupported-version, never decoded as nearest-known"
+    (let [rid (random-uuid)
+          coll (:repository-location-collection @conn)]
+      (.insertOne coll (raw-location-doc rid (long 99)))
+      (try
+        ((:find-by-request-id (mongo/make-observations-adapter @conn)) rid)
+        (is false "expected an integrity failure, got a clean result")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :integrity/unsupported-version (:code (ex-data e)))))))))
+
+(deftest ^:integration export-import-export-round-trip-on-mongo
+  (testing "canonical export -> clear -> import -> export preserves the manifest"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)
+          rid (random-uuid)
+          record (test-observation {:observation/request-id rid})
+          file1 (str (java.nio.file.Files/createTempFile "epiphany-mongo-backup" ".edn"
+                                                         (make-array java.nio.file.attribute.FileAttribute 0)))
+          file2 (str file1 ".re")]
+      ((:record-repository-location! obs-adapter) record)
+      (let [exported (backup/export-to-file obs-adapter file1)]
+        (mongo/clean-test-db! @conn)
+        (backup/import-from-file obs-adapter file1)
+        (let [re-exported (backup/export-to-file obs-adapter file2)]
+          (is (= (:manifest exported) (:manifest re-exported))
+              "round trip preserves the canonical manifest"))))))
+
+(defn- index-names
+  [collection]
+  (set (map #(.getString ^Document % "name")
+            (.into (.listIndexes collection) (java.util.ArrayList.)))))
+
+(deftest ^:integration clear-all-recreates-idempotency-indexes
+  (testing "restore clearing leaves every request-id uniqueness index active"
+    (let [obs-adapter (mongo/make-observations-adapter @conn)]
+      ((:clear-all! obs-adapter))
+      (doseq [collection [(:repository-location-collection @conn)
+                          (:review-decision-collection @conn)
+                          (:lineage-candidate-collection @conn)]]
+        (is (contains? (index-names collection) "request_id_unique_v1"))))))

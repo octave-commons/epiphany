@@ -1,0 +1,72 @@
+{:workflow/id :eng-017n-review
+ :workflow/version 1
+
+ :meta {:name "eng-017n-review"
+        :description "Adversarial review of ENG-017N (assurance-kernel hardening) before promotion."
+        :phases [{:title "Review" :detail "3 lenses"}
+                 {:title "Verify" :detail "2 skeptic votes per finding, quorum 2"}]}
+
+ :run {:model "kimi-for-coding/k3"
+       :dir "/home/err/spaces/epiphany"
+       :agent-timeout-ms 900000
+       :max-concurrency 3}
+
+ :vars
+ {:repo "/home/err/spaces/epiphany"
+  :cards
+  [{:key "eng-017n"
+    :path "/home/err/spaces/epiphany/docs/kanban/stories/eng-017n-assurance-kernel-hardening-prod-wrapper-wiring-write-op-classifier-guard-law-suite-generalization.md"
+    :context "The change under review is commit 06cd710 (ENG-017N: assurance-kernel hardening, 3 items) plus the tiny 26a4c18 (review fixes to the seam it rewires). Run `git show 06cd710` and read it. Item 1: profile/resolve-raw-adapters :services now composes real adapters (explicit :mongo-conn + :index-dir); main.clj run-register/run-status/run-ingest/run-serve/with-observations-adapter all retargeted onto profile/resolve-adapters so the ENG-017B validating wrapper is live. Item 2: law/operations read-operation?/destructive-port-operations/unclassified-port-operations classifier guard. Item 3: test/epiphany/law_suite/observations_laws.clj rewritten record-type-parametric (op-fixtures for all 7 write ops; idempotency kinds :full/:first-write-wins/:none). Deliberate deferrals the reviewer must not re-litigate: :local ingest keeps its documented durable-index override of the profile's in-memory index port (ENG-003G); :local profile keeps in-memory observations (profile contract); read-path validation is ENG-017F; CI topology is ENG-017J. Gates: clojure -M:unit-test => 712 tests, 1876 assertions, 0 failures; clojure -M:integration-test => 17/96 with only the 2 pre-existing baseline failures; boundary-check clean. MongoDB IS running on this machine (URI in test/epiphany/infra/adapters/mongo_test.clj) — you may run integration tests."}]
+  :lenses
+  [{:key "correctness"
+    :prompt "Hunt for real correctness bugs: profile composition edge cases (missing/extra opts, cleanup paths, connection leaks), classifier guard false positives/negatives, law-suite fixture vs schema mismatches that make laws vacuous or falsely red, behavior changes from the main.clj retarget (any caller silently getting different adapters than before)."}
+   {:key "architecture-law"
+    :prompt "Audit against the repo constitution (AGENTS.md, ADR-000/001/004, four-quadrant namespace law, profile contract: explicit profiles, UNAVAILABLE never silent fallback): does the profile :services composition leak infra concerns into the wrong quadrant? Does the classifier guard live at the right layer? Cite the rule each finding violates; flag only violations introduced by 06cd710."}
+   {:key "dod-coverage"
+    :prompt "Verify every acceptance criterion on the card against the actual code and tests. For each item, name the exact test or evidence that satisfies it, or flag it unmet."}]}
+
+ :schemas
+ {:findings {:type "object"
+             :additionalProperties false
+             :properties {:findings {:type "array"
+                                     :items {:type "object"
+                                             :additionalProperties false
+                                             :properties {:title {:type "string"}
+                                                          :file {:type "string"}
+                                                          :detail {:type "string" :description "What is wrong / unmet, with concrete evidence (line refs, failing scenario)"}
+                                                          :severity {:type "string" :enum ["blocker" "should-fix" "nit"]}}
+                                             :required ["title" "file" "detail" "severity"]}}
+                          :dodVerdict {:type "string" :description "For dod-coverage lens only: per-DoD-item evidence table as text; empty string otherwise"}}
+             :required ["findings" "dodVerdict"]}
+  :verdict {:type "object"
+            :additionalProperties false
+            :properties {:refuted {:type "boolean" :description "true if the finding is wrong, already handled, out of scope for the card, or not worth acting on"}
+                         :reason {:type "string"}}
+            :required ["refuted" "reason"]}}
+
+ :stages
+ [{:stage/id :review
+   :stage/kind :map-agent
+   :stage/phase "Review"
+   :stage/items {:cartesian [{:bind :card :from [:vars :cards]}
+                             {:bind :lens :from [:vars :lenses]}]}
+   :stage/agent "ultra-reviewer"
+   :stage/schema :findings
+   :stage/label "review:{card/key}:{lens/key}"
+   :stage/prompt "You are reviewing a change in the repo ({repo}) against its kanban card.\n\nCard: read {card/path} in full (including comment history — earlier reviews may have already fixed things; do not re-report fixed items).\nRepo rules: read {repo}/AGENTS.md if present.\n{card/context}\n\nYour lens: {lens/prompt}\n\nRead the actual source files (and tests) relevant to your lens. Report ONLY findings that would matter to a maintainer deciding whether to promote this card. Do not report style preferences the repo doesn't legislate. If the dod-coverage lens, also fill dodVerdict with the per-item evidence table."}
+
+  {:stage/id :verify
+   :stage/kind :vote-fan-out
+   :stage/phase "Verify"
+   :stage/over :review
+   :stage/finding-path [:findings]
+   :stage/agent "ultra-skeptic"
+   :stage/schema :verdict
+   :stage/votes 2
+   :stage/quorum 2
+   :stage/label "verify:{finding/title|40}"
+   :stage/prompt "A code reviewer claims the following about the repo ({repo}), card {card/path}:\n\nTITLE: {finding/title}\nFILE: {finding/file}\nCLAIM: {finding/detail}\nSEVERITY CLAIMED: {finding/severity}\n\nSkeptic pass #{vote/n}: try to REFUTE this. Read the actual code and card (including comment history — the card may already document this as an accepted tradeoff or fixed item). Refute if: the claim is factually wrong, the behavior is deliberate and documented, it is out of the card's delivered scope, or it is too minor to gate a promotion. Default to refuted=true if uncertain."}
+
+  {:stage/id :return
+   :stage/kind :return
+   :stage/return {:confirmed :surviving :all :flat}}]}

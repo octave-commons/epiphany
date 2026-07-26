@@ -1,0 +1,72 @@
+{:workflow/id :eng-017f-review
+ :workflow/version 1
+
+ :meta {:name "eng-017f-review"
+        :description "Adversarial review of ENG-017F (decoded/imported observation validation) before promotion."
+        :phases [{:title "Review" :detail "3 lenses"}
+                 {:title "Verify" :detail "2 skeptic votes per finding, quorum 2"}]}
+
+ :run {:model "kimi-for-coding/k3"
+       :dir "/home/err/spaces/epiphany"
+       :agent-timeout-ms 900000
+       :max-concurrency 3}
+
+ :vars
+ {:repo "/home/err/spaces/epiphany"
+  :cards
+  [{:key "eng-017f"
+    :path "/home/err/spaces/epiphany/docs/kanban/stories/engineering-assurance-read-import-integrity.md"
+    :context "The change under review is commit 5d9f9e8 (ENG-017F: validate decoded and imported observation data). Run `git show 5d9f9e8` and read it. Key files: src/epiphany/law/operations.clj (collection-schemas, expected-record-version), src/epiphany/domain/backup.clj (validate-record, validate-backup-payload, read-backup-file, import-from-file rewrite), src/epiphany/infra/adapters/mongo.clj (decode-validated on every read path, import-all upfront validation), src/epiphany/infra/adapters/in_memory.clj (import-all upfront validation, export-all vector shape fix), test/epiphany/domain/backup_integrity_test.clj, mongo integration additions. Deliberate deferrals: full restore drill is ENG-021A scope; no new backup format beyond manifest fields. Gates: clojure -M:unit-test => 724 tests, 1903 assertions, 0 failures; integration 20/99 with only the 2 pre-existing baseline failures. MongoDB IS running (URI in test/epiphany/infra/adapters/mongo_test.clj); you may run integration tests and seed corrupt documents to verify."}]
+  :lenses
+  [{:key "correctness"
+    :prompt "Hunt for real correctness bugs: validation that can be bypassed (any read path missing decode-validated, any import path mutating before validating), wrong integrity category assignments, hash/count checks that can false-positive on canonical payloads (ordering, types), vector-vs-list payload shape leaks."}
+   {:key "architecture-law"
+    :prompt "Audit against the repo constitution (AGENTS.md, ADR-000/004, four-quadrant law, the one domain rule): backup.clj is domain — does it stay pure of I/O except through injected ports? Does law/operations' new collection-schemas belong in law? Any silent fallback or category collapse (corrupt vs unsupported vs unavailable vs empty)? Cite the rule each finding violates; flag only what 5d9f9e8 introduced."}
+   {:key "dod-coverage"
+    :prompt "Verify every acceptance criterion and verification-table row on the card against the actual code and tests. For each, name the exact test or evidence, or flag it unmet."}]}
+
+ :schemas
+ {:findings {:type "object"
+             :additionalProperties false
+             :properties {:findings {:type "array"
+                                     :items {:type "object"
+                                             :additionalProperties false
+                                             :properties {:title {:type "string"}
+                                                          :file {:type "string"}
+                                                          :detail {:type "string" :description "What is wrong / unmet, with concrete evidence (line refs, failing scenario)"}
+                                                          :severity {:type "string" :enum ["blocker" "should-fix" "nit"]}}
+                                             :required ["title" "file" "detail" "severity"]}}
+                          :dodVerdict {:type "string" :description "For dod-coverage lens only: per-DoD-item evidence table as text; empty string otherwise"}}
+             :required ["findings" "dodVerdict"]}
+  :verdict {:type "object"
+            :additionalProperties false
+            :properties {:refuted {:type "boolean" :description "true if the finding is wrong, already handled, out of scope for the card, or not worth acting on"}
+                         :reason {:type "string"}}
+            :required ["refuted" "reason"]}}
+
+ :stages
+ [{:stage/id :review
+   :stage/kind :map-agent
+   :stage/phase "Review"
+   :stage/items {:cartesian [{:bind :card :from [:vars :cards]}
+                             {:bind :lens :from [:vars :lenses]}]}
+   :stage/agent "ultra-reviewer"
+   :stage/schema :findings
+   :stage/label "review:{card/key}:{lens/key}"
+   :stage/prompt "You are reviewing a change in the repo ({repo}) against its kanban card.\n\nCard: read {card/path} in full (including comment history — earlier reviews may have already fixed things; do not re-report fixed items).\nRepo rules: read {repo}/AGENTS.md if present.\n{card/context}\n\nYour lens: {lens/prompt}\n\nRead the actual source files (and tests) relevant to your lens. Report ONLY findings that would matter to a maintainer deciding whether to promote this card. Do not report style preferences the repo doesn't legislate. If the dod-coverage lens, also fill dodVerdict with the per-item evidence table."}
+
+  {:stage/id :verify
+   :stage/kind :vote-fan-out
+   :stage/phase "Verify"
+   :stage/over :review
+   :stage/finding-path [:findings]
+   :stage/agent "ultra-skeptic"
+   :stage/schema :verdict
+   :stage/votes 2
+   :stage/quorum 2
+   :stage/label "verify:{finding/title|40}"
+   :stage/prompt "A code reviewer claims the following about the repo ({repo}), card {card/path}:\n\nTITLE: {finding/title}\nFILE: {finding/file}\nCLAIM: {finding/detail}\nSEVERITY CLAIMED: {finding/severity}\n\nSkeptic pass #{vote/n}: try to REFUTE this. Read the actual code and card (including comment history — the card may already document this as an accepted tradeoff or fixed item). Refute if: the claim is factually wrong, the behavior is deliberate and documented, it is out of the card's delivered scope, or it is too minor to gate a promotion. Default to refuted=true if uncertain."}
+
+  {:stage/id :return
+   :stage/kind :return
+   :stage/return {:confirmed :surviving :all :flat}}]}
