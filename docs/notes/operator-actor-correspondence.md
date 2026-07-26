@@ -83,7 +83,9 @@ human acceptance.
    the retrieved set as the whole mind or the whole workspace.
 5. **Support reflection over the process itself.** Repeated note shapes,
    unresolved loops, forgotten decisions, and costly re-reading are evidence
-   for product capabilities, workflow changes, or mycology spores.
+   for product capabilities, workflow changes, or Epiphany pattern spores—the
+   process term for recurring heuristics that are incubated as proposals rather
+   than promoted directly into permanent rules.
 6. **Use common actor/event contracts without erasing authority differences.**
    Human, agent, service, monitor, and workflow actors may share an event
    substrate while retaining different permissions, evidence obligations, and
