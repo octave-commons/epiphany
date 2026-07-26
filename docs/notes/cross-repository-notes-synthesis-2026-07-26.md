@@ -73,7 +73,7 @@ manual GitHub search exercise.
 | Repository | Observed corpus shape | Current disposition |
 |---|---|---|
 | **Epiphany** | Prior batch recorded 41 inbox files / 26 unique contents, mostly one exported assurance conversation; policies, ADRs, designs, findings, stories, and journal events already extracted | Retain originals; use the existing source map; add the present cross-repo batch and operator/actor note |
-| **eta-mu** | Curated index lists 43 note entries across contracts, actors, workspace, tooling, Keryx, and research; several key notes still contain literal merge-conflict markers | Repair malformed metadata without rewriting source prose; extract cross-repo boundary findings; retain historical transcripts |
+| **eta-mu** | Curated index lists 43 note entries across contracts, actors, workspace, tooling, Keryx, and research; several key notes still contain literal merge-conflict markers | Repair short malformed metadata blocks without rewriting source prose; extract bounded current syntheses; retain the long historical transcript unchanged |
 | **Knoxx** | Two timestamped notes found: one session/OpenPlanner authority observation and one one-line GitHub variable command | Extract the session-authority observation into a durable working note; retain the command snippet as historical operations context with `closed-no-extraction` disposition |
 | **OpenPlanner** | One implementation-status note found describing graph counts, vector-search implementation, storage assumptions, and follow-up | Retain as time-bound implementation/verification evidence; do not treat numeric state or architectural interpretations as current authority |
 | **Muse** | No `docs/notes/` or `docs/inbox/` item discovered by bounded history search | `unavailable/not-observed`; inspect from a source-tree ingestion pass |
@@ -167,13 +167,13 @@ store.” It is useful operational evidence from one revision, but:
 |---|---|---|
 | User statement, 2026-07-26 | `note` | `operator-actor-correspondence.md` |
 | Epiphany 2026-07-12 inbox batch | retain prior dispositions | Existing source map already records all 41 files and extracted residue |
-| eta-mu `dev/katamorph-resources-fsm-contracts.md` | repair metadata + retain | Contains merge markers; core resources/ledgers/state insight remains useful |
-| eta-mu `design/eta-mu-worlds-projections-ledger-design.md` | repair metadata + retain historical | Contains merge markers; long transcript remains source material, not current authority |
-| eta-mu `design/eta-mu-init-experience-vision.md` | repair metadata + retain design intent | Contains merge markers; product-experience vision remains useful |
-| eta-mu Keryx cluster | `design` / `decision-candidate` residue | Reconcile with Muse; no mass move in this batch |
-| Knoxx `2026.06.04.09.47.41.md` | `note` -> extract | Create a source-linked session-authority synthesis in Knoxx |
+| eta-mu `dev/katamorph-resources-fsm-contracts.md` | repair metadata + retain | Six-line frontmatter conflict removed; core resources/ledgers/state insight retained |
+| eta-mu `design/eta-mu-worlds-projections-ledger-design.md` | retain historical + extract | Long transcript left unchanged; current model extracted into `workspace-resources-ledgers-projections-synthesis.md` |
+| eta-mu `design/eta-mu-init-experience-vision.md` | repair metadata + retain design intent | Seven-line frontmatter conflict replaced with one coherent summary; product-experience vision retained |
+| eta-mu Keryx cluster | `design` / `decision-candidate` residue | Reconciliation note created; no source deletion or bulk move |
+| Knoxx `2026.06.04.09.47.41.md` | `note` -> extract | Source-linked session-authority synthesis created in Knoxx |
 | Knoxx `2026.06.03.09.09.14.md` | `closed-no-extraction` | One historical `gh variable set` command; no durable design content observed |
-| OpenPlanner `2026.04.13.13.57.07.md` | retain / archive candidate | Time-bound implementation report; preserve revision and evidence scope |
+| OpenPlanner `2026.04.13.13.57.07.md` | retain / verification-record candidate | Time-bound implementation report; index now preserves revision/evidence scope |
 | Muse/Katamorph/Proxx/event-ledger/Uxx note corpus | defer | Corpus not reliably enumerable with current interface |
 
 ## Product and process observations
@@ -197,17 +197,19 @@ store.” It is useful operational evidence from one revision, but:
 
 ## Artifacts produced by this batch
 
-- `docs/notes/operator-actor-correspondence.md`
-- this source map and disposition note
-- append-only entries in `docs/inbox/.observations/2026-07.jsonl`
-- repo-local follow-up branches for eta-mu and Knoxx
+- Epiphany operator/actor correspondence note, cross-repository source map, and
+  three append-only observation events.
+- eta-mu metadata repairs, workspace synthesis, Keryx/Muse reconciliation note,
+  and updated note index.
+- Knoxx session-boundary synthesis and note index.
+- OpenPlanner implementation-note index.
 
 ## Unresolved items
 
 - Complete source-tree inventory for all constellation repositories.
-- Inspect the 43 eta-mu indexed notes against current code and the new contract
-  dialect/data-authority architecture record.
-- Reconcile Keryx and Muse without losing useful implementation work.
+- Inspect the remaining eta-mu indexed notes against current code and the new
+  contract dialect/data-authority architecture record.
+- Reconcile Keryx and Muse implementation without losing useful prototype work.
 - Inventory Knoxx's larger `kanban/` and contract corpus as source material for
   the eta-mu-module refactor.
 - Determine whether OpenPlanner's remaining APIs merit preservation as an
@@ -215,8 +217,7 @@ store.” It is useful operational evidence from one revision, but:
 
 ## Highest-value next pass
 
-Run Epiphany itself over the declared repository set once Git-repository and
-eta-mu-ledger source adapters can enumerate the workspace. Until that exists,
-continue in small repo-local batches: fix malformed eta-mu notes, synthesize the
-Knoxx session-authority note, then inspect the Keryx/Muse cluster against actual
-implementation.
+Inspect the actual Keryx and Muse implementations against the reconciliation
+note, then classify portable compiler behavior, the OpenCode adapter, eta-mu
+native runtime behavior, and historical naming artifacts with exact source
+paths and migration consequences.
