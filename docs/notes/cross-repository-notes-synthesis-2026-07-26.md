@@ -14,12 +14,11 @@ sources:
   - "open-hax/knoxx:docs/notes/2026.06.04.09.47.41.md"
   - "open-hax/knoxx:docs/notes/2026.06.03.09.09.14.md"
   - "open-hax/openplanner:docs/notes/2026.04.13.13.57.07.md"
+  - "open-hax/eta-mu:docs/architecture/contract-dialect-and-data-authority.md"
 implements:
   - "docs/process/inbox.md"
   - "docs/process/notes.md"
-informs:
-  - "open-hax/eta-mu:docs/architecture/contract-dialect-and-data-authority.md"
-  - "docs/notes/operator-actor-correspondence.md"
+informs: []
 ---
 
 # Cross-Repository Notes Synthesis — 2026-07-26
@@ -174,7 +173,7 @@ store.” It is useful operational evidence from one revision, but:
 | Knoxx `2026.06.04.09.47.41.md` | `note` -> extract | Source-linked session-authority synthesis created in Knoxx |
 | Knoxx `2026.06.03.09.09.14.md` | `closed-no-extraction` | One historical `gh variable set` command; no durable design content observed |
 | OpenPlanner `2026.04.13.13.57.07.md` | retain / verification-record candidate | Time-bound implementation report; index now preserves revision/evidence scope |
-| Muse/Katamorph/Proxx/event-ledger/Uxx note corpus | defer | Corpus not reliably enumerable with current interface |
+| Muse/Katamorph/Proxx/event-ledger/Uxx note corpus | `unavailable/not-observed` | Next action: enumerate through a source-tree or Epiphany ingestion pass |
 
 ## Product and process observations
 
