@@ -1,0 +1,172 @@
+name: Sandbox bundle
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_dependency_cache:
+        description: Include Maven and gitlib caches in a separate short-lived artifact
+        required: false
+        default: false
+        type: boolean
+  pull_request:
+    paths:
+      - "deps.edn"
+      - "src/**"
+      - "test/**"
+      - "dev/**"
+      - "tools/**"
+      - "tests.edn"
+      - "bin/**"
+      - ".github/workflows/sandbox-bundle.yml"
+  push:
+    tags:
+      - "sandbox-bundle-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sandbox-bundle-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      OUT: ${{ runner.temp }}/sandbox-export
+      DEPS_OUT: ${{ runner.temp }}/sandbox-deps
+      CLOJURE_TOOLS_VERSION: "1.12.5.1654"
+      BABASHKA_VERSION: "1.13.219"
+
+    steps:
+      - name: Check out full repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare revision-bound source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$OUT"
+          mkdir -p "$OUT"/{source,runtime,logs,toolchain,metadata}
+          repo_name="${GITHUB_REPOSITORY#*/}"
+          git bundle create "$OUT/source/${repo_name}.bundle" --all
+          git archive --format=tar.gz --prefix="${repo_name}/" --output="$OUT/source/source.tar.gz" HEAD
+          git rev-parse HEAD > "$OUT/metadata/revision.txt"
+          git status --short > "$OUT/metadata/worktree.txt"
+          git submodule status --recursive > "$OUT/metadata/submodules.txt" 2>&1 || true
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up pinned Clojure CLI
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          cli: ${{ env.CLOJURE_TOOLS_VERSION }}
+
+      - name: Resolve dependencies and run the headless suite
+        id: validate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            clojure -P -M:unit-test
+            clojure -M:unit-test
+            clojure -M:lint
+            clojure -M:boundary-check
+            clojure -M:interop-inventory
+            clojure -M:run -- --help
+          } 2>&1 | tee "$OUT/logs/validate.log"
+
+      - name: Collect runtime outputs and portable toolchains
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          staging="$RUNNER_TEMP/sandbox-runtime"
+          rm -rf "$staging"
+          mkdir -p "$staging"
+          for path in target reports; do
+            if [[ -e "$path" ]]; then
+              mkdir -p "$staging/$(dirname "$path")"
+              cp -a "$path" "$staging/$path"
+            fi
+          done
+          if find "$staging" -mindepth 1 -print -quit | grep -q .; then
+            tar -czf "$OUT/runtime/runtime.tar.gz" -C "$staging" .
+          fi
+
+          curl -fsSL \
+            "https://download.clojure.org/install/clojure-tools-${CLOJURE_TOOLS_VERSION}.tar.gz" \
+            -o "$OUT/toolchain/clojure-tools-${CLOJURE_TOOLS_VERSION}.tar.gz"
+          curl -fsSL \
+            "https://github.com/babashka/babashka/releases/download/v${BABASHKA_VERSION}/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz" \
+            -o "$OUT/toolchain/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz"
+
+          cp deps.edn "$OUT/metadata/deps.edn"
+          {
+            java -version
+            clojure -Sdescribe
+          } > "$OUT/metadata/tool-versions.txt" 2>&1
+
+          cat > "$OUT/manifest.json" <<EOF
+          {
+            "sandbox_bundle_version": 1,
+            "repository": "${GITHUB_REPOSITORY}",
+            "revision": "${GITHUB_SHA}",
+            "ref": "${GITHUB_REF}",
+            "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "validation": "${{ steps.validate.outcome }}",
+            "entrypoint": "clojure -M:unit-test",
+            "network_required_after_restore": false
+          }
+          EOF
+          (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+
+      - name: Package optional dependency cache
+        if: github.event_name == 'workflow_dispatch' && inputs.include_dependency_cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$DEPS_OUT"
+          mkdir -p "$DEPS_OUT"
+          if [[ -d "$HOME/.m2/repository" ]]; then
+            tar -czf "$DEPS_OUT/m2-repository.tar.gz" -C "$HOME/.m2" repository
+          fi
+          if [[ -d "$HOME/.gitlibs" ]]; then
+            tar -czf "$DEPS_OUT/gitlibs.tar.gz" -C "$HOME" .gitlibs
+          fi
+          if [[ -d "$HOME/.clojure" ]]; then
+            tar -czf "$DEPS_OUT/clojure-config.tar.gz" -C "$HOME" .clojure
+          fi
+          (cd "$DEPS_OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
+
+      - name: Upload sandbox bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: epiphany-sandbox-${{ github.sha }}
+          path: ${{ runner.temp }}/sandbox-export
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload optional dependency cache
+        if: github.event_name == 'workflow_dispatch' && inputs.include_dependency_cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: epiphany-sandbox-deps-${{ github.sha }}
+          path: ${{ runner.temp }}/sandbox-deps
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Preserve validation result
+        if: always() && steps.validate.outcome == 'failure'
+        shell: bash
+        run: exit 1
