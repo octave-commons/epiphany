@@ -4,13 +4,17 @@ uuid: 50f6d8d9-bc27-4214-905d-3ce9cf024eb2
 title: "Knoxx authentication fail-closed triage — 2026-08-01"
 kind: note
 status: draft
-description: "Revision-scoped finding that a Knoxx module-loading failure exposed a fail-open policy initialization path, plus the bounded design correction implied by current evidence."
+description: "Revision-scoped findings from Knoxx policy initialization and MCP OAuth failures, separating repaired defects from remaining fail-closed and end-to-end verification obligations."
 created: "2026-08-01"
-labels: [triage, knoxx, authentication, authorization, fail-closed, security, provenance]
+updated: "2026-08-03"
+labels: [triage, knoxx, authentication, authorization, oauth, mcp, fail-closed, security, provenance]
 sources:
   - "open-hax/knoxx@24ae9b7c1dac2ca9ed26a3aa74e33a6812bfc1b2"
   - "open-hax/knoxx@7a954505dc97fd804eb9a427bc95803294226563:backend/src/cljs/knoxx/backend/bootstrap.cljs"
   - "open-hax/knoxx@7a954505dc97fd804eb9a427bc95803294226563:backend/src/cljs/knoxx/backend/infra/db/policy.cljs"
+  - "open-hax/knoxx#212@3689b77c4786b8373ded44037e60c645e44aba9d"
+  - "open-hax/knoxx#213@b24c68b1a1951a478316682d6adcac84d0145a48"
+  - "open-hax/knoxx#214@41b15af5d24d1e26a2daad36fa6172dc4fed2220"
 informs: []
 ---
 
@@ -18,11 +22,13 @@ informs: []
 
 ## Scope
 
-This note records one bounded cross-repository triage finding. It does not define
-new accepted architecture. It preserves the current implementation evidence and
-the smallest design correction that evidence supports.
+This note records bounded cross-repository triage findings. It does not define
+new accepted architecture. It preserves current implementation evidence and the
+smallest design corrections that evidence supports.
 
-## Observation
+## Finding 1: policy initialization must fail closed
+
+### Observation
 
 Knoxx commit `24ae9b7c1dac2ca9ed26a3aa74e33a6812bfc1b2` fixed ESM module imports for
 MongoDB and Node built-ins. Before that fix, `js/require` remained in an ESM
@@ -37,7 +43,7 @@ boundary problem: authentication and authorization availability were coupled to
 policy-store initialization in a way that permitted a running HTTP service with
 no effective policy context.
 
-## Current code evidence
+### Current code evidence
 
 At revision `7a954505dc97fd804eb9a427bc95803294226563`, bootstrap wraps
 `create-policy-db` in a `try`/`catch` and exits the process when initialization
@@ -51,7 +57,7 @@ registration, the catch boundary does not protect it.
 This creates an ambiguity between the declared public contract and the intended
 startup invariant.
 
-## Classification
+### Classification
 
 - **Fact:** the ESM import failure caused the policy database path to fail and
   protected routes to become publicly reachable.
@@ -69,9 +75,7 @@ startup invariant.
   visible startup state, and route-level constraints rather than accidental
   fallback.
 
-## Bounded correction
-
-The smallest warranted design refinement is:
+### Bounded correction
 
 ```text
 policy context unavailable
@@ -90,6 +94,82 @@ available at startup. Session recovery, indexes, caches, and optional enrichment
 may remain degradable where their contracts explicitly permit it. The policy
 context is different because its absence changes who may invoke the service.
 
+## Finding 2: route reachability is not OAuth-flow verification
+
+### New merged evidence
+
+Knoxx PRs #212, #213, and #214 repaired three sequential blockers discovered by
+a real ChatGPT MCP connector attempt:
+
+1. The public OAuth discovery documents returned `500` because their route mode
+   invoked a missing request-context dependency. Clients could not enter the
+   flow at all. PR #212 moved these intentionally unauthenticated endpoints onto
+   the route mode their dependency map supports and added tests against the real
+   route registration path.
+2. Dynamic client registration persisted the registration under
+   `client_data`, while lookup returned the surrounding storage envelope.
+   Redirect allow-list validation therefore saw no `redirect_uris` and rejected
+   every registered client. PR #213 restored the registration/storage boundary
+   and exposed OAuth client errors to Fastify with their intended HTTP status.
+3. The first authenticated consent request treated a ClojureScript auth-context
+   map as a nested JavaScript object. The consent page failed before code issue,
+   and token list/revoke routes carried the same latent access pattern. PR #214
+   moved those reads to the shared authorization accessors.
+
+PR #214 also closed two authorization defects found during review:
+
+- token revocation is now scoped to the authenticated membership rather than
+  token value alone;
+- authorization-code creation refuses blank membership or user identity rather
+  than minting a bearer credential without an authorization principal.
+
+The revocation persistence boundary now decodes the Mongo result through an
+extern adapter, validates law-owned request/result contracts, and fails closed
+when `deletedCount` is missing or non-numeric instead of fabricating a confident
+"nothing deleted" result.
+
+### Classification
+
+- **Fact:** discovery, registered-client lookup, and authenticated consent each
+  independently prevented any MCP client from completing OAuth.
+- **Fact:** earlier unauthenticated probes could not exercise the authenticated
+  consent and token-management paths because the browser-auth guard redirected
+  before those handlers ran.
+- **Fact:** the three merged fixes add route-level and store-level regression
+  tests for the failures observed so far.
+- **Fact:** membership-scoped revocation and nonblank code identity are now
+  executable authorization invariants.
+- **Stale interpretation:** "the downstream OAuth flow is healthy because its
+  routes respond or redirect" is disproved by the sequence of production
+  failures.
+- **Interpretation:** a security protocol is verified by a successful stateful
+  journey across its trust boundaries, not by isolated endpoint reachability.
+- **Proposal:** treat a real registered-client OAuth journey through discovery,
+  login, consent, code exchange, PKCE verification, authenticated MCP request,
+  token listing, and scoped revocation as a release/readiness invariant.
+- **Not decided here:** which connector implementation is the canonical
+  conformance client or whether this belongs in Knoxx, deployment services, or
+  both.
+
+### Remaining verification gap
+
+At `41b15af5d24d1e26a2daad36fa6172dc4fed2220`, the consent page is the furthest
+production-confirmed step recorded by the source PR. The following transitions
+remain unverified as one end-to-end journey in the cited evidence:
+
+```text
+authorize confirmation
+  -> authorization-code redirect
+  -> PKCE token exchange
+  -> first authenticated POST /mcp
+  -> token listing
+  -> membership-scoped revocation
+```
+
+Unit and route tests are necessary evidence, but they do not prove that deployed
+configuration, browser session state, registered-client storage, redirect
+handling, PKCE, bearer identity, and MCP transport compose correctly.
+
 ## Recommended verification
 
 1. Change `create-policy-db` to reject on unavailable policy storage and remove
@@ -98,12 +178,19 @@ context is different because its absence changes who may invoke the service.
    prevent HTTP readiness.
 3. Keep the deployed unauthenticated `/api/config` health assertion as an
    end-to-end security invariant.
-4. Audit other ESM CLJS namespaces for raw `js/require`; the same commit found
-   an identical latent defect in OpenUTAU tooling, although that path was not an
+4. Add one deployed OAuth journey using a registered test client and PKCE. Assert
+   the final MCP request resolves the same membership authorized at consent.
+5. Include negative journey checks: altered redirect URI, wrong PKCE verifier,
+   blank identity, cross-membership revocation, and unreadable deletion result.
+6. Audit other ESM CLJS namespaces for raw `js/require`; PR #209 found an
+   identical latent defect in OpenUTAU tooling, although that path was not an
    authorization bypass.
+7. Align OAuth error bodies with the protocol format separately from status-code
+   correctness; PR #213 explicitly leaves that as follow-up.
 
 ## Disposition
 
-`finding` / `proposal input`. The implementation defect is repaired. The
-fail-closed startup invariant and nil-contract cleanup remain bounded Knoxx
-follow-up work until accepted and implemented there.
+`finding` / `proposal input` with merged implementation updates. The observed
+policy bypass and MCP OAuth blockers are repaired at their cited revisions. The
+fail-closed policy-context contract and deployed end-to-end OAuth conformance
+journey remain bounded Knoxx follow-up work until accepted and implemented.
