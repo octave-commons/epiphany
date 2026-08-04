@@ -6,7 +6,7 @@ kind: note
 status: draft
 description: "Revision-scoped findings from Knoxx policy initialization and MCP OAuth failures, separating repaired defects from remaining fail-closed and end-to-end verification obligations."
 created: "2026-08-01"
-updated: "2026-08-03"
+updated: "2026-08-04"
 labels: [triage, knoxx, authentication, authorization, oauth, mcp, fail-closed, security, provenance]
 sources:
   - "open-hax/knoxx@24ae9b7c1dac2ca9ed26a3aa74e33a6812bfc1b2"
@@ -15,6 +15,7 @@ sources:
   - "open-hax/knoxx#212@3689b77c4786b8373ded44037e60c645e44aba9d"
   - "open-hax/knoxx#213@b24c68b1a1951a478316682d6adcac84d0145a48"
   - "open-hax/knoxx#214@41b15af5d24d1e26a2daad36fa6172dc4fed2220"
+  - "open-hax/knoxx#215@c005638986bd0ae8b5c0c25cb56b1c24f1ed3ed6 (open branch evidence)"
 informs: []
 ---
 
@@ -128,6 +129,27 @@ extern adapter, validates law-owned request/result contracts, and fails closed
 when `deletedCount` is missing or non-numeric instead of fabricating a confident
 "nothing deleted" result.
 
+### New open-branch evidence
+
+Knoxx PR #215 remains open at
+`c005638986bd0ae8b5c0c25cb56b1c24f1ed3ed6`; it is branch evidence, not merged
+implementation fact. It records the next production-confirmed blocker after
+consent: code exchange rejected a freshly issued authorization code as
+`Unknown or expired code`.
+
+The writers store `:expiresAt`, while the code, token, and membership-token-list
+readers asked for `:expires-at`. Because the missing field defaulted to `0`, all
+persisted authorization codes and tokens were treated as expired. Even a
+successful exchange would therefore have produced a bearer token that the next
+authenticated request could not verify.
+
+The branch changes all credential readers to one fail-closed liveness rule over
+the written `:expiresAt` field. The Mongo boundary accepts BSON dates, finite
+numeric epoch values, or parseable ISO strings and rejects unreadable expiry
+values. It also changes code exchange from a separate read-then-delete sequence
+to an atomic `findOneAndDelete` claim, preventing concurrent exchanges from
+minting multiple tokens from one authorization code.
+
 ### Classification
 
 - **Fact:** discovery, registered-client lookup, and authenticated consent each
@@ -139,11 +161,19 @@ when `deletedCount` is missing or non-numeric instead of fabricating a confident
   tests for the failures observed so far.
 - **Fact:** membership-scoped revocation and nonblank code identity are now
   executable authorization invariants.
+- **Open branch fact:** PR #215's cited branch consistently reads the expiry key
+  its writers persist and atomically consumes an authorization code.
+- **Production observation:** the deployed flow reached token exchange and then
+  rejected a newly minted code as expired, according to PR #215's source record.
+- **Proposal:** merge and deploy PR #215 only after review and validation; its
+  behavior is not current `main` authority while the PR remains open.
 - **Stale interpretation:** "the downstream OAuth flow is healthy because its
   routes respond or redirect" is disproved by the sequence of production
   failures.
 - **Interpretation:** a security protocol is verified by a successful stateful
   journey across its trust boundaries, not by isolated endpoint reachability.
+- **Interpretation:** writer/reader agreement and single-use atomicity are part
+  of the credential contract, not storage implementation trivia.
 - **Proposal:** treat a real registered-client OAuth journey through discovery,
   login, consent, code exchange, PKCE verification, authenticated MCP request,
   token listing, and scoped revocation as a release/readiness invariant.
@@ -153,14 +183,15 @@ when `deletedCount` is missing or non-numeric instead of fabricating a confident
 
 ### Remaining verification gap
 
-At `41b15af5d24d1e26a2daad36fa6172dc4fed2220`, the consent page is the furthest
-production-confirmed step recorded by the source PR. The following transitions
-remain unverified as one end-to-end journey in the cited evidence:
+At the merged revision
+`41b15af5d24d1e26a2daad36fa6172dc4fed2220`, the consent page is the furthest
+production-confirmed step in `main`. PR #215 records branch and production
+observation evidence through authorization-code issue and attempted token
+exchange, but the following still lack one successful deployed journey:
 
 ```text
-authorize confirmation
-  -> authorization-code redirect
-  -> PKCE token exchange
+PKCE token exchange with the corrected expiry reader
+  -> bearer-token verification
   -> first authenticated POST /mcp
   -> token listing
   -> membership-scoped revocation
@@ -178,19 +209,25 @@ handling, PKCE, bearer identity, and MCP transport compose correctly.
    prevent HTTP readiness.
 3. Keep the deployed unauthenticated `/api/config` health assertion as an
    end-to-end security invariant.
-4. Add one deployed OAuth journey using a registered test client and PKCE. Assert
+4. Review PR #215's expiry normalization, query contract, and atomic
+   authorization-code consumption before merge.
+5. Add one deployed OAuth journey using a registered test client and PKCE. Assert
    the final MCP request resolves the same membership authorized at consent.
-5. Include negative journey checks: altered redirect URI, wrong PKCE verifier,
-   blank identity, cross-membership revocation, and unreadable deletion result.
-6. Audit other ESM CLJS namespaces for raw `js/require`; PR #209 found an
+6. Include negative journey checks: altered redirect URI, wrong PKCE verifier,
+   reused authorization code, unreadable expiry, blank identity,
+   cross-membership revocation, and unreadable deletion result.
+7. Audit other ESM CLJS namespaces for raw `js/require`; PR #209 found an
    identical latent defect in OpenUTAU tooling, although that path was not an
    authorization bypass.
-7. Align OAuth error bodies with the protocol format separately from status-code
+8. Align OAuth error bodies with the protocol format separately from status-code
    correctness; PR #213 explicitly leaves that as follow-up.
 
 ## Disposition
 
-`finding` / `proposal input` with merged implementation updates. The observed
-policy bypass and MCP OAuth blockers are repaired at their cited revisions. The
-fail-closed policy-context contract and deployed end-to-end OAuth conformance
-journey remain bounded Knoxx follow-up work until accepted and implemented.
+`finding` / `proposal input` with merged implementation updates and one open
+branch refinement. The observed policy bypass and merged MCP OAuth blockers are
+repaired at their cited revisions. PR #215 contains a bounded candidate repair
+for expiry-field drift and authorization-code replay, but remains proposal-stage
+branch evidence until merged. The fail-closed policy-context contract and a
+successful deployed end-to-end OAuth conformance journey remain bounded Knoxx
+follow-up work until accepted and implemented.
