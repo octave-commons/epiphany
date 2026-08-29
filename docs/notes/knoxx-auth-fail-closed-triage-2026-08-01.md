@@ -296,6 +296,10 @@ and deployed configuration.
 
 ## Recommended verification
 
+The fail-closed bootstrap implementation is split into `open-hax/knoxx#266`,
+whose acceptance gate binds both nil and rejected initialization to the route
+composition and listener-start boundary.
+
 1. Change `create-policy-db` to reject on unavailable policy storage and remove
    `| nil` from its documented contract.
 2. Add a bootstrap test proving nil and rejected policy initialization both
