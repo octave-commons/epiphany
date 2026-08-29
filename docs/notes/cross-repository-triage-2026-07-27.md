@@ -56,9 +56,9 @@ Remaining verified gaps include:
 
 ## Observation 3: Axxium identity authority became executable
 
-eta-mu commit `342cc85acade1e78c996b8d2179c8e454d9f8c95` added Axxium-owned runtime principal bindings for Sol and event-ledger attribution, organization-scope constraints, authenticated principal resolution, closed schemas, canonical JSON wire keys, PostgreSQL integration tests, and read-only CI.
+eta-mu commit `342cc85acade1e78c996b8d2179c8e454d9f8c95` added runtime-principal bindings in eta-mu's Axxium package for Sol and event-ledger attribution, organization-scope constraints, authenticated principal resolution, closed schemas, canonical JSON wire keys, PostgreSQL integration tests, and read-only CI.
 
-**Interpretation:** the earlier authority model is gaining executable support: Axxium owns actor/principal identity, while Sol and event-ledger consume resolved attribution rather than inventing identity locally.
+**Interpretation:** the earlier authority model is gaining executable support: eta-mu's Axxium binding layer owns runtime-principal mapping, while Sol and event-ledger consume resolved attribution rather than inventing identity locally.
 
 **Limit:** this commit establishes a runtime binding slice, not complete cross-repository adoption. Consumers still need to use the binding consistently and preserve provenance at host boundaries.
 
