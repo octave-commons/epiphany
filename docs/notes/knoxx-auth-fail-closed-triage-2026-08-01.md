@@ -6,7 +6,7 @@ kind: note
 status: draft
 description: "Revision-scoped findings from Knoxx policy initialization, MCP OAuth, transport, schema, and tool-semantics failures, separating repaired defects from remaining readiness obligations."
 created: "2026-08-01"
-updated: "2026-08-05"
+updated: "2026-08-29"
 labels: [triage, knoxx, authentication, authorization, oauth, mcp, fail-closed, security, readiness, provenance]
 sources:
   - "open-hax/knoxx@24ae9b7c1dac2ca9ed26a3aa74e33a6812bfc1b2"
@@ -61,6 +61,11 @@ registration, the catch boundary does not protect it.
 This creates an ambiguity between the declared public contract and the intended
 startup invariant.
 
+The required operational invariant is stronger than a process-manager readiness
+signal: bootstrap must reject a nil or failed policy context before composing
+protected routes or starting the HTTP listener. Readiness may report that
+invariant, but it cannot enforce it after an unprotected listener exists.
+
 ### Classification
 
 - **Fact:** the ESM import failure caused the policy database path to fail and
@@ -83,7 +88,8 @@ startup invariant.
 
 ```text
 policy context unavailable
-  -> HTTP application does not become ready
+  -> protected routes are not composed
+  -> HTTP listener does not start
   -> process exits or remains unready
 
 never:
@@ -100,7 +106,7 @@ context is different because its absence changes who may invoke the service.
 
 ## Finding 2: route reachability is not OAuth-flow verification
 
-### Merged evidence
+### Merged implementation evidence and reported deployment observation
 
 Knoxx PRs #212 through #215 repaired four sequential blockers discovered by real
 MCP connector attempts:
@@ -129,29 +135,31 @@ atomic with `findOneAndDelete`, while validating client, redirect, and PKCE
 bindings before the destructive claim so an invalid request cannot spend a
 legitimate client's code.
 
-The OAuth flow then crossed a material verification boundary. Production logs
-cited in PR #216 record:
+PR #216 contains an author-reported deployment log excerpt:
 
 ```text
 POST /api/mcp/oauth/token   200
 POST /mcp  (Bearer)         200 text/event-stream
 ```
 
-A token was issued and verified in production. The previous statement that no
-successful bearer-authenticated MCP request had been observed is now stale.
+That excerpt is durable evidence that the PR author reported a successful token
+exchange and bearer-authenticated request. It is not an independently reproduced,
+revision-bound conformance record: the deployed revision, configuration, and
+complete client journey are not bound together by the cited excerpt.
 
 ### Classification
 
 - **Fact:** discovery, registered-client lookup, authenticated consent, and
   credential expiry drift each independently prevented completion of OAuth.
 - **Fact:** PRs #212 through #215 are merged at the cited revisions.
-- **Fact:** production evidence in PR #216 records successful PKCE token exchange
-  and bearer-authenticated `POST /mcp`.
+- **Reported observation:** PR #216 contains a log excerpt claiming successful
+  PKCE token exchange and bearer-authenticated `POST /mcp`.
 - **Fact:** membership-scoped revocation, nonblank code identity, fail-closed
   expiry decoding, binding checks, and atomic single-use code claiming are now
   executable invariants.
-- **Stale interpretation:** the downstream OAuth flow remains unverified through
-  bearer authentication.
+- **Unresolved verification:** no independently reproducible, revision-bound
+  conformance record yet proves the downstream OAuth flow through bearer
+  authentication and usable MCP capability.
 - **Interpretation:** a security protocol is verified by a successful stateful
   journey across its trust boundaries, not by isolated endpoint reachability.
 - **Interpretation:** writer/reader agreement and single-use atomicity are part
@@ -164,10 +172,10 @@ successful bearer-authenticated MCP request had been observed is now stale.
 
 ## Finding 3: authenticated transport is not usable MCP capability
 
-### Sequential production evidence
+### Sequential merged evidence and reported production symptoms
 
-Successful bearer authentication exposed three further layers that earlier
-failures made unreachable.
+The reported bearer-authenticated request exposed three further layers that
+earlier failures made unreachable.
 
 #### Tool-schema composition
 
@@ -220,8 +228,8 @@ rewritten, preventing silent metadata loss for `web.read` -> `web_read`.
 
 ### Classification
 
-- **Fact:** successful authentication exposed schema-registration, transport-mode,
-  and tool-metadata defects that could not be reached earlier.
+- **Fact:** PRs #216 through #218 repaired schema-registration, transport-mode,
+  and tool-metadata defects that earlier failures made unreachable.
 - **Fact:** PRs #216, #217, and #218 are merged at the cited revisions.
 - **Fact:** a single malformed nested parameter schema could prevent the complete
   tool catalog from registering.
@@ -265,8 +273,10 @@ rewritten, preventing silent metadata loss for `web.read` -> `web_read`.
 
 ## Remaining verification and design gaps
 
-The OAuth identity path has crossed its previous success boundary, but one
-end-to-end record still needs to prove the complete usable capability journey:
+PR #216's reported logs suggest that the OAuth identity path crossed its previous
+success boundary, but independently reproducible evidence remains incomplete.
+One revision-bound end-to-end record still needs to prove the complete usable
+capability journey:
 
 ```text
 OAuth discovery
@@ -289,7 +299,7 @@ and deployed configuration.
 1. Change `create-policy-db` to reject on unavailable policy storage and remove
    `| nil` from its documented contract.
 2. Add a bootstrap test proving nil and rejected policy initialization both
-   prevent HTTP readiness.
+   abort protected-route composition and listener startup before readiness.
 3. Keep the deployed unauthenticated `/api/config` health assertion as an
    end-to-end security invariant.
 4. Add one revision-bound deployed MCP conformance journey covering discovery,
@@ -313,9 +323,9 @@ and deployed configuration.
 
 `finding` / `proposal input` with merged implementation updates. The observed
 policy bypass and the sequential OAuth, schema, transport, and annotation defects
-are repaired at their cited revisions. Bearer authentication has now succeeded
-in production, superseding the earlier open verification claim. The fail-closed
-policy-context contract, production dependency pinning, session-route coherence,
-remaining tool annotations, structured outputs, and a single revision-bound
-end-to-end MCP conformance record remain bounded Knoxx follow-up work until
-accepted and implemented.
+are repaired at their cited revisions. PR #216 reports successful bearer
+authentication, but this note does not promote that report into independently
+verified production fact. The fail-closed policy-context contract, production
+dependency pinning, session-route coherence, remaining tool annotations,
+structured outputs, and a single revision-bound end-to-end MCP conformance
+record remain bounded Knoxx follow-up work until accepted and implemented.
