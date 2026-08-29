@@ -38,17 +38,26 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
-      OUT: ${{ runner.temp }}/sandbox-export
-      DEPS_OUT: ${{ runner.temp }}/sandbox-deps
       CLOJURE_TOOLS_VERSION: "1.12.5.1654"
+      CLOJURE_TOOLS_SHA256: "dc86cc56bc372fcef07bd87f44693eeb4b61cf5f44347883878364d03b5fb342"
       BABASHKA_VERSION: "1.13.219"
+      BABASHKA_SHA256: "9ac1fe988d7001625b30ef3e3307e67f8545505a7cb49a4aa179f578115a3e09"
 
     steps:
       - name: Check out full repository history
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Initialize bundle paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "OUT=$RUNNER_TEMP/sandbox-export"
+            echo "DEPS_OUT=$RUNNER_TEMP/sandbox-deps"
+          } >> "$GITHUB_ENV"
 
       - name: Prepare revision-bound source bundle
         shell: bash
@@ -64,13 +73,13 @@ jobs:
           git submodule status --recursive > "$OUT/metadata/submodules.txt" 2>&1 || true
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Set up pinned Clojure CLI
-        uses: DeLaGuardo/setup-clojure@13.4
+        uses: DeLaGuardo/setup-clojure@3fe9b3ae632c6758d0b7757b0838606ef4287b08 # 13.4
         with:
           cli: ${{ env.CLOJURE_TOOLS_VERSION }}
 
@@ -91,6 +100,8 @@ jobs:
 
       - name: Collect runtime outputs and portable toolchains
         if: always()
+        env:
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
         shell: bash
         run: |
           set -euo pipefail
@@ -107,12 +118,24 @@ jobs:
             tar -czf "$OUT/runtime/runtime.tar.gz" -C "$staging" .
           fi
 
+          download_dir="$RUNNER_TEMP/toolchain-downloads"
+          rm -rf "$download_dir"
+          mkdir -p "$download_dir"
+          clojure_archive="clojure-tools-${CLOJURE_TOOLS_VERSION}.tar.gz"
+          babashka_archive="babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz"
+
           curl -fsSL \
             "https://download.clojure.org/install/clojure-tools-${CLOJURE_TOOLS_VERSION}.tar.gz" \
-            -o "$OUT/toolchain/clojure-tools-${CLOJURE_TOOLS_VERSION}.tar.gz"
+            -o "$download_dir/$clojure_archive"
           curl -fsSL \
             "https://github.com/babashka/babashka/releases/download/v${BABASHKA_VERSION}/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz" \
-            -o "$OUT/toolchain/babashka-${BABASHKA_VERSION}-linux-amd64-static.tar.gz"
+            -o "$download_dir/$babashka_archive"
+          printf '%s  %s\n' "$CLOJURE_TOOLS_SHA256" "$download_dir/$clojure_archive" \
+            | sha256sum --check --strict
+          printf '%s  %s\n' "$BABASHKA_SHA256" "$download_dir/$babashka_archive" \
+            | sha256sum --check --strict
+          install -m 0644 "$download_dir/$clojure_archive" "$OUT/toolchain/$clojure_archive"
+          install -m 0644 "$download_dir/$babashka_archive" "$OUT/toolchain/$babashka_archive"
 
           cp deps.edn "$OUT/metadata/deps.edn"
           {
@@ -127,9 +150,10 @@ jobs:
             "revision": "${GITHUB_SHA}",
             "ref": "${GITHUB_REF}",
             "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "validation": "${{ steps.validate.outcome }}",
+            "validation": "${VALIDATION_OUTCOME}",
             "entrypoint": "clojure -M:unit-test",
-            "network_required_after_restore": false
+            "runtime_dependency_closure_included": false,
+            "network_required_after_restore": true
           }
           EOF
           (cd "$OUT" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS)
@@ -154,7 +178,7 @@ jobs:
 
       - name: Upload sandbox bundle
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: epiphany-sandbox-${{ github.sha }}
           path: ${{ runner.temp }}/sandbox-export
@@ -163,7 +187,7 @@ jobs:
 
       - name: Upload optional dependency cache
         if: github.event_name == 'workflow_dispatch' && inputs.include_dependency_cache
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: epiphany-sandbox-deps-${{ github.sha }}
           path: ${{ runner.temp }}/sandbox-deps
