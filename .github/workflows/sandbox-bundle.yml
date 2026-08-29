@@ -95,7 +95,7 @@ jobs:
             clojure -M:lint
             clojure -M:boundary-check
             clojure -M:interop-inventory
-            clojure -M:run -- --help
+            bin/ep --help
           } 2>&1 | tee "$OUT/logs/validate.log"
 
       - name: Collect runtime outputs and portable toolchains
