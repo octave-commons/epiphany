@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   review:
+    if: ${{ github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository }}
     name: Evidence-first review (eta-mu)
     uses: open-hax/eta-mu/.github/workflows/opencode-code-review.yml@2b918cdab2ebd30e745bb8fa86d077d7a3af0030
     with:
