@@ -151,7 +151,7 @@ jobs:
             "ref": "${GITHUB_REF}",
             "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "validation": "${VALIDATION_OUTCOME}",
-            "entrypoint": "clojure -M:unit-test",
+            "entrypoint": "bin/ep",
             "runtime_dependency_closure_included": false,
             "network_required_after_restore": true
           }
