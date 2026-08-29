@@ -12,7 +12,7 @@ sources:
   - "https://github.com/open-hax/eta-mu/blob/337a1404673b5ce0a488305528f5d3615010882d/packages/clio/README.md"
   - "https://github.com/open-hax/eta-mu/blob/2afdb0208dd614bbcc87a6096db938e17b96426a/ROADMAP.md"
 informs:
-  - "ROADMAP.md"
+  - "open-hax/eta-mu@2afdb0208dd614bbcc87a6096db938e17b96426a:ROADMAP.md"
 ---
 
 # Eta-mu Clio event-kernel triage — 2026-08-10
