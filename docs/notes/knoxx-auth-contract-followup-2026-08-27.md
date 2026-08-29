@@ -17,7 +17,7 @@ sources:
 
 ## Scope
 
-This note supplements, rather than rewrites, the earlier authentication/MCP triage in Epiphany PR #9. It records current merged implementation evidence from Knoxx PR #256 and keeps implementation fact, interpretation, and promotion status separate.
+This note supplements, rather than rewrites, `knoxx-auth-fail-closed-triage-2026-08-01.md` from Epiphany PR #9. It records current merged implementation evidence from Knoxx PR #256 and keeps implementation fact, interpretation, and promotion status separate.
 
 ## New merged evidence
 
