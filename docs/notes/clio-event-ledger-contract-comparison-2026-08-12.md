@@ -1,14 +1,15 @@
 ---
 slug: clio-event-ledger-contract-comparison-2026-08-12
+uuid: d8f83538-69ca-41ce-9bed-1cf67e53a099
 kind: note
 status: draft
 description: "Revision-scoped comparison of eta-mu Clio and the standalone open-hax/event-ledger contract."
 labels: [eta-mu, clio, event-ledger, event-sourcing, contracts, cross-repo, triage]
 created: "2026-08-12"
 sources:
-  - "https://github.com/open-hax/eta-mu/blob/main/packages/clio/README.md"
-  - "https://github.com/open-hax/event-ledger/blob/main/README.md"
-  - "https://github.com/open-hax/eta-mu/blob/main/ROADMAP.md"
+  - "https://github.com/open-hax/eta-mu/blob/337a1404673b5ce0a488305528f5d3615010882d/packages/clio/README.md"
+  - "https://github.com/open-hax/event-ledger/blob/ada7374b7f4e1c3b0ab4e6bbe996f10f06e9b93a/README.md"
+  - "https://github.com/open-hax/eta-mu/blob/2afdb0208dd614bbcc87a6096db938e17b96426a/ROADMAP.md"
 informs:
   - "docs/notes/eta-mu-clio-event-kernel-triage-2026-08-10.md"
 ---
@@ -21,8 +22,8 @@ Complete the bounded comparison requested by the Clio triage note without
 promoting either implementation into cross-repository ownership.
 
 This is revision-scoped synthesis. It compares the public contracts documented
-on the current default branches; it is not an ADR, migration authorization, or
-claim that either repository supersedes the other.
+at the immutable source revisions listed above; it is not an ADR, migration
+authorization, or claim that either repository supersedes the other.
 
 ## Observed overlap
 

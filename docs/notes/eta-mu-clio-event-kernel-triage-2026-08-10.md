@@ -1,16 +1,18 @@
 ---
 slug: eta-mu-clio-event-kernel-triage-2026-08-10
+uuid: 91a1b5f3-0a31-45ec-bcc7-21af7f2f3e49
 kind: note
 status: draft
 description: "Revision-scoped synthesis of eta-mu's merged Clio event-sourcing kernel and its unresolved relationship to existing event-ledger authority."
 labels: [eta-mu, clio, event-sourcing, ledger, schemas, cross-repo, triage]
 created: "2026-08-10"
 sources:
-  - "https://github.com/open-hax/eta-mu/pull/280"
-  - "https://github.com/open-hax/eta-mu/pull/282"
-  - "https://github.com/open-hax/eta-mu/blob/main/packages/clio/README.md"
+  - "https://github.com/open-hax/eta-mu/commit/5dfa8e97099cc473584e451e3847fedcf7b0c7e6"
+  - "https://github.com/open-hax/eta-mu/commit/0a009f4686fd81df0759b9946407fc3f9a7496c2"
+  - "https://github.com/open-hax/eta-mu/blob/337a1404673b5ce0a488305528f5d3615010882d/packages/clio/README.md"
+  - "https://github.com/open-hax/eta-mu/blob/2afdb0208dd614bbcc87a6096db938e17b96426a/ROADMAP.md"
 informs:
-  - "https://github.com/open-hax/eta-mu/blob/main/ROADMAP.md"
+  - "ROADMAP.md"
 ---
 
 # Eta-mu Clio event-kernel triage — 2026-08-10
@@ -168,7 +170,7 @@ package names or runtime details wholesale.
   append admission is being normalized upward from transport into law.
 - Clio → standalone event-ledger ownership relation: **unresolved**.
 - Clio laws → Epiphany normalization: **promotion candidate**, not accepted.
-- Eta-mu roadmap ownership text: **requires bounded re-verification/update**, not
+- Eta-mu roadmap ownership text: **requires re-verification/update within a bounded scope**, not
   silent reinterpretation.
 
 ## Highest-value next pass

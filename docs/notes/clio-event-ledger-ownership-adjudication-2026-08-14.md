@@ -1,19 +1,21 @@
 ---
 slug: clio-event-ledger-ownership-adjudication-2026-08-14
+uuid: c4192c28-72ab-42d1-bbea-7ca59f52a26e
 kind: note
 status: draft
 description: "Operator adjudication that Clio owns the event-ledger domain; legacy event-ledger implementations are migration sources, not peer authorities."
 labels: [eta-mu, clio, event-ledger, event-sourcing, ownership, migration, cross-repo, triage]
 created: "2026-08-14"
 sources:
-  - "https://github.com/open-hax/eta-mu/pull/280"
-  - "https://github.com/open-hax/eta-mu/pull/282"
-  - "https://github.com/open-hax/openplanner/blob/main/packages/services/graphics-svg-pipeline/src/cljs/graphics_svg_pipeline/ledger.cljs"
+  - "https://github.com/open-hax/eta-mu/commit/5dfa8e97099cc473584e451e3847fedcf7b0c7e6"
+  - "https://github.com/open-hax/eta-mu/commit/0a009f4686fd81df0759b9946407fc3f9a7496c2"
+  - "https://github.com/open-hax/openplanner/blob/b473034df697ea26d472101b0c0c4b0d3609d24f/packages/services/graphics-svg-pipeline/src/cljs/graphics_svg_pipeline/ledger.cljs"
+  - "https://github.com/open-hax/eta-mu/blob/2afdb0208dd614bbcc87a6096db938e17b96426a/ROADMAP.md"
 supersedes:
   - "docs/notes/clio-event-ledger-contract-comparison-2026-08-12.md#working-interpretation"
   - "docs/notes/eta-mu-clio-event-kernel-triage-2026-08-10.md#unresolved-questions"
 informs:
-  - "https://github.com/open-hax/eta-mu/blob/main/ROADMAP.md"
+  - "ROADMAP.md"
 ---
 
 # Clio event-ledger ownership adjudication — 2026-08-14
@@ -48,13 +50,18 @@ legacy standalone or embedded event-ledger implementations
 
 This decision does not require every legacy implementation detail to survive. A behavior is migrated only when a live consumer or an independently accepted requirement justifies it against Clio's laws.
 
-## Observed migration obligation
+## Observed source dependency requiring deployment/runtime verification
 
-A repository-wide follow-up found at least one concrete current source dependency on OpenPlanner's embedded event-ledger package:
+A repository-wide source search found at least one concrete source dependency on OpenPlanner's embedded event-ledger package:
 
 `packages/services/graphics-svg-pipeline/src/cljs/graphics_svg_pipeline/ledger.cljs` requires `promethean.event-ledger.core`.
 
-That observation revises the tentative belief that nothing uses the old implementation. It does **not** revise the ownership decision. The graphics pipeline dependency is migration debt: its required behavior should be identified, represented through Clio or a Clio-backed adapter, cut over, and then the legacy dependency can be retired.
+That source-level observation revises the tentative belief that no code
+references the old implementation. It does not establish deployment or runtime
+reachability, and it does **not** revise the ownership decision. The graphics
+pipeline dependency requires deployment/runtime verification; if active, its
+required behavior should be identified, represented through Clio or a
+Clio-backed adapter, cut over, and then the legacy dependency can be retired.
 
 The remaining event-ledger package files, roadmaps, epics, compatibility bridges, Mongo/REST surfaces, TTL policy, and other historical implementation artifacts are not evidence of ongoing authority by existence alone.
 
@@ -85,7 +92,13 @@ Before removing a legacy event-ledger implementation, verify at minimum:
 3. persistence data or compatibility reads that must remain accessible;
 4. watchers, TTL, REST, attribution, or sequencing behavior actually depended upon by a live caller;
 5. a Clio or Clio-backed replacement for every retained behavior;
-6. an executable cutover check demonstrating the caller no longer reaches the legacy implementation.
+6. an executable cutover check demonstrating the caller no longer reaches the legacy implementation;
+7. conversion of every retained legacy event into a Clio envelope, with schema,
+   causal, ordering, and version constraints validated;
+8. replay and projection equivalence over retained history, including Clio's
+   current complete-history and sequence-1 requirements; or
+9. an explicit approved exception identifying data that will not be retained
+   and why conversion and replay proof do not apply.
 
 Absence of a search hit is evidence only for the search performed, not proof of non-use.
 
@@ -94,5 +107,5 @@ Absence of a search hit is evidence only for the search performed, not proof of 
 - ownership ambiguity: **resolved**;
 - accepted owner/destination: **Clio**;
 - legacy implementations: **migration/retirement candidates**;
-- OpenPlanner graphics pipeline: **observed live migration obligation**;
+- OpenPlanner graphics pipeline: **observed source dependency requiring deployment/runtime verification**;
 - Epiphany normalization of portable Clio laws: **promotion candidate only**, independently governed by Epiphany's process and explicit acceptance rules.
