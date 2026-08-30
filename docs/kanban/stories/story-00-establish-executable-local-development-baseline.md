@@ -1,16 +1,18 @@
 ---
-id: 01900d7c-7f3a-7e8b-9c4d-000000000000
-title: "US-000: Establish executable local development baseline"
-status: breakdown
-type: story
-priority: P0
-phase: 0
-blocks: ["US-001", "US-004", "US-005", "US-007", "US-010", "US-019", "US-020", "US-021"]
-points: 13
-labels: [bootstrap, clojure, build, local-first, testing, service-contracts, decomposed]
 category: "stories"
-dependency: []
+labels: ["bootstrap", "clojure", "build", "local-first", "testing", "service-contracts", "decomposed"]
+dependency: [""]
+phase: "0"
+type: "story"
+write-id: "1788047682370-0.la6e5cy4pf7f3cato5x"
+points: "13"
+title: "US-000: Establish executable local development baseline"
+priority: "P0"
+status: "breakdown"
+id: "01900d7c-7f3a-7e8b-9c4d-000000000000"
+blocks: ["US-001", "US-004", "US-005", "US-007", "US-010", "US-019", "US-020", "US-021"]
 ---
+
 # US-000: Establish executable local development baseline
 
 ## User outcome
@@ -68,3 +70,7 @@ This card exceeded the 5-point cap (its own subtask total was 14). Do not implem
 - **US-000C** `story-00c-local-service-manifest-and-diagnostics.md` — service manifest, readiness diagnostics (4 pts)
 
 Acceptance criteria above remain the definition of done for the set; each child card carries its own slice.
+
+---
+Command-contract correction (2026-08-29): the historical acceptance text names clojure -M:run -- --help, but current argument forwarding treats the literal separator as a positional command and exits 1. Live contributor guidance and GitHub issue #16 use the shipped bin/ep --help entrypoint, whose launcher behavior is evidenced by ENG-017M. This comment supersedes only that command example; it does not rewrite historical evidence or change the card's other criteria.
+---

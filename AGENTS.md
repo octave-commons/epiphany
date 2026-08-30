@@ -14,7 +14,7 @@ clojure -M:test              # full suite — the green baseline
 clojure -M:unit-test         # no Docker, no network
 clojure -M:integration-test  # needs local services started, else exits UNAVAILABLE
 clojure -M:repl              # dev REPL
-clojure -M:run -- --help     # the epiphany executable (alias: ep)
+bin/ep --help                # the shipped epiphany executable
 ```
 
 ### CLI subcommands

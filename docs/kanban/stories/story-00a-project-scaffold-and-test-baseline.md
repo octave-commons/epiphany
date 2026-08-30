@@ -1,15 +1,16 @@
 ---
-id: "01900d7c-7f3a-7e8b-9c4d-000000000000-a"
-title: "US-000A: Project scaffold, executable entry point, and green test baseline"
-status: "done"
-type: "story"
-priority: "P0"
-phase: 0
-parent: "01900d7c-7f3a-7e8b-9c4d-000000000000"
-points: 4
-labels: ["bootstrap", "clojure", "build", "testing", "phase-0"]
 category: "stories"
-dependency: []
+labels: ["bootstrap", "clojure", "build", "testing", "phase-0"]
+dependency: [""]
+parent: "01900d7c-7f3a-7e8b-9c4d-000000000000"
+phase: "0"
+type: "story"
+write-id: "1788047683028-0.x2ped9mrcek6lj3ynb5"
+points: "4"
+title: "US-000A: Project scaffold, executable entry point, and green test baseline"
+priority: "P0"
+status: "done"
+id: "01900d7c-7f3a-7e8b-9c4d-000000000000-a"
 ---
 
 # US-000A: Project scaffold, executable entry point, and green test baseline
@@ -42,4 +43,6 @@ US-000A implemented 2026-07-11. deps.edn rewritten to contract: Clojure 1.12.2, 
 Review complete. All acceptance criteria pass. Moving to done. Unblocks ENG-001C, ENG-001B1, ENG-002A. --tasks-dir docs/kanban
 
 AUDIT 2026-07-12: status=done graded A-. The strongest completion record on the board: commands with observed results, and an ANOMALIES section that logged four discovered contradictions instead of absorbing them — this is the exemplar behavior for completion evidence. Caveat: the card's green-baseline outcome has since been violated repo-wide (unit suite currently 528 tests / 9 failures, all in http_test.clj, observed 2026-07-12) and no card owns restoring it; the red tests are attached to ENG-006A's demotion. Lesson: a done card's outcome can regress silently when no gate keeps it true — ENG-017J's CI evidence artifact is the standing version of this card's one-time claim. --tasks-dir docs/kanban
+
+Command-contract correction (2026-08-29): the historical acceptance criterion and implementation note for clojure -M:run -- --help are stale on current main. GitHub issue #16 and the live README/AGENTS guide use bin/ep --help, consistent with ENG-017M's accepted launcher evidence. Preserve this done-card history; treat the shipped entrypoint as the current executable smoke.
 ---
