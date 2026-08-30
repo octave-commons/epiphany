@@ -187,11 +187,13 @@ clojure -M:unit-test         # no Docker, no network
 clojure -M:integration-test  # needs local services (real semantics arrive with US-000C)
 clojure -M:repl              # nREPL for editor attach
 clojure -M:dev               # nREPL with dev/ and test/ on the classpath
-clojure -M:run -- --help     # the epiphany executable
-bin/ep --help                # short alias; same entry point (also bin/epiphany)
+bin/ep --help                # the shipped epiphany executable
+bin/epiphany --help          # long-form launcher; same entry point
 ```
 
 Tests run with kaocha; suites are defined in `tests.edn` (`unit` skips `^:integration` tests, `integration` selects only them). CI runs the unit suite headlessly on every push and pull request (`.github/workflows/test.yml`).
+That workflow also executes `bin/ep --help` and checks the Epiphany usage banner,
+so the documented entrypoint has revision-bound executable evidence.
 
 ## Development status
 
