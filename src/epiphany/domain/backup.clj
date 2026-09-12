@@ -232,22 +232,28 @@
      {:export {...}, :import {...}, :re-export {...}
       :round-trip-identical? bool
       :inaccessible-sources [...]
-      :drill-status :complete | :round-trip-mismatch}"
-  [observations-adapter git-adapter backup-dir]
-  (let [backup-file (str backup-dir "/backup.edn")
-        re-export-file (str backup-dir "/backup-re-export.edn")
+      :drill-status :complete | :round-trip-mismatch}
 
-        export-result (export-to-file observations-adapter backup-file)
-        _ ((:clear-all! observations-adapter))
-        import-result (import-from-file observations-adapter backup-file)
-        re-export-result (export-to-file observations-adapter re-export-file)
-        round-trip-identical? (= (:content-hash (:manifest export-result))
-                                 (:content-hash (:manifest re-export-result)))
-        restored-data (:data (edn/read-string (slurp backup-file)))
-        inaccessible (inaccessible-sources git-adapter restored-data)]
-    {:export export-result
-     :import import-result
-     :re-export re-export-result
-     :round-trip-identical? round-trip-identical?
-     :inaccessible-sources inaccessible
-     :drill-status (if round-trip-identical? :complete :round-trip-mismatch)}))
+   Durable EDN clears require the four-argument form with a caller UUID. Reuse
+   that UUID when retrying the drill. The three-argument form retains the
+   historical zero-argument clear contract for legacy reference/Mongo drills."
+  ([observations-adapter git-adapter backup-dir]
+   (restore-drill observations-adapter git-adapter backup-dir nil))
+  ([observations-adapter git-adapter backup-dir command-id]
+   (let [backup-file (str backup-dir "/backup.edn")
+         re-export-file (str backup-dir "/backup-re-export.edn")
+
+         export-result (export-to-file observations-adapter backup-file)
+         _ (apply (:clear-all! observations-adapter) (when command-id [command-id]))
+         import-result (import-from-file observations-adapter backup-file)
+         re-export-result (export-to-file observations-adapter re-export-file)
+         round-trip-identical? (= (:content-hash (:manifest export-result))
+                                  (:content-hash (:manifest re-export-result)))
+         restored-data (:data (edn/read-string (slurp backup-file)))
+         inaccessible (inaccessible-sources git-adapter restored-data)]
+     {:export export-result
+      :import import-result
+      :re-export re-export-result
+      :round-trip-identical? round-trip-identical?
+      :inaccessible-sources inaccessible
+      :drill-status (if round-trip-identical? :complete :round-trip-mismatch)})))

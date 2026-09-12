@@ -2,6 +2,7 @@
   (:require [clio.extern.jvm.fs :as fs]
             [clojure.test :refer [deftest is]]
             [epiphany.domain.hybrid-search :as search]
+            [epiphany.domain.observation-admission :as admission]
             [epiphany.extern.clio-observations :as host]
             [epiphany.infra.adapters.clio :as clio]
             [epiphany.law.registry :as registry]
@@ -20,7 +21,7 @@
                               :block-children [{:block/type :paragraph :block/span span
                                                 :paragraph/inlines []}]}]}]
     (is (registry/valid? "md/document" document))
-    (is (not (registry/valid? "md/document" (assoc-in document [:doc/body 0 :block-type] :unknown))))))
+    (is (not (registry/valid? "md/document" (assoc-in document [:doc/body 0 :block/type] :unknown))))))
 
 (deftest configured-ledger-path-retains-parent-segments-and-unicode
   (let [supplied "/tmp/.ημ/child/../ledger"]
@@ -74,6 +75,49 @@
               (is (= accepted (fs/read-text (:file store))))
               (is (= snapshot ((:export-all (clio/make-observations-adapter (clio/open-store directory))))))))))
       (finally (fs/remove-tree! directory)))))
+
+(deftest concurrent-extractions-share-logical-identity-across-command-ids
+  (let [directory (temporary-directory)]
+    (try
+      (let [store (clio/open-store directory)
+            ports (mapv (fn [_] (clio/make-observations-adapter (clio/open-store directory))) (range 2))
+            base (fixture :record-section-extraction!)
+            retry (assoc base :observation/id (random-uuid) :observation/request-id (random-uuid)
+                         :observation/observed-at #inst "2026-09-12T13:00:00.000Z")
+            start (promise)
+            writes (mapv (fn [port record]
+                           (future @start ((:record-section-extraction! port) record))) ports [base retry])]
+        (deliver start true)
+        (doseq [write writes] (is (nil? (deref write 10000 ::timeout))))
+        (is (= 1 (count (clio/history store))))
+        (is (= 1 (count ((:list-section-extractions-by-revision (first ports))
+                         (:extraction/revision-at-path-id base)))))
+        (let [reopened (clio/make-observations-adapter (clio/open-store directory))
+              accepted (fs/read-text (:file store))
+              imported (assoc retry :observation/id (random-uuid) :observation/request-id (random-uuid))]
+          (is (nil? ((:import-all reopened) {"section-extraction" [imported]})))
+          (is (= accepted (fs/read-text (:file store))))
+          (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
+                                ((:record-section-extraction! reopened)
+                                 (assoc imported :extraction/content-sha256 "changed-content"))))
+          (is (= accepted (fs/read-text (:file store))))
+          (is (nil? ((:record-section-extraction! reopened)
+                     (assoc imported :observation/id (random-uuid) :observation/request-id (random-uuid)
+                            :extraction/extractor-version "extractor-v2"))))
+          (is (= 2 (count ((:list-section-extractions-by-revision reopened)
+                           (:extraction/revision-at-path-id base)))))
+          (is (= 2 (count (clio/history (clio/open-store directory)))))))
+      (finally (fs/remove-tree! directory)))))
+
+(deftest equivalent-historical-extractions-retain-all-accepted-envelope-identities
+  (let [first-record (fixture :record-section-extraction!)
+        duplicate (assoc first-record :observation/id (random-uuid) :observation/request-id (random-uuid))
+        conflicting (assoc duplicate :observation/request-id (random-uuid)
+                           :extraction/extractor-version "different-extractor")]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
+                          (admission/missing-records "section-extraction" [first-record duplicate] [conflicting])))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
+                          (admission/missing-records "section-extraction" [] [first-record duplicate conflicting])))))
 
 (deftest repeated-bulk-import-is-a-durable-noop-for-every-append-collection
   (let [directory (temporary-directory)]

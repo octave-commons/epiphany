@@ -9,7 +9,95 @@ labels: [development, clio, verification]
 
 # Clio review recovery
 
-## Current direct-write and real service verification
+## Current extraction and clear command correction
+
+Actual Codex 3996355207 found that concurrent ingestion commands could persist
+the same section extraction under independently generated observation IDs.
+Prospective admission now keys an extraction by resource, accepted revision,
+blob and extractor version. Accepted observation/request IDs also remain bound
+to their content. Equivalent retries ignore regenerated command envelopes and
+timestamps; a changed payload refuses before append. A new extractor version
+with new envelope IDs creates a new fact. Historical replay retains the original
+facts, including any older duplicates. Every envelope ID in those accepted facts
+is indexed when comparing later writes. IDs from an unpersisted duplicate retry
+are not claimed as durable reservations.
+
+The actual concurrent regression first failed six of eleven assertions; the
+corrected focused adapter suite passed 18 tests / 114 assertions. A subsequent
+self-review found that equivalent historical duplicates could lose secondary
+envelope aliases during admission indexing. Both failure-first assertions failed;
+the reduction now keeps those aliases, including comparisons within one import
+batch. The recursive Markdown regression also now changes the actual dispatch
+key `:block/type` rather than adding an unrelated unknown key.
+
+CodeRabbit's clear-command finding reproduced an actual lost-acknowledgement
+hazard: a second zero-argument clear removed a later observation and appended
+another event. Both assertions failed. Prospective EDN clears now require one
+caller UUID, stored as `:command-id` in canonical event data. Reuse that UUID
+on retry. The locked admission decision binds it to operation and arguments,
+returns without re-executing an accepted clear, and still forces durability.
+An initially empty clear records its command too, so its later retry cannot
+erase intervening writes. Invalid IDs or extra command material refuse before
+mutation. Replay rejects duplicate accepted command IDs.
+
+The event catalog adds an optional command field while retaining old schema
+snapshots. Identified clears may preserve the same before/after state; historical
+unidentified operations retain the original state-change requirement. A fixture
+contains the exact catalog evaluated from committed `3156a5d652d4771b64406627821c8c06c42413fa`.
+The compatibility test writes through that old runtime, then checks that the
+new reader preserves both original ledger and schema bytes. The first version
+of this additional fixture omitted its owned parent directory and failed before
+writing; explicitly creating the directory repaired that harness error.
+
+The explicit durable drill call is
+`(backup/restore-drill observations git backup-directory command-id)`.
+The historical three-argument drill remains available for legacy in-memory and
+Mongo adapters. EDN refuses a missing command ID. Focused regressions cover clear
+retry after another write, empty-first-clear, restart, failed fsync, altered
+command arguments, duplicate command corruption and the real backup drill.
+
+The standalone dependency pin is independently fetched Clio
+`6c5af6077d069620583b29a180eb925a0805e94b`, tree
+`c590a1ce1abbf970a4263c70f6e39f56cff434aa`, which adds shared read locks for
+read-only ledgers. Fresh complete gates for this source and kernel are recorded
+separately below; earlier results do not transfer to this revision.
+
+### Exact verification and self-review
+
+The complete application checkpoint
+`c433d63f43cefd626c1d17152cc5cb4be3c6eeb5`, tree
+`a71c00d1746afb643e0ba5de7249202b7baa4152`, passed **790 unit tests / 2,273
+assertions**, lint with zero errors/warnings, formatting, boundary and interop
+checks, AOT build, the separate-JVM Clio/Lucene process proof, and the actual
+shipped launcher. The real Mongo/S3rver/MiniLM integration also passed **22 tests /
+108 assertions**, with no skips and matching digests for all 455 tracked source
+files and symlink targets.
+
+Self-review then moved only invocation normalization into
+`shape.observation-invocation`, leaving the law as a validator returning the
+original arguments. Final source `4c40cb93c689f328782671eb512b405be64aa5f7`, tree
+`2d0ebee0bcee3c540437f551e2a4989624858518`, passed the unchanged focused **33 tests /
+186 assertions**, all static gates, a fresh AOT build and actual launcher.
+The real service integration was repeated on this final source and passed
+**22 tests / 108 assertions**, no skips, with matching digests for all 456 files
+and symlink targets. These are distinct receipts: the full 790-test and process
+results remain attached to `c433d63`, while the final wiring has its own focused
+and integration proof. Both used exactly the independently fetched Clio revision
+above. [Exact gate metadata](evidence/clio-command-identity.json) and
+[actual command output](evidence/clio-command-identity.txt) include the behavioral
+failures, corrected results, source hashes and visible runtime advisories.
+
+The new clear test initially needed one closing delimiter repaired during lint.
+The first extraction failure run reused a just-imported observation ID while
+trying to represent a new extractor version; assigning that new fact its own
+envelope IDs removed the unrelated fixture error. Neither harness error is
+presented as the behavioral failure proof. The historical schema fixture's
+directory repair is described above; its final six assertions pass. Independent
+peer review found no confirmed blocker in the clear transaction and requested
+that stronger old-schema proof. Actual remote reviewers and root dependency
+promotion remain pending; source-only review is not reported as a test run.
+
+## Earlier direct-write and real service verification
 
 Source `d06a08b88e940204ce4575fee8a34837eaf0a2a0`, tree
 `0eac2c8d734913ecb973b996478e006638da706b`, passed **783 unit tests / 2,217
@@ -17,7 +105,7 @@ assertions**, zero lint errors/warnings, formatting, boundary and interop checks
 AOT build, the multi-process Clio/Lucene gate, and the actual shipped launcher.
 Every gate used independently fetched immutable Clio
 `690aad83ff54ef5225a1f1533b4a7bd0eaef3561`; source stayed unchanged throughout.
-[Current gate metadata](evidence/clio-direct-review.json) and
+[Historical gate metadata](evidence/clio-direct-review.json) and
 [actual gate output](evidence/clio-direct-review.txt) retain exact provenance and
 the visible JVM/Lucene advisories.
 
@@ -71,7 +159,7 @@ a future kernel revision.
 
 ## Earlier immutable successor verification
 
-The latest implementation checkpoint is
+The earlier implementation checkpoint was
 `152b8f5c88fe597c723425788d7fab06b916d962`, tree
 `757a7ada2c2fdbc0cb6340e6d894d67f99ac770d`. It passed every owned gate below
 against separately fetched Clio `690aad83ff54ef5225a1f1533b4a7bd0eaef3561`,
@@ -83,7 +171,7 @@ through the final launcher check.
 The full unit suite passed **781 tests / 2,180 assertions**. Lint reported zero
 errors or warnings; formatting, architecture boundaries, interop inventory, AOT
 build, multi-process Clio/Lucene verification, and the actual shipped launcher
-all passed. [Current revision metadata](evidence/clio-final-review.json) and
+all passed. [Historical revision metadata](evidence/clio-final-review.json) and
 [actual command output](evidence/clio-final-review.txt) retain the separate gate
 durations and visible runtime advisories. These results supersede the earlier
 37b720 consumer run recorded below; the legacy service integration alias remains

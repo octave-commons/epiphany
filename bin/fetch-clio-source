@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 destination="${1:-../eta-mu}"
-revision=690aad83ff54ef5225a1f1533b4a7bd0eaef3561
+revision=6c5af6077d069620583b29a180eb925a0805e94b
 while [[ "$destination" != / && "$destination" == */ ]]; do
   destination=${destination%/}
 done

@@ -14,20 +14,28 @@
    :record-review-decision! "review-decision"
    :record-lineage-candidate! "lineage-candidate"})
 
-(defn- identity-key [collection record]
-  (case collection
-    "revision-at-path" (select-keys record [:resource-id :revision/commit-oid :revision/path-raw])
-    ("repository-location" "review-decision" "lineage-candidate")
-    (if-let [request-id (:observation/request-id record)]
-      [:request request-id]
-      [:observation (:observation/id record)])
-    (:observation/id record)))
+(defn- identity-keys [collection record]
+  (if (= collection "section-extraction")
+    ;; Logical derivation identity survives independently generated command
+    ;; envelopes. Accepted envelope IDs must still never name other content.
+    (cond-> [[:extraction (select-keys record [:resource-id :extraction/revision-at-path-id
+                                               :extraction/blob-oid :extraction/extractor-version])]
+             [:observation (:observation/id record)]]
+      (:observation/request-id record) (conj [:request (:observation/request-id record)]))
+    [(case collection
+       "revision-at-path" (select-keys record [:resource-id :revision/commit-oid :revision/path-raw])
+       ("repository-location" "review-decision" "lineage-candidate")
+       (if-let [request-id (:observation/request-id record)]
+         [:request request-id]
+         [:observation (:observation/id record)])
+       (:observation/id record))]))
 
 (defn- comparable-record [collection record]
   (case collection
     "revision-at-path" (dissoc record :observation/id :revision-at-path/id :observation/observed-at)
-    ("ingestion-run" "projection-checkpoint" "section-extraction")
+    ("ingestion-run" "projection-checkpoint")
     (dissoc record :observation/observed-at)
+    "section-extraction" (dissoc record :observation/id :observation/request-id :observation/observed-at)
     "repository-location" (dissoc record :observation/id :observation/observed-at)
     "review-decision" (dissoc record :observation/id :observation/observed-at
                               :review-decision/id :review-decision/decided-at)
@@ -36,14 +44,16 @@
     record))
 
 (defn- retain-record [{:keys [index] :as state} collection record]
-  (let [id (identity-key collection record)]
-    (if-let [accepted (get index id)]
-      (if (= (comparable-record collection accepted)
-             (comparable-record collection record))
-        state
+  (let [ids (identity-keys collection record)
+        accepted (keep index ids)]
+    (doseq [previous accepted]
+      (when-not (= (comparable-record collection previous) (comparable-record collection record))
         (throw (ex-info "Observation identity has different accepted content"
-                        {:code :idempotency-conflict :collection collection :identity id})))
-      (-> state (assoc-in [:index id] record) (update :records conj record)))))
+                        {:code :idempotency-conflict :collection collection :identities ids}))))
+    ;; Historical duplicate facts still reserve each of their accepted envelope
+    ;; identities. A bulk batch must also reject conflicting aliases internally.
+    (cond-> (update state :index into (map (fn [id] [id record]) ids))
+      (empty? accepted) (update :records conj record))))
 
 (defn missing-records
   "Return new records in order; reject changed-content reuse before mutation."
@@ -63,3 +73,16 @@
                        [collection (missing-records collection (get snapshot collection) records)]))
              (first arguments))]
       arguments)))
+
+(defn command-status
+  "Classify an identified command before replaying its prospective side effects."
+  [events operation arguments command-id]
+  (when command-id
+    (if-let [accepted (some #(when (= command-id (get-in % [:event/data :command-id]))
+                               (:event/data %)) events)]
+      (if (= {:operation operation :arguments arguments}
+             (select-keys accepted [:operation :arguments]))
+        :accepted
+        (throw (ex-info "Command identity has different accepted content"
+                        {:code :idempotency-conflict :command-id command-id})))
+      :new)))

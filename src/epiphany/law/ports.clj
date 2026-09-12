@@ -64,6 +64,8 @@
 ;;   - :export-all / :import-all — full-store backup/restore (epiphany.domain.backup)
 ;;   - :clear-all! — drop all observation data; used by restore drills to
 ;;     simulate cache/index/store loss before restoring from a backup
+;;     The durable EDN provider requires a caller UUID, reused on retries;
+;;     legacy in-memory/Mongo providers retain the zero-argument drill contract.
 ;;
 ;; Candidate queries by relation type, generator version, confidence band,
 ;; and time are pure domain filters over :list-lineage-candidates output

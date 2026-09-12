@@ -54,7 +54,7 @@
                  (:code (error-data #((:record-ingestion-run! restarted) {})))))
           (is (= first-bytes (fs/read-text (:file store))))
           (let [exported ((:export-all restarted))]
-            ((:clear-all! restarted))
+            ((:clear-all! restarted) (random-uuid))
             (is (= 2 (count (clio/history store))))
             (is (nil? ((:find-by-request-id
                         (clio/make-observations-adapter (clio/open-store directory))) request-id)))

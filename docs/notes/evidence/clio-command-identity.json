@@ -1,0 +1,307 @@
+{
+  "full_gate": {
+    "source": {
+      "local_head": "c433d63f43cefd626c1d17152cc5cb4be3c6eeb5",
+      "tree": "a71c00d1746afb643e0ba5de7249202b7baa4152",
+      "clio_revision": "6c5af6077d069620583b29a180eb925a0805e94b",
+      "clio_tree": "c590a1ce1abbf970a4263c70f6e39f56cff434aa"
+    },
+    "records": [
+      {
+        "id": "dependency",
+        "command": [
+          "clojure",
+          "-M",
+          "-e",
+          "(require (quote clojure.java.io)) (println (clojure.java.io/resource \"clio/infra/ledger.cljc\"))"
+        ],
+        "started": "2026-09-12T14:04:00.223Z",
+        "finished": "2026-09-12T14:04:03.302Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 3.079
+      },
+      {
+        "id": "unit",
+        "command": [
+          "clojure",
+          "-M:unit-test"
+        ],
+        "started": "2026-09-12T14:04:03.304Z",
+        "finished": "2026-09-12T14:05:13.556Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 70.252
+      },
+      {
+        "id": "lint",
+        "command": [
+          "clojure",
+          "-M:lint"
+        ],
+        "started": "2026-09-12T14:05:13.557Z",
+        "finished": "2026-09-12T14:05:29.816Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 16.259
+      },
+      {
+        "id": "format",
+        "command": [
+          "clojure",
+          "-M:cljfmt"
+        ],
+        "started": "2026-09-12T14:05:29.817Z",
+        "finished": "2026-09-12T14:05:43.119Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 13.302
+      },
+      {
+        "id": "boundary",
+        "command": [
+          "clojure",
+          "-M:boundary-check"
+        ],
+        "started": "2026-09-12T14:05:43.119Z",
+        "finished": "2026-09-12T14:05:47.115Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 3.996
+      },
+      {
+        "id": "interop",
+        "command": [
+          "clojure",
+          "-M:interop-inventory"
+        ],
+        "started": "2026-09-12T14:05:47.116Z",
+        "finished": "2026-09-12T14:05:53.339Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 6.223
+      },
+      {
+        "id": "build",
+        "command": [
+          "bash",
+          "bin/build"
+        ],
+        "started": "2026-09-12T14:05:53.340Z",
+        "finished": "2026-09-12T14:06:03.637Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 10.297
+      },
+      {
+        "id": "process",
+        "command": [
+          "bash",
+          "bin/verify-clio-edn"
+        ],
+        "started": "2026-09-12T14:06:03.642Z",
+        "finished": "2026-09-12T14:07:00.821Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 57.179
+      },
+      {
+        "id": "launcher",
+        "command": [
+          "bin/ep",
+          "--help"
+        ],
+        "started": "2026-09-12T14:07:00.848Z",
+        "finished": "2026-09-12T14:07:10.002Z",
+        "exit_code": 0,
+        "seconds": 9.154,
+        "actual_entrypoint": true,
+        "independent_caller": true
+      }
+    ],
+    "source_unchanged": true
+  },
+  "shape_refactor_gate": {
+    "source": {
+      "local_head": "4c40cb93c689f328782671eb512b405be64aa5f7",
+      "tree": "2d0ebee0bcee3c540437f551e2a4989624858518",
+      "clio_revision": "6c5af6077d069620583b29a180eb925a0805e94b",
+      "clio_tree": "c590a1ce1abbf970a4263c70f6e39f56cff434aa"
+    },
+    "records": [
+      {
+        "id": "dependency",
+        "command": [
+          "clojure",
+          "-M",
+          "-e",
+          "(require (quote clojure.java.io)) (println (clojure.java.io/resource \"clio/infra/ledger.cljc\"))"
+        ],
+        "started": "2026-09-12T14:08:36.313Z",
+        "finished": "2026-09-12T14:08:37.387Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 1.074
+      },
+      {
+        "id": "unit",
+        "command": [
+          "clojure",
+          "-M:unit-test",
+          "--focus",
+          "epiphany.infra.clio-clear-command-test",
+          "--focus",
+          "epiphany.infra.clio-review-regression-test",
+          "--focus",
+          "epiphany.infra.adapters.clio-test",
+          "--focus",
+          "epiphany.domain.backup-test"
+        ],
+        "started": "2026-09-12T14:08:37.388Z",
+        "finished": "2026-09-12T14:09:03.095Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 25.707
+      },
+      {
+        "id": "lint",
+        "command": [
+          "clojure",
+          "-M:lint"
+        ],
+        "started": "2026-09-12T14:09:03.096Z",
+        "finished": "2026-09-12T14:09:18.536Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 15.44
+      },
+      {
+        "id": "format",
+        "command": [
+          "clojure",
+          "-M:cljfmt"
+        ],
+        "started": "2026-09-12T14:09:18.537Z",
+        "finished": "2026-09-12T14:09:34.300Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 15.763
+      },
+      {
+        "id": "boundary",
+        "command": [
+          "clojure",
+          "-M:boundary-check"
+        ],
+        "started": "2026-09-12T14:09:34.300Z",
+        "finished": "2026-09-12T14:09:35.743Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 1.443
+      },
+      {
+        "id": "interop",
+        "command": [
+          "clojure",
+          "-M:interop-inventory"
+        ],
+        "started": "2026-09-12T14:09:35.744Z",
+        "finished": "2026-09-12T14:09:37.463Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 1.719
+      },
+      {
+        "id": "build",
+        "command": [
+          "bash",
+          "bin/build"
+        ],
+        "started": "2026-09-12T14:09:37.463Z",
+        "finished": "2026-09-12T14:09:47.947Z",
+        "exit_code": 0,
+        "signal": null,
+        "seconds": 10.484
+      },
+      {
+        "id": "launcher",
+        "command": [
+          "bin/ep",
+          "--help"
+        ],
+        "started": "2026-09-12T14:09:47.981Z",
+        "finished": "2026-09-12T14:09:57.425Z",
+        "exit_code": 0,
+        "seconds": 9.444,
+        "actual_entrypoint": true,
+        "independent_caller": true
+      }
+    ],
+    "source_unchanged": true
+  },
+  "integration": {
+    "started": "2026-09-12T14:08:38.713Z",
+    "finished": "2026-09-12T14:09:02.916Z",
+    "source": {
+      "head": "4c40cb93c689f328782671eb512b405be64aa5f7",
+      "tree": "2d0ebee0bcee3c540437f551e2a4989624858518",
+      "dirty": false,
+      "files": 456,
+      "sha256": "6850f4305c5eafd0653ef84a88b60bfc9ff87583fdbd33ce3c02e035ddf0e0d5"
+    },
+    "clio": "6c5af6077d069620583b29a180eb925a0805e94b",
+    "embedding": {
+      "model": "Xenova/all-MiniLM-L6-v2",
+      "dimensions": 384,
+      "revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+      "artifact": "sha256:afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1"
+    },
+    "mongoPing": true,
+    "s3ObjectRoundtrip": true,
+    "integration": {
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/foresight-active/runtime/epiphany-clio-6c5af6/packages/clio\"}}}}}",
+        "-M:verified-clio:integration-test"
+      ],
+      "code": 0,
+      "signal": null,
+      "summary": "22 tests, 108 assertions, 0 failures."
+    },
+    "skipped": false
+  },
+  "failure_first": [
+    {
+      "name": "Concurrent extraction identity",
+      "file": "epiphany-extraction-identity-red02.log",
+      "tests": 1,
+      "assertions": 11,
+      "failures": 6,
+      "errors": 0
+    },
+    {
+      "name": "Historical extraction envelope aliases",
+      "file": "epiphany-extraction-alias-red.log",
+      "tests": 1,
+      "assertions": 2,
+      "failures": 2,
+      "errors": 0
+    },
+    {
+      "name": "Original unidentified clear after lost acknowledgement",
+      "file": "epiphany-clear-legacy-red.log",
+      "tests": 1,
+      "assertions": 2,
+      "failures": 2,
+      "errors": 0
+    }
+  ],
+  "scope": "The full 790/2273 and multiprocess proof cover c433d63; the final three-file validators/shape move at4c40cb9 has fresh33/186, all static gates, AOT, actual launcher and real22/108 service integration. These are separate unchanged-source receipts.",
+  "limitations": [
+    "Lucene optional native-access/vectorization advisories remain visible; no warning filter was added.",
+    "Legacy Mongo integration remains a tested compatibility boundary, while the EDN profile uses canonical Clio.",
+    "Historical card comments and ledgers are append-only; readable corrections are later events.",
+    "Actual remote review and coordinated root pin promotion remain separate gates."
+  ]
+}
