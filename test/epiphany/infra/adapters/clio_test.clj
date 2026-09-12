@@ -27,7 +27,8 @@
                                       (swap! directories conj directory)
                                       (clio/make-observations-adapter
                                        (clio/open-store directory))))
-                       :capabilities #{:schema-validation :idempotency :export-import}})]
+                       :capabilities #{:schema-validation :idempotency :export-import}
+                       :strict-admission? true})]
         (is (seq outcomes))
         (is (= #{} (laws/failed-laws outcomes)) (pr-str outcomes))
         (is (= #{} (laws/skipped-laws outcomes))))
@@ -46,8 +47,8 @@
           (is (= record ((:find-by-request-id restarted) request-id)))
           (is (nil? ((:record-repository-location! restarted) record)))
           (is (= :idempotency-conflict
-                 (:code ((:record-repository-location! restarted)
-                         (assoc record :observation/id (random-uuid))))))
+                 (:code (error-data #((:record-repository-location! restarted)
+                                      (assoc record :resource-id (random-uuid)))))))
           (is (= first-bytes (fs/read-text (:file store))))
           (is (= :schema-validation-failed
                  (:code (error-data #((:record-ingestion-run! restarted) {})))))

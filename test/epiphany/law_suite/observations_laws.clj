@@ -259,9 +259,16 @@
             (fail (str "first-write-wins replay must return nil, got " (pr-str result)))
             (pass))
 
+          :strict-admission
+          (if (= :idempotency-conflict (:code result))
+            (pass)
+            (fail (str "strict admission must refuse changed content, got " (pr-str result))))
+
           (fail (str "no changed-content law for idempotency kind " idempotency))))
       (catch Exception e
-        (fail (str "changed-content replay threw " (.getName (class e)) ": " (.getMessage e)))))))
+        (if (and (= :strict-admission idempotency) (= :idempotency-conflict (:code (ex-data e))))
+          (pass)
+          (fail (str "changed-content replay threw " (.getName (class e)) ": " (.getMessage e))))))))
 
 (defn- law-export-import-round-trip
   [port _op {:keys [make-valid]}]
@@ -309,6 +316,16 @@
 ;; ---------------------------------------------------------------------------
 ;; Law suite runner
 
+(defn- fixture-for [operation strict-admission?]
+  (when-let [fixture (get op-fixtures operation)]
+    (if strict-admission?
+      (assoc fixture :idempotency :strict-admission
+             :make-conflict (fn [record]
+                              (if (= operation :record-revision-at-path!)
+                                (assoc record :revision/blob-oid (apply str (repeat 40 "c")))
+                                (assoc record :resource-id #uuid "22222222-2222-2222-2222-222222222222"))))
+      fixture)))
+
 (defn observations-laws
   "Run the observation-port law suite and return normalized outcomes.
 
@@ -320,6 +337,9 @@
      :capabilities — a set of capability keywords declared by the adapter.
      :ops          — write operations to judge (default: every registered
                      write operation in law/operations).
+     :strict-admission? — require every record kind to refuse materially changed
+                     identity reuse, beyond the legacy first-write-wins contract.
+                     Generated envelope IDs are not the material conflict fixture.
 
    Registered write ops WITHOUT a fixture are not silently skipped —
    they produce a :fail outcome naming the missing fixture, so a new
@@ -339,7 +359,7 @@
 
    This function emits no clojure.test assertions; callers inspect the
    returned data. Skip and pass are distinguishable outcomes."
-  [{:keys [capabilities ops] :as args}]
+  [{:keys [capabilities ops strict-admission?] :as args}]
   (let [caps (or capabilities #{})
         provider (resolve-port-provider args)
         judged-ops (or ops (operations/registered-write-operations))]
@@ -353,7 +373,7 @@
                             " has no law-suite fixture — the harness would "
                             "silently skip it")}])
            (for [op judged-ops
-                 :let [fixture (get op-fixtures op)]
+                 :let [fixture (fixture-for op strict-admission?)]
                  :when fixture
                  {:keys [law capability run]} universal-laws]
              [[op law]
@@ -361,7 +381,7 @@
                 {:outcome :skip :capability capability}
                 (run (provider) op fixture))])
            (for [op judged-ops
-                 :let [fixture (get op-fixtures op)]
+                 :let [fixture (fixture-for op strict-admission?)]
                  :when (and fixture (not= :none (:idempotency fixture)))
                  {:keys [law capability run]} idempotency-laws]
              [[op law]

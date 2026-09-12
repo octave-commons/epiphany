@@ -1,5 +1,5 @@
 {
-  "generated-at": "2026-09-12T13:03:21.997Z",
+  "generated-at": "2026-09-12T13:31:09.453Z",
   "total-tasks": 116,
   "columns": [
     {
@@ -21,7 +21,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-10-program-relationship-graph",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -37,7 +37,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-11-concept-to-code-grounding",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -53,7 +53,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-12-architectural-boundary-inference",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -69,7 +69,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-13-code-archaeology-workbench",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -85,7 +85,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-14-governed-external-source-registry",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -102,7 +102,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-15-external-artifact-ingestion",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -118,7 +118,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-16-research-component-extraction",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.442Z"
         },
         {
           "labels": [
@@ -134,7 +134,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-17-research-knowledge-graph-and-evidence-ranking",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -150,7 +150,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-18-prior-art-gap-and-contradiction-analysis",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -166,7 +166,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-19-taxonomy-and-research-question-studio",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -182,7 +182,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-20-experiment-design-and-reproducibility-contracts",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -198,7 +198,7 @@
           "priority": "MEDIUM",
           "status": "icebox",
           "uuid": "epic-21-bounded-research-agent-workflows",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -214,7 +214,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-22-simulation-kernel-and-experiment-ledger",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -231,7 +231,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-23-spatial-temporal-data-fabric",
-          "created-at": "2026-09-12T13:03:21.962Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -247,7 +247,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-24-weather-and-environmental-scenario-modeling",
-          "created-at": "2026-09-12T13:03:21.963Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -263,7 +263,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-25-agent-based-behavioral-modeling",
-          "created-at": "2026-09-12T13:03:21.963Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -279,7 +279,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-26-graph-dynamics-and-semantic-physics-laboratory",
-          "created-at": "2026-09-12T13:03:21.963Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -295,7 +295,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-27-calibration-uncertainty-and-counterfactual-analysis",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -311,7 +311,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-28-distributed-experiment-scheduling",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -327,7 +327,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-29-simulation-visual-analytics-workbench",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -343,7 +343,7 @@
           "priority": "LOW",
           "status": "icebox",
           "uuid": "epic-30-bounded-autonomous-experiment-loops",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -359,7 +359,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-7-polyglot-source-ledger",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -375,7 +375,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-8-syntax-forest-and-structural-features",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -391,7 +391,7 @@
           "priority": "HIGH",
           "status": "icebox",
           "uuid": "epic-9-clojure-semantic-intelligence",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         }
       ]
     },
@@ -432,7 +432,7 @@
           "priority": "P2",
           "status": "incoming",
           "uuid": "chore-rebase-the-kanban-done-gate-on-rheos-parsing-a-shared-muse-hook-and-ledger-sourced-state",
-          "created-at": "2026-09-12T13:03:21.959Z"
+          "created-at": "2026-09-12T13:31:09.440Z"
         },
         {
           "labels": [],
@@ -443,7 +443,7 @@
           "priority": "P3",
           "status": "incoming",
           "uuid": "agents",
-          "created-at": "2026-09-12T13:03:21.957Z"
+          "created-at": "2026-09-12T13:31:09.439Z"
         },
         {
           "labels": [],
@@ -454,7 +454,7 @@
           "priority": "P3",
           "status": "incoming",
           "uuid": "board-breakdown",
-          "created-at": "2026-09-12T13:03:21.959Z"
+          "created-at": "2026-09-12T13:31:09.440Z"
         }
       ]
     },
@@ -486,7 +486,7 @@
           "priority": "P0",
           "status": "breakdown",
           "uuid": "us-000-establish-executable-local-development-baseline",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -504,7 +504,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-002-rediscover-a-moved-repository",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -522,7 +522,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-003-recognize-shared-history",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -540,7 +540,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-004-discover-git-backed-markdown-revisions",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -558,7 +558,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-005-resume-and-replay-projections",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -576,7 +576,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-006-detect-potential-history-replacement",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -594,7 +594,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-007-extract-revision-scoped-sections",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -612,7 +612,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-008-extract-deterministic-continuity-features",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -630,7 +630,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-009-propose-path-repurpose-boundaries",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -648,7 +648,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-010-search-current-and-historical-notes",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -665,7 +665,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-011-inspect-search-evidence",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -683,7 +683,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-012-compare-historical-expressions",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -701,7 +701,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-013-generate-candidate-lineage-links",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -719,7 +719,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-014-trace-an-idea-through-time",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -737,7 +737,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-015-identify-research-gaps",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -755,7 +755,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-016-review-proposed-relationships",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -773,7 +773,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-017-curate-a-concept-from-evidence",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -792,7 +792,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-018-export-an-evidence-packet",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -810,7 +810,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-019-use-a-minimal-local-workbench",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -828,7 +828,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-020-observe-ingestion-and-indexing",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -846,7 +846,7 @@
           "priority": "P1",
           "status": "breakdown",
           "uuid": "us-021-recover-the-corpus-archaeology-view",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -863,7 +863,7 @@
           "priority": "HIGH",
           "status": "breakdown",
           "uuid": "epic-1-archaeological-ledger",
-          "created-at": "2026-09-12T13:03:21.960Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -880,7 +880,7 @@
           "priority": "HIGH",
           "status": "breakdown",
           "uuid": "epic-2-markdown-evidence-extraction",
-          "created-at": "2026-09-12T13:03:21.960Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -897,7 +897,7 @@
           "priority": "HIGH",
           "status": "breakdown",
           "uuid": "epic-4-temporal-idea-lineage",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -914,7 +914,7 @@
           "priority": "HIGH",
           "status": "breakdown",
           "uuid": "epic-5-redundancy-and-tension-review",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -931,7 +931,7 @@
           "priority": "HIGH",
           "status": "breakdown",
           "uuid": "epic-6-temporal-research-workbench",
-          "created-at": "2026-09-12T13:03:21.961Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         }
       ]
     },
@@ -961,7 +961,7 @@
         {
           "labels": [],
           "slug": "restore-durable-clio-observations-and-zero-warning-epiphany-gates",
-          "content": "\n## Outcome\n\nRestore the user-authorized Clio EDN observation provider in the existing JVM\nClojure environment, retaining explicit Mongo and memory profiles and rebuildable\nLucene indexes. Fix the actual lint warnings without suppressing checks.\n\n## Scope and basis\n\nThe former local commit 17ec28f41a0d6274f8a09f11fd9b5350a4f42041 is unavailable\nafter scratch cleanup. Published main has no replacement implementation. Saved\nhistorical logs establish intent, not fresh executable evidence. The user directs\nClio ownership and removal of external-service requirements for local work; this\nexplicit development-provider authorization supersedes the older Mongo-only\ndurability wording in ADR-000 within this scope. Git remains canonical source;\nLucene remains rebuildable; no production provider is removed.\n\nDependency justification: eta-mu/packages/clio is the user's designated canonical\nevent kernel, consumed as the sibling JVM local/root source dependency.\n\n## Acceptance criteria\n\n- Explicit EDN profile implements every observation-port operation through\n  validated canonical Clio events and rebuilds state after process restart.\n- Rejected writes and exact no-op retries append nothing; corruption, missing\n  history and unavailable storage fail visibly without memory fallback.\n- Concurrent processes serialize read/decision/append without losing writes.\n- Actual CLI register, ingest, lexical search and repeat ingest run without\n  Mongo or inference; observation laws and full unit tests pass.\n- Configured lint and relevant static gates pass with zero warnings; all failed\n  attempts, workarounds and remaining limitations are recorded.\n\n## Exclusions\n\nNo environment/language change, no remote model prompts, no fabricated embeddings,\nno production migration, and no historical evidence promoted to a current pass.\n\n---\nThe old JSON board config cannot express the documented chore type in current Rheos; an EDN config now declares the existing epic/story/chore/planning-record vocabulary without changing the FSM. All lifecycle transitions used Rheos. Clio sibling local/root is the user-designated event dependency. Add slf4j-simple 2.0.9 to match the existing SLF4J API and provide actual logging instead of the missing-provider/NOP warning. Fresh full unit result is 768 tests, 2129 assertions, 0 failures; all 66 source/test lint warnings are resolved and the lint command now fails on warnings. First Clio test run rejected an invalid nil schema form; :nil fixed that contract before successful replay proof.\n\nFinal actual verification: 771 tests, 2134 assertions, 0 failures. Lint 0 errors/0 warnings; formatting, boundary, interop, JVM AOT build and CLI help passed. The same 130.511s command verified separate JVM registration, ingestion, Lucene lexical search, incremental no-op ingestion and concurrent durable writers against current Clio fd7cd256. Durable command metadata/output live in docs/notes/evidence/clio-edn-recovery.{json,txt}. Runtime native-access/Vector API advisories remain recorded. Legacy Mongo/S3/Ollama suite is unrun. Upstream failed-fsync retry barrier follow-up remains open and blocks merge; current adapter review requested.\n\nReview transition attempt: corrected missing --to syntax, then canonical build gate inherited parent pnpm build and refused the not-yet-promoted eta-mu root gitlink (a7 recorded, dbbe actual). Card remains in_progress; no manual status change or parent pin mutation. Epiphany-owned unit/static/AOT/CLI/process gates above remain verified; root assembly promotion and upstream Clio uncertainty barrier are separate pending dependencies.\n\nResumed PR18 review at immutable 816531ecadcaee2e3856f43a258ebc193ae301be after workspace recovery. Adjudicate Codex profile routing, concurrent revision identity, import idempotency, generated board snapshot and partial source-fetch cleanup; CodeRabbit schema registry, hybrid result identity, JGit resolver, exact configured path and documentation metadata. Preserve prior event bytes. Canonical Clio failed-fsync successor remains a separate dependency. Implement portable operation decisions before adapters and meaningful concurrency/restart/HTTP tests, then rerun all JVM gates. Current baseline evidence is historical until the new checkout executes.\n\nCorrection of abbreviated identifiers in earlier immutable comments: the then-current Clio revision was fd7cd25645d6acf80c3e5909f3ceecb65b7b1148. The root eta-mu gitlink was a7b19825fb5d7c624c38f1d41043c42e92d7f0c3; the actual recovered eta-mu checkout was dbbe64154895e6e63af04054059c4bf34bc5a297. These facts append to history without rewriting prior events. Current failed-fsync tests use canonical Clio f22199ee8a8903b4b69eceee9a18ae4d3e7b3c32, complete tree d2278e9d4dd0a53518b5afc53081a44e9479d2dd, which the standalone fetch also verified from the public source. HTTP now dispatches to explicitly configured profile adapters and refuses unconfigured selections; 42 focused HTTP/Clio tests and 83 assertions pass. Full updated gates are in progress.\n\nReview recovery checkpoint 942934e69f38fc355a6db70dc20b2f29aa47b032: immutable Clio37b720ddded5dbb83a2d55fabbe0415dc7302b1e full unit780/2165, lint0/0, formatting, boundary, interop, AOT, actual launcher and separate-JVM durable Lucene proof pass. Revision admission and repeated import are locked and idempotent; no-op retries use canonical force barrier; HTTP uses selected configured adapters or refuses. Fetch failure cleanup and metadata fixes pass. Corrected Rheos1659ec9173c39999bb33bb9aaba503716f3864e0 retains inline labels in116-card snapshot. JVM advisories, legacy service integrations, parent promotion and newer upstream read-lock successor remain explicit limits in docs/notes/clio-review-recovery-2026-09-12.md.\n\nActual follow-up reviews reproduced and corrected timestamp-only backup import retries (Codex 3996201045) and trailing-slash Clio fetch staging (CodeRabbit 3996200917). Source checkpoint 152b8f5c88fe597c723425788d7fab06b916d962, tree 757a7ada2c2fdbc0cb6340e6d894d67f99ac770d, passed full 781 tests / 2180 assertions, lint 0 errors / 0 warnings, format, boundaries, interop, AOT, multiprocess Clio/Lucene and actual shipped launcher against separately fetched immutable Clio 690aad83ff54ef5225a1f1533b4a7bd0eaef3561 (tree 8799304eb2cba6975d925cbd9dd27e87f1e10fea). Classpath and unchanged-source proof retained. Runtime advisories remain visible. This supersedes the historical 37b720 consumer gate; legacy Mongo/S3/Ollama integration and root promotion remain pending. Updated report and self-contained actual output: docs/notes/clio-review-recovery-2026-09-12.md and evidence/clio-final-review.*. Snapshot uses the corrected linear Rheos parser; no card status bypass.\n\n---",
+          "content": "\n## Outcome\n\nRestore the user-authorized Clio EDN observation provider in the existing JVM\nClojure environment, retaining explicit Mongo and memory profiles and rebuildable\nLucene indexes. Fix the actual lint warnings without suppressing checks.\n\n## Scope and basis\n\nThe former local commit 17ec28f41a0d6274f8a09f11fd9b5350a4f42041 is unavailable\nafter scratch cleanup. Published main has no replacement implementation. Saved\nhistorical logs establish intent, not fresh executable evidence. The user directs\nClio ownership and removal of external-service requirements for local work; this\nexplicit development-provider authorization supersedes the older Mongo-only\ndurability wording in ADR-000 within this scope. Git remains canonical source;\nLucene remains rebuildable; no production provider is removed.\n\nDependency justification: eta-mu/packages/clio is the user's designated canonical\nevent kernel, consumed as the sibling JVM local/root source dependency.\n\n## Acceptance criteria\n\n- Explicit EDN profile implements every observation-port operation through\n  validated canonical Clio events and rebuilds state after process restart.\n- Rejected writes and exact no-op retries append nothing; corruption, missing\n  history and unavailable storage fail visibly without memory fallback.\n- Concurrent processes serialize read/decision/append without losing writes.\n- Actual CLI register, ingest, lexical search and repeat ingest run without\n  Mongo or inference; observation laws and full unit tests pass.\n- Configured lint and relevant static gates pass with zero warnings; all failed\n  attempts, workarounds and remaining limitations are recorded.\n\n## Exclusions\n\nNo environment/language change, no remote model prompts, no fabricated embeddings,\nno production migration, and no historical evidence promoted to a current pass.\n\n---\nThe old JSON board config cannot express the documented chore type in current Rheos; an EDN config now declares the existing epic/story/chore/planning-record vocabulary without changing the FSM. All lifecycle transitions used Rheos. Clio sibling local/root is the user-designated event dependency. Add slf4j-simple 2.0.9 to match the existing SLF4J API and provide actual logging instead of the missing-provider/NOP warning. Fresh full unit result is 768 tests, 2129 assertions, 0 failures; all 66 source/test lint warnings are resolved and the lint command now fails on warnings. First Clio test run rejected an invalid nil schema form; :nil fixed that contract before successful replay proof.\n\nFinal actual verification: 771 tests, 2134 assertions, 0 failures. Lint 0 errors/0 warnings; formatting, boundary, interop, JVM AOT build and CLI help passed. The same 130.511s command verified separate JVM registration, ingestion, Lucene lexical search, incremental no-op ingestion and concurrent durable writers against current Clio fd7cd256. Durable command metadata/output live in docs/notes/evidence/clio-edn-recovery.{json,txt}. Runtime native-access/Vector API advisories remain recorded. Legacy Mongo/S3/Ollama suite is unrun. Upstream failed-fsync retry barrier follow-up remains open and blocks merge; current adapter review requested.\n\nReview transition attempt: corrected missing --to syntax, then canonical build gate inherited parent pnpm build and refused the not-yet-promoted eta-mu root gitlink (a7 recorded, dbbe actual). Card remains in_progress; no manual status change or parent pin mutation. Epiphany-owned unit/static/AOT/CLI/process gates above remain verified; root assembly promotion and upstream Clio uncertainty barrier are separate pending dependencies.\n\nResumed PR18 review at immutable 816531ecadcaee2e3856f43a258ebc193ae301be after workspace recovery. Adjudicate Codex profile routing, concurrent revision identity, import idempotency, generated board snapshot and partial source-fetch cleanup; CodeRabbit schema registry, hybrid result identity, JGit resolver, exact configured path and documentation metadata. Preserve prior event bytes. Canonical Clio failed-fsync successor remains a separate dependency. Implement portable operation decisions before adapters and meaningful concurrency/restart/HTTP tests, then rerun all JVM gates. Current baseline evidence is historical until the new checkout executes.\n\nCorrection of abbreviated identifiers in earlier immutable comments: the then-current Clio revision was fd7cd25645d6acf80c3e5909f3ceecb65b7b1148. The root eta-mu gitlink was a7b19825fb5d7c624c38f1d41043c42e92d7f0c3; the actual recovered eta-mu checkout was dbbe64154895e6e63af04054059c4bf34bc5a297. These facts append to history without rewriting prior events. Current failed-fsync tests use canonical Clio f22199ee8a8903b4b69eceee9a18ae4d3e7b3c32, complete tree d2278e9d4dd0a53518b5afc53081a44e9479d2dd, which the standalone fetch also verified from the public source. HTTP now dispatches to explicitly configured profile adapters and refuses unconfigured selections; 42 focused HTTP/Clio tests and 83 assertions pass. Full updated gates are in progress.\n\nReview recovery checkpoint 942934e69f38fc355a6db70dc20b2f29aa47b032: immutable Clio37b720ddded5dbb83a2d55fabbe0415dc7302b1e full unit780/2165, lint0/0, formatting, boundary, interop, AOT, actual launcher and separate-JVM durable Lucene proof pass. Revision admission and repeated import are locked and idempotent; no-op retries use canonical force barrier; HTTP uses selected configured adapters or refuses. Fetch failure cleanup and metadata fixes pass. Corrected Rheos1659ec9173c39999bb33bb9aaba503716f3864e0 retains inline labels in116-card snapshot. JVM advisories, legacy service integrations, parent promotion and newer upstream read-lock successor remain explicit limits in docs/notes/clio-review-recovery-2026-09-12.md.\n\nActual follow-up reviews reproduced and corrected timestamp-only backup import retries (Codex 3996201045) and trailing-slash Clio fetch staging (CodeRabbit 3996200917). Source checkpoint 152b8f5c88fe597c723425788d7fab06b916d962, tree 757a7ada2c2fdbc0cb6340e6d894d67f99ac770d, passed full 781 tests / 2180 assertions, lint 0 errors / 0 warnings, format, boundaries, interop, AOT, multiprocess Clio/Lucene and actual shipped launcher against separately fetched immutable Clio 690aad83ff54ef5225a1f1533b4a7bd0eaef3561 (tree 8799304eb2cba6975d925cbd9dd27e87f1e10fea). Classpath and unchanged-source proof retained. Runtime advisories remain visible. This supersedes the historical 37b720 consumer gate; legacy Mongo/S3/Ollama integration and root promotion remain pending. Updated report and self-contained actual output: docs/notes/clio-review-recovery-2026-09-12.md and evidence/clio-final-review.*. Snapshot uses the corrected linear Rheos parser; no card status bypass.\n\nNext scoped acceptance: execute the actual legacy integration alias in this same JVM/Node sandbox using disposable native MongoDB, npm S3rver, and pinned real MiniLM384 through the existing embeddings HTTP protocol. Remove the law fixture hardcoded Mongo connection, use explicit test endpoint/model/dimension/digest settings, and make unavailable required services fail rather than silently skip. Preserve original nomic/768 defaults unless explicit configuration selects MiniLM. Supervisor must own and clean its data/processes, verify real Mongo and S3 operations plus actual embeddings, reject skips, and retain all attempted/failing gates. Existing Clio690 immutable proof remains separately sourced.\n\nActual Codex 3996289134 found a stronger direct-write defect: changed material content can reuse accepted identity and silently continue through the historical first-write-wins reference. Extend prospective Clio admission to every identity-bearing write, validating before duplicate filtering. Same semantic retries may change generated envelope IDs/timestamps; material fields must still conflict, optional request IDs must not collide, and canonical historical replay must remain unchanged. Add direct failure-first regressions and declare stronger Clio conflict law expectations explicitly while preserving legacy Mongo/reference fixture semantics. The lighter real integration now passes22tests108assertions with native Mongo ping, S3rver EDN roundtrip, and actual MiniLM384 embeddings; initial readiness MongoClient failed due closed topology after startup race, fixed with fresh bounded attempts.\n\nFinal source d06a08b88e940204ce4575fee8a34837eaf0a2a0 tree0eac2c8d734913ecb973b996478e006638da706b passed783unit tests/2217assertions, lint0/0, format, boundaries, interop, AOT, multiprocessClio/Lucene and actual shippedlauncher, unchanged-source against immutableClio690aad83ff54ef5225a1f1533b4a7bd0eaef3561. Direct material-retry P1 actualRED1test35assertions10fail to focusedGREEN17/103; strict prospective admission allseven types with historicalreplay unchanged. Actual lighter integration22/108 no skips passed on clean same source, matching all450file/symlink sourceSHA71d2824a82d960b9f1b8bb9deca959686aef702817d9563c2fc2761f25bbf5b7, realnativeMongo ping/S3rver EDN putget/MiniLM384 HTTP. Root supervisor/docs committed0e1e7d6518da41425ee410eb55c72976bfafde36. Exact gate and integration evidence in docs/notes/clio-review-recovery-2026-09-12.md. New kernel findings/rootpromotion/actualreview loop remain; no coverage transfer to future kernel.\n\n---",
           "title": "Restore durable Clio observations and zero-warning Epiphany gates",
           "source-path": "/workspace/foresight-active/foresight/epiphany/docs/kanban/chores/restore-durable-clio-observations-and-zero-warning-epiphany-gates.md",
           "priority": "P0",
@@ -1002,7 +1002,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-001a-persist-idempotent-repository-location-observations",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1019,7 +1019,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-001b1-resolve-git-local-repository-identity-across-repo-shapes",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1036,7 +1036,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-001b2-registration-application-service-and-epiphany-register-cli",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1052,7 +1052,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-001b-expose-direct-repository-registration-command",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1069,7 +1069,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-001c-define-append-only-git-registration-observation-schemas",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1103,7 +1103,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017a-define-the-schema-operation-registry",
-          "created-at": "2026-09-12T13:03:21.966Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1120,7 +1120,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017b-enforce-schemas-through-validating-observation-ports",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1137,7 +1137,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017c-make-the-in-memory-observations-adapter-contract-enforcing",
-          "created-at": "2026-09-12T13:03:21.965Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1154,7 +1154,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017d-establish-reusable-observation-adapter-contract-laws",
-          "created-at": "2026-09-12T13:03:21.966Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1171,7 +1171,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017e-align-mongo-observations-with-the-shared-contract-laws",
-          "created-at": "2026-09-12T13:03:21.965Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1188,7 +1188,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "eng-017k-replace-reader-eval-edn-parsing-at-external-boundaries",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.443Z"
         },
         {
           "labels": [
@@ -1223,7 +1223,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "us-000a-project-scaffold-executable-entry-point-and-green-test-baseline",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1241,7 +1241,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "us-000b-profile-contract-storage-ports-and-in-memory-adapters",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1259,7 +1259,7 @@
           "priority": "P0",
           "status": "done",
           "uuid": "us-000c-local-service-manifest-and-readiness-diagnostics",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1274,7 +1274,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001d-observe-a-bounded-reachable-git-commit-graph",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1289,7 +1289,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001e-select-markdown-tree-entries-under-explicit-path-policy",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1304,7 +1304,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001f-persist-revision-at-path-observations",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1319,7 +1319,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001g-record-ingestion-runs-and-projection-checkpoints",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1334,7 +1334,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001h-record-possible-history-replacement-evidence",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1349,7 +1349,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-001j-report-ledger-ingestion-outcomes-and-recovery-evidence",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1365,7 +1365,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-002a-parse-a-markdown-blob-into-a-typed-tree-with-source-spans",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1381,7 +1381,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-002b-persist-versioned-section-extraction-records",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1397,7 +1397,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-002c-run-extraction-as-a-checkpointed-projection",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1413,7 +1413,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-002d-compute-deterministic-continuity-features-per-revision-transition",
-          "created-at": "2026-09-12T13:03:21.970Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1429,7 +1429,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-002e-propose-path-repurpose-boundaries-from-continuity-signals",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1445,7 +1445,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003a-build-the-lucene-lexical-index-over-sections",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1461,7 +1461,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003b-embed-sections-via-ollama-as-a-versioned-projection",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1477,7 +1477,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003c-serve-knn-vector-search-over-section-embeddings",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1493,7 +1493,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003d-compose-the-hybrid-search-query-service",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1508,7 +1508,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003e-expose-search-on-the-cli-ep-search-",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1524,7 +1524,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-003f-stand-up-the-retrieval-benchmark-harness",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1540,7 +1540,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-004a-open-exact-historical-evidence-ep-show-",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1556,7 +1556,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-004b-compare-two-historical-expressions-ep-diff-",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1572,7 +1572,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-004c-generate-deterministic-candidate-lineage-links",
-          "created-at": "2026-09-12T13:03:21.971Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1588,7 +1588,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-004d-trace-a-lineage-chronology-ep-trace-",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1604,7 +1604,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005a-record-review-decisions-as-append-only-events",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1620,7 +1620,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005b-serve-the-review-inbox-ep-inbox-",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1636,7 +1636,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005c-detect-deterministic-redundancy-and-contradiction-candidates",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1652,7 +1652,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005d-curate-concepts-and-research-questions-from-evidence",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1668,7 +1668,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005e-surface-research-gaps-in-the-lineage-view",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1684,7 +1684,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-005f-export-an-evidence-packet-ep-export-",
-          "created-at": "2026-09-12T13:03:21.972Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1718,7 +1718,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-006a-expose-the-http-api-adapter-api-v1-",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1735,7 +1735,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-006b-ship-the-workbench-search-evidence-drawer",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1752,7 +1752,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-006c-ship-the-workbench-timeline-inbox-corpus-health",
-          "created-at": "2026-09-12T13:03:21.973Z"
+          "created-at": "2026-09-12T13:31:09.446Z"
         },
         {
           "labels": [
@@ -1769,7 +1769,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-017f-validate-decoded-and-imported-observation-data",
-          "created-at": "2026-09-12T13:03:21.966Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1805,7 +1805,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-017g-normalize-cli-and-http-command-contracts",
-          "created-at": "2026-09-12T13:03:21.965Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1822,7 +1822,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-017h-add-static-architecture-and-interop-boundary-gates",
-          "created-at": "2026-09-12T13:03:21.967Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1839,7 +1839,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-017i-add-generative-and-epistemic-verification-laws",
-          "created-at": "2026-09-12T13:03:21.964Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1855,7 +1855,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-017l-add-test-coverage-reporting-with-cloverage",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1871,7 +1871,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-020a-query-cross-stage-projection-status-ep-status-",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -1887,7 +1887,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "eng-021a-prove-backup-restore-and-rebuild",
-          "created-at": "2026-09-12T13:03:21.975Z"
+          "created-at": "2026-09-12T13:31:09.447Z"
         },
         {
           "labels": [
@@ -1904,7 +1904,7 @@
           "priority": "P1",
           "status": "done",
           "uuid": "us-001-register-a-local-repository",
-          "created-at": "2026-09-12T13:03:21.968Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1919,7 +1919,7 @@
           "priority": "P2",
           "status": "done",
           "uuid": "eng-001i-produce-revision-level-file-lineage-candidates-from-git-diff",
-          "created-at": "2026-09-12T13:03:21.969Z"
+          "created-at": "2026-09-12T13:31:09.445Z"
         },
         {
           "labels": [
@@ -1936,7 +1936,7 @@
           "priority": "P2",
           "status": "done",
           "uuid": "eng-017j-pilot-mutation-checks-and-ci-assurance-evidence",
-          "created-at": "2026-09-12T13:03:21.965Z"
+          "created-at": "2026-09-12T13:31:09.444Z"
         },
         {
           "labels": [
@@ -1964,7 +1964,7 @@
           "priority": "P3",
           "status": "done",
           "uuid": "epic-1-engineering-breakdown-and-delivery-order",
-          "created-at": "2026-09-12T13:03:21.960Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         },
         {
           "labels": [
@@ -1981,7 +1981,7 @@
           "priority": "HIGH",
           "status": "done",
           "uuid": "epic-3-retrieval-substrate",
-          "created-at": "2026-09-12T13:03:21.960Z"
+          "created-at": "2026-09-12T13:31:09.441Z"
         }
       ]
     },

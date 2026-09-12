@@ -4,7 +4,8 @@
    Tagged ^:integration so they only run with the :integration profile."
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
             [epiphany.domain.backup :as backup]
-            [epiphany.infra.adapters.mongo :as mongo])
+            [epiphany.infra.adapters.mongo :as mongo]
+            [epiphany.infra.integration-config :as config])
   (:import [org.bson Document]))
 
 ;; ---------------------------------------------------------------------------
@@ -28,21 +29,14 @@
                                        :path/comparison :exact}}
          overrides))
 
-(def ^:private test-uri
-  "MongoDB URI for integration tests. Credentials and explicit localhost
-   opt-in must come from the environment."
-  (or (System/getenv "EPIPHANY_TEST_MONGODB_URI")
-      (System/getenv "MONGODB_URI")))
-
 (def ^:private conn (atom nil))
 
 (defn- setup-db!
   "Connect to test database and clean collections."
   []
   (when-not @conn
-    (reset! conn (mongo/connect! {:uri               test-uri
-                                  :database          "openplanner"
-                                  :collection-prefix "epiphany_test_"})))
+    (reset! conn (mongo/connect! (assoc (config/mongo-options)
+                                        :collection-prefix (str "epiphany_test_" (random-uuid) "_")))))
   (mongo/clean-test-db! @conn)
   (mongo/ensure-indexes! @conn))
 
@@ -50,19 +44,19 @@
   "Disconnect from test database."
   []
   (when @conn
-    (mongo/disconnect! @conn)
-    (reset! conn nil)))
+    (try
+      (mongo/clean-test-db! @conn)
+      (finally
+        (mongo/disconnect! @conn)
+        (reset! conn nil)))))
 
 (use-fixtures :each
   (fn [f]
-    (if test-uri
-      (try
-        (setup-db!)
-        (f)
-        (finally
-          (teardown-db!)))
-      (binding [*out* *err*]
-        (println "SKIP Mongo integration test: set EPIPHANY_TEST_MONGODB_URI")))))
+    (try
+      (setup-db!)
+      (f)
+      (finally
+        (teardown-db!)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Tests

@@ -73,7 +73,7 @@
     (doseq [[collection records] (first arguments)
             record records]
       (backup/validate-record collection record))
-    (when (= operation :record-revision-at-path!)
+    (when (contains? admission/record-collections operation)
       ((validation/wrap-write operation (constantly nil)) (first arguments))))
   (host/with-lock!
     (:directory store)

@@ -42,6 +42,39 @@
         (is (= 1 (count ((:list-revision-at-path-by-resource (first ports)) (:resource-id base))))))
       (finally (fs/remove-tree! directory)))))
 
+(deftest direct-retries-reject-changed-material-content-before-acknowledging
+  (let [directory (temporary-directory)
+        later #inst "2026-09-12T13:00:00.000Z"]
+    (try
+      (let [store (clio/open-store directory)
+            port (clio/make-observations-adapter store)]
+        (doseq [[operation generated material-field changed]
+                [[:record-repository-location! {:observation/id (random-uuid)} :resource-id (random-uuid)]
+                 [:record-ingestion-run! {} :ingestion/commit-count 99]
+                 [:record-checkpoint! {} :checkpoint/processed-count 99]
+                 [:record-section-extraction! {} :extraction/extractor-version "changed"]
+                 [:record-revision-at-path! {:observation/id (random-uuid) :revision-at-path/id (random-uuid)}
+                  :revision/blob-oid (apply str (repeat 40 "c"))]
+                 [:record-review-decision! {:observation/id (random-uuid) :review-decision/id (random-uuid)
+                                            :review-decision/decided-at later} :review-decision/decision :rejected]
+                 [:record-lineage-candidate! {:observation/id (random-uuid) :lineage-candidate/id (random-uuid)
+                                              :lineage-candidate/generated-at later} :lineage-candidate/confidence 0.99]]]
+          (let [record (fixture operation)
+                retry (merge record generated {:observation/observed-at later})]
+            ((get port operation) record)
+            (let [accepted (fs/read-text (:file store))
+                  snapshot ((:export-all port))]
+              (is (nil? ((get port operation) retry)) (str operation " preserves the original accepted fact"))
+              (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
+                                    ((get port operation) (assoc retry material-field changed)))
+                  (str operation " must not silently acknowledge changed content"))
+              (is (thrown? clojure.lang.ExceptionInfo
+                           ((get port operation) (dissoc retry :resource-id)))
+                  "Invalid retries must validate before duplicate filtering")
+              (is (= accepted (fs/read-text (:file store))))
+              (is (= snapshot ((:export-all (clio/make-observations-adapter (clio/open-store directory))))))))))
+      (finally (fs/remove-tree! directory)))))
+
 (deftest repeated-bulk-import-is-a-durable-noop-for-every-append-collection
   (let [directory (temporary-directory)]
     (try
