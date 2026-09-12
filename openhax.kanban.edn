@@ -1,0 +1,4 @@
+{:tasks-dir "./docs/kanban"
+ :fsm "promethean"
+ :card-dirs {:epic "epics" :story "stories" :chore "chores"
+             :planning-record "stories"}}

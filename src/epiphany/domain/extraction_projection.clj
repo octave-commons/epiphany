@@ -78,16 +78,16 @@
                    (str "section-extraction:" id ":" extractor-version))]
      (try
        (let [blob-result (git-fn nil blob-oid)
-            _          (when (:blob/failure blob-result)
-                         (throw (ex-info "Blob not readable"
-                                         {:code :blob-unreadable
-                                          :blob-oid blob-oid
-                                          :failure (:blob/failure blob-result)})))
-            blob       (:blob/content blob-result)
-            parsed     (md/parse blob)
-            sections   (se/extract-sections parsed)
-            record     (se/make-extraction-record
-                        sections id commit-oid path-raw blob-oid blob extractor-version)
+             _          (when (:blob/failure blob-result)
+                          (throw (ex-info "Blob not readable"
+                                          {:code :blob-unreadable
+                                           :blob-oid blob-oid
+                                           :failure (:blob/failure blob-result)})))
+             blob       (:blob/content blob-result)
+             parsed     (md/parse blob)
+             sections   (se/extract-sections parsed)
+             record     (se/make-extraction-record
+                         sections id commit-oid path-raw blob-oid blob extractor-version)
              observation (cond-> (assoc record
                                         :observation/type :section/extraction-completed
                                         :observation/id (or write-id
@@ -98,12 +98,12 @@
                                         :resource-id resource-id)
                            write-id
                            (assoc :observation/request-id write-id))]
-        (obs-fn observation)
-        (when idx-fn
-          (idx-fn (assoc observation :extraction/content blob)))
-        {:extraction/record     observation
-         :extraction/error      nil
-         :extraction/revision-id id})
+         (obs-fn observation)
+         (when idx-fn
+           (idx-fn (assoc observation :extraction/content blob)))
+         {:extraction/record     observation
+          :extraction/error      nil
+          :extraction/revision-id id})
        (catch Exception e
          {:extraction/record     nil
           :extraction/error      {:failure/reason "extraction-failed"
@@ -162,9 +162,9 @@
       (if (empty? remaining)
         (let [;; Record final checkpoint
               _ (when (pos? processed)
-                   (let [processed-count (+ (or (:last-processed-count resume-point) 0)
-                                            processed)
-                         checkpoint (ingestion/make-checkpoint-record
+                  (let [processed-count (+ (or (:last-processed-count resume-point) 0)
+                                           processed)
+                        checkpoint (ingestion/make-checkpoint-record
                                     {:resource-id         resource-id
                                      :projection-name     projection-name
                                      :projection-version  projection-version

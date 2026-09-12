@@ -10,7 +10,7 @@
 (defn- make-mock-search-fn
   "Create a mock search function that returns results based on query content."
   []
-  (fn [query opts]
+  (fn [_query opts]
     (let [mode (:mode opts :hybrid)]
       (case mode
         :lexical
@@ -120,9 +120,9 @@
       (is (seq (:benchmark/filter-queries query-set)))
       ;; Total should be 30+
       (is (>= (+ (count (:benchmark/queries query-set))
-                  (count (:benchmark/semantic-queries query-set))
-                  (count (:benchmark/hybrid-queries query-set))
-                  (count (:benchmark/filter-queries query-set)))
+                 (count (:benchmark/semantic-queries query-set))
+                 (count (:benchmark/hybrid-queries query-set))
+                 (count (:benchmark/filter-queries query-set)))
               30)))))
 
 ;; ---------------------------------------------------------------------------
@@ -148,8 +148,8 @@
     (let [search-fn (make-mock-search-fn)
           query-set {:benchmark/version 1
                      :benchmark/queries [{:id :q1 :query "test" :mode :lexical
-                                         :expected [{:path "AGENTS.md"
-                                                     :heading ["Namespace law" "four quadrants" "no junk drawers"]}]}]
+                                          :expected [{:path "AGENTS.md"
+                                                      :heading ["Namespace law" "four quadrants" "no junk drawers"]}]}]
                      :benchmark/semantic-queries []
                      :benchmark/hybrid-queries []
                      :benchmark/filter-queries []}

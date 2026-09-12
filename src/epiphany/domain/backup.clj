@@ -242,7 +242,7 @@
         import-result (import-from-file observations-adapter backup-file)
         re-export-result (export-to-file observations-adapter re-export-file)
         round-trip-identical? (= (:content-hash (:manifest export-result))
-                                  (:content-hash (:manifest re-export-result)))
+                                 (:content-hash (:manifest re-export-result)))
         restored-data (:data (edn/read-string (slurp backup-file)))
         inaccessible (inaccessible-sources git-adapter restored-data)]
     {:export export-result

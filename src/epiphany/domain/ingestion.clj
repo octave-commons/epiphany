@@ -135,7 +135,7 @@
    observations — that is a separate projection step (ENG-001F).
    This run records the traversal metadata only."
   [{:keys [git observations]} {:keys [resource-id repository-path selected-refs request-id]
-                                :as _command}]
+                               :as _command}]
   (let [run-id (or (derived-request-id request-id "ingestion-run")
                    (make-run-id))
         ;; Walk the commit graph

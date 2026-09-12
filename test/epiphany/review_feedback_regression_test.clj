@@ -211,7 +211,7 @@
         (let [expected (string/trim
                         (:out (shell/sh "git" "-C" (.getPath repo) "rev-parse" "HEAD")))]
           (with-redefs [shell/sh (fn [& _]
-                                  (throw (ex-info "shell disabled" {})))]
+                                   (throw (ex-info "shell disabled" {})))]
             (is (= expected (git/resolve-commit-oid (.getPath repo) "HEAD")))))
         (finally
           (delete-recursive! repo))))))

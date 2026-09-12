@@ -1,5 +1,5 @@
 (ns epiphany.domain.continuity-test
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require [clojure.test :refer [deftest testing is]]
             [epiphany.domain.continuity :as c]))
 
 ;; ---------------------------------------------------------------------------

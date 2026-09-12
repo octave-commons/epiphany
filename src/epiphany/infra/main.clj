@@ -32,6 +32,13 @@
 
 (declare resolve-common-git-dir make-durable-index-ports default-index-dir)
 
+(defn- make-edn-adapters
+  "Compose durable Clio observations and the local Lucene projection."
+  [index-dir]
+  (profile/resolve-adapters {:profile :edn
+                             :common-git-dir-fn resolve-common-git-dir
+                             :index-dir index-dir}))
+
 ;; ---------------------------------------------------------------------------
 ;; Global options (before subcommand)
 
@@ -46,7 +53,7 @@
 (def register-options
   [["-r" "--request-id UUID" "Idempotent request ID (UUID format)"
     :parse-fn #(java.util.UUID/fromString %)]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword]
    ["-h" "--help" "Show register help and exit."]])
@@ -103,6 +110,9 @@
                                   :common-git-dir-fn resolve-common-git-dir})}
                      decoded)
 
+                    :edn
+                    (commands/execute {:adapters (make-edn-adapters default-index-dir)} decoded)
+
                     :services
                     (let [conn (try
                                  (mongo/connect!)
@@ -151,7 +161,7 @@
 (def status-options
   [["-r" "--resource-id UUID" "Resource ID to query"
     :parse-fn #(java.util.UUID/fromString %)]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword]
    ["-h" "--help" "Show status help and exit."]])
@@ -181,6 +191,9 @@
                         :common-git-dir-fn resolve-common-git-dir})
                       (make-durable-index-ports default-index-dir))
      :cleanup (fn [] nil)}
+
+    :edn
+    {:adapters (make-edn-adapters default-index-dir) :cleanup (fn [] nil)}
 
     :services
     (let [conn (try
@@ -272,10 +285,10 @@
 
 (def search-options
   [["-m" "--mode MODE" "Search mode: lexical, semantic, hybrid"
-     :id :mode
-     :default :hybrid
-     :parse-fn keyword
-     :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
+    :id :mode
+    :default :hybrid
+    :parse-fn keyword
+    :validate [#{:lexical :semantic :hybrid} "Must be lexical, semantic, or hybrid"]]
    ["-l" "--limit N" "Max results"
     :id :limit
     :default 20
@@ -294,15 +307,15 @@
    [nil "--embedding-version VER" "Embedding model version for semantic search"
     :id :embedding-version
     :parse-fn #(Integer/parseInt %)]
-    ["-v" "--verbose" "Show diagnostics (profile, versions)"
-     :id :verbose]
-    [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
-     :id :index-dir
-     :default default-index-dir]
-    ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
-     :id :profile
-     :default :local
-     :parse-fn keyword]
+   ["-v" "--verbose" "Show diagnostics (profile, versions)"
+    :id :verbose]
+   [nil "--index-dir DIR" "Lucene index directory (durable, rebuildable)"
+    :id :index-dir
+    :default default-index-dir]
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
+    :id :profile
+    :default :local
+    :parse-fn keyword]
    ["-h" "--help" "Show search help and exit."
     :id :help]])
 
@@ -333,7 +346,7 @@
     (str header
          (when verbose?
            (str "\n\nProfile: " (name profile)))
-     "\n\n" body)))
+         "\n\n" body)))
 
 (defn- format-results-edn
   "Format search results as EDN."
@@ -429,7 +442,7 @@
   [["-r" "--request-id UUID" "Idempotency ID for replaying the complete ingest command"
     :id :request-id
     :parse-fn #(java.util.UUID/fromString %)]
-   ["-p" "--profile PROFILE" "Profile for durable observations: :local (in-memory, one-shot) or :services (MongoDB, incremental)"
+   ["-p" "--profile PROFILE" "Profile for observations: :local (memory), :edn (Clio), or :services (MongoDB)"
     :id :profile
     :default :services
     :parse-fn keyword]
@@ -460,6 +473,9 @@
                  {:profile :local
                   :common-git-dir-fn resolve-common-git-dir})
                 index-ports))
+
+      :edn
+      (f (make-edn-adapters index-dir))
 
       :services
       (let [conn (try
@@ -675,7 +691,7 @@
   (keyword (if (.startsWith ^String s ":") (subs s 1) s)))
 
 (def serve-options
-  [["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+  [["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :services
     :parse-fn parse-profile]
    [nil "--port PORT" "Port to listen on"
@@ -710,6 +726,9 @@
                                   :common-git-dir-fn resolve-common-git-dir})
                                 (make-durable-index-ports default-index-dir))
 
+                         :edn
+                         (make-edn-adapters default-index-dir)
+
                          :services
                          (let [conn (try
                                       (mongo/connect!)
@@ -723,7 +742,7 @@
                              :mongo-conn conn
                              :common-git-dir-fn resolve-common-git-dir
                              :index-dir default-index-dir})))]
-           (println (str "Epiphany workbench starting on http://localhost:" port))
+          (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))
           (http/start-server! adapters port)
           ;; Block until interrupted
@@ -845,7 +864,7 @@
     :parse-fn keyword
     :validate [candidates/relation-types
                (str "Must be one of: " (string/join ", " (map name candidates/relation-types)))]]
-   ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
@@ -861,6 +880,9 @@
     (f (:observations (profile/resolve-adapters
                        {:profile :local
                         :common-git-dir-fn resolve-common-git-dir})))
+
+    :edn
+    (f (:observations (make-edn-adapters default-index-dir)))
 
     :services
     (let [conn (try
@@ -887,11 +909,11 @@
   [repo profile relation left right]
   (let [{:keys [resource-id]} (repository-identity/resolve-repository repo)
         source-span (candidates/make-span {:path-raw (:path left)
-                                            :heading-path (:heading left)
-                                            :commit-oid (:commit-oid left)})
+                                           :heading-path (:heading left)
+                                           :commit-oid (:commit-oid left)})
         target-span (candidates/make-span {:path-raw (:path right)
-                                            :heading-path (:heading right)
-                                            :commit-oid (:commit-oid right)})
+                                           :heading-path (:heading right)
+                                           :commit-oid (:commit-oid right)})
         candidate (candidates/make-candidate relation source-span target-span
                                              :confidence 1.0
                                              :generator-version "ep-diff-v1")
@@ -1089,7 +1111,7 @@
     :parse-fn keyword
     :validate [#{:confidence :evidence} "Must be confidence or evidence"]]
    [nil "--include-suppressed" "Also show rejected/do-not-suggest candidates"]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
@@ -1107,7 +1129,7 @@
    [nil "--relabel-to RELATION" "New relation type (for relabel decisions)"
     :parse-fn keyword]
    [nil "--annotation TEXT" "Free-text annotation (for annotated decisions)"]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
@@ -1132,9 +1154,9 @@
          (:lineage-candidate/confidence c) "]"
          "\n     " (:inbox/evidence-summary item)
          "\n     source: " (get-in c [:lineage-candidate/source :span/path-raw]
-                                    (get-in c [:lineage-candidate/source :section/path-raw]))
+                                   (get-in c [:lineage-candidate/source :section/path-raw]))
          " -> target: " (get-in c [:lineage-candidate/target :span/path-raw]
-                                 (get-in c [:lineage-candidate/target :section/path-raw])))))
+                                (get-in c [:lineage-candidate/target :section/path-raw])))))
 
 (defn- format-inbox-text [items]
   (if (empty? items)
@@ -1210,15 +1232,15 @@
           {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
           (try
             (with-observations-adapter
-             (:profile options)
-             (fn [obs-adapter]
-               (let [outcome (commands/execute {:adapters {:observations obs-adapter}} decoded)
-                     category (:outcome/category outcome)]
-                 (if (= :accepted category)
-                   {:exit 0 :out (str "Recorded " decision-str " for candidate " candidate-id-str ".")}
-                   {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
-                                      (when (= :unavailable category)
-                                        "\n  Code: unavailable"))}))))
+              (:profile options)
+              (fn [obs-adapter]
+                (let [outcome (commands/execute {:adapters {:observations obs-adapter}} decoded)
+                      category (:outcome/category outcome)]
+                  (if (= :accepted category)
+                    {:exit 0 :out (str "Recorded " decision-str " for candidate " candidate-id-str ".")}
+                    {:exit 1 :out (str "Error: " (:detail (:outcome/payload outcome))
+                                       (when (= :unavailable category)
+                                         "\n  Code: unavailable"))}))))
             (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
             (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))))
 
@@ -1238,7 +1260,7 @@
   [repo-option
    [nil "--also-repo PATHS" "Additional repository paths (comma-separated) to include candidates/decisions from"]
    [nil "--label TEXT" "Human-readable packet label" :default "Evidence Packet"]
-   ["-p" "--profile PROFILE" "Profile: :local (in-memory) or :services (MongoDB)"
+   ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn keyword
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]

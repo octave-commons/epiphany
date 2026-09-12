@@ -1,16 +1,20 @@
 (ns epiphany.infra.profile
   "Profile contract and adapter resolution.
 
-  Two explicit modes:
+  Three explicit modes:
     :local     — in-process/direct mode. Uses in-memory adapters.
                  No external services required.
+    :edn       — durable Clio events and a rebuildable Lucene index.
+                 Lexical work requires no external services.
     :services  — locally provisioned adapters (MongoDB, S3, etc.).
                  Fails with UNAVAILABLE if a required service is unreachable.
 
   No profile silently falls back to another. Selection is explicit and
   visible in diagnostics and command output."
 
-  (:require [epiphany.infra.adapters.in-memory :as in-memory]
+  (:require [epiphany.extern.clio-observations :as clio-host]
+            [epiphany.infra.adapters.clio :as clio]
+            [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.lucene :as lucene]
             [epiphany.infra.adapters.mongo :as mongo]
             [epiphany.infra.adapters.ollama :as ollama]
@@ -19,7 +23,7 @@
 
 (def valid-profiles
   "Set of recognized profile keywords."
-  #{:local :services})
+  #{:local :edn :services})
 
 (defn valid-profile? [profile]
   (contains? valid-profiles profile))
@@ -34,6 +38,13 @@
 ;; ---------------------------------------------------------------------------
 ;; Adapter resolution
 
+(defn- durable-index-adapter [index-dir]
+  (lucene/make-index-adapter
+   {:index-dir (if (instance? java.nio.file.Path index-dir)
+                 index-dir
+                 (java.nio.file.Paths/get (str index-dir)
+                                          (into-array String [])))}))
+
 (defn resolve-raw-adapters
   "Per-profile raw adapter map, BEFORE the validation wrapper is
   applied. Kept separate from `resolve-adapters` so the validation
@@ -41,15 +52,31 @@
   branch (see ENG-017B).
 
    :local     returns in-memory adapters (requires :common-git-dir-fn).
+   :edn       returns Clio observations and durable Lucene. Requires :index-dir;
+              :edn-dir defaults to EPIPHANY_EDN_DIR or ~/.epiphany/observations.
    :services  returns real adapters (MongoDB observations, Git-local
               repository.edn metadata, on-disk Lucene index, Ollama
               embeddings). Requires :mongo-conn (connection lifecycle
               stays with the caller) and :index-dir. Throws UNAVAILABLE
               when either is absent — no adapter may silently substitute."
-  [{:keys [profile common-git-dir-fn mongo-conn index-dir]}]
+  [{:keys [profile common-git-dir-fn mongo-conn index-dir edn-dir]}]
   (case profile
     :local
     (in-memory/make {:common-git-dir-fn common-git-dir-fn})
+
+    :edn
+    (do
+      (when-not index-dir
+        (throw (ex-info "Profile :edn requires :index-dir."
+                        {:code :unavailable :profile :edn})))
+      (let [store (clio/open-store (or edn-dir (clio-host/configured-directory)))]
+        {:git {:common-git-directory common-git-dir-fn}
+         :repository-metadata {:read repository-metadata-file/read!
+                               :write repository-metadata-file/write!
+                               :list-repositories #(clio/list-repository-locations store)}
+         :observations (clio/make-observations-adapter store)
+         :index (durable-index-adapter index-dir)
+         :embeddings (ollama/make-embeddings-adapter {})}))
 
     :services
     (do
@@ -69,11 +96,7 @@
                              :list-repositories
                              (fn [] (mongo/list-repository-locations mongo-conn))}
        :observations (mongo/make-observations-adapter mongo-conn)
-       :index (lucene/make-index-adapter
-               {:index-dir (if (instance? java.nio.file.Path index-dir)
-                             index-dir
-                             (java.nio.file.Paths/get (str index-dir)
-                                                      (into-array String [])))})
+       :index (durable-index-adapter index-dir)
        :embeddings (ollama/make-embeddings-adapter {})})))
 
 (defn resolve-adapters
@@ -95,7 +118,8 @@
       prerequisites are UNAVAILABLE, never a silent fallback.
 
    Options:
-      :profile            keyword — :local or :services
+      :profile            keyword — :local, :edn or :services
+      :edn-dir            explicit Clio ledger directory — optional for :edn
       :common-git-dir-fn  (fn [path] -> string) — required
       :mongo-conn         Mongo connection map — required for :services
       :index-dir          Lucene index dir — required for :services"
@@ -113,4 +137,5 @@
   (validate-profile! profile)
   (case profile
     :local    "local (in-memory, no external services)"
+    :edn      "edn (durable Clio observations, rebuildable Lucene index)"
     :services "services (locally provisioned MongoDB, S3, etc.)"))

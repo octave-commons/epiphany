@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+destination="${1:-../eta-mu}"
+revision=fd7cd25645d6acf80c3e5909f3ceecb65b7b1148
+if [[ -e "$destination" ]]; then
+  echo "Refusing to replace an existing Clio workspace: $destination" >&2
+  exit 1
+fi
+git init -q "$destination"
+git -C "$destination" remote add origin https://github.com/open-hax/eta-mu.git
+git -C "$destination" sparse-checkout init --cone
+git -C "$destination" sparse-checkout set packages/clio
+git -C "$destination" fetch --depth=1 --filter=blob:none origin "$revision"
+git -C "$destination" checkout --detach -q FETCH_HEAD
+test "$(git -C "$destination" rev-parse HEAD)" = "$revision"
+test -f "$destination/packages/clio/deps.edn"
+echo "Clio source ready at $revision in $destination"

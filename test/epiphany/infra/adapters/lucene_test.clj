@@ -1,6 +1,5 @@
 (ns epiphany.infra.adapters.lucene-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [clojure.java.io :as io]
+  (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.adapters.lucene :as lucene]
             [epiphany.domain.section-extraction :as se]
             [epiphany.shape.markdown :as md])

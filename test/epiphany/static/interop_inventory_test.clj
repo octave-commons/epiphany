@@ -1,17 +1,17 @@
 (ns epiphany.static.interop-inventory-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.edn] [clojure.test :refer [deftest testing is]]
             [epiphany.static.interop-inventory :as inv]))
 
 (defn- fixture-inventory
   [ns-sym quadrant & {:keys [imports dot-calls static-calls type-hints]
-                       :or {imports #{} dot-calls 0 static-calls 0 type-hints 0}}]
+                      :or {imports #{} dot-calls 0 static-calls 0 type-hints 0}}]
   {ns-sym {:ns ns-sym :quadrant quadrant :imports imports
            :dot-calls dot-calls :static-calls static-calls :type-hints type-hints}})
 
 (deftest interop-count-test
   (testing "sums imports, dot-calls, static-calls, and type-hints"
     (is (= 4 (inv/interop-count {:imports #{'java.util.Date} :dot-calls 2
-                                  :static-calls 0 :type-hints 1})))))
+                                 :static-calls 0 :type-hints 1})))))
 
 (deftest ratchet-violations-unchanged-domain-test
   (testing "a domain.* namespace with no growth over baseline is clean"
@@ -21,10 +21,10 @@
 (deftest ratchet-violations-new-domain-interop-test
   (testing "domain.* growing new dot-calls beyond baseline is a violation"
     (let [baseline (fixture-inventory 'epiphany.domain.status :domain :dot-calls 0)
-          current (fixture-inventory 'epiphany.domain.status :domain :dot-calls 3)]
-      (let [violations (inv/ratchet-violations baseline current #{})]
-        (is (= 1 (count violations)))
-        (is (= 'epiphany.domain.status (:ns (first violations))))))))
+          current (fixture-inventory 'epiphany.domain.status :domain :dot-calls 3)
+          violations (inv/ratchet-violations baseline current #{})]
+      (is (= 1 (count violations)))
+      (is (= 'epiphany.domain.status (:ns (first violations)))))))
 
 (deftest ratchet-violations-law-new-import-test
   (testing "law.* growing a new Java import beyond baseline is a violation"

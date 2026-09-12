@@ -36,14 +36,14 @@
 
 (defn- make-test-ports []
   {:index {:search (fn [_] (make-lexical-results))
-           :knn-search (fn [{:keys [vector]}]
+           :knn-search (fn [{:keys [_vector]}]
                          (make-semantic-results))
            :index-sections! (fn [_] nil)
            :index-embeddings! (fn [_] nil)
            :index-version (fn [] 1)
            :rebuild-index! (fn [_] nil)
            :clear-index! (fn [] nil)}
-   :embeddings {:embed-query (fn [text] (vec (repeatedly 768 #(double (- (rand 2) 1)))))
+   :embeddings {:embed-query (fn [_text] (vec (repeatedly 768 #(double (- (rand 2) 1)))))
                 :embed-sections! (fn [_] nil)
                 :embedding-version (fn [] 1)
                 :clear-embeddings! (fn [] nil)}})

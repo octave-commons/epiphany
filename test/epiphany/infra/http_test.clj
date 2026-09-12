@@ -1,7 +1,6 @@
 (ns epiphany.infra.http-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.data.json :as json]
-            [clojure.edn :as edn]
             [epiphany.infra.http :as http]))
 
 ;; ---------------------------------------------------------------------------
@@ -35,9 +34,9 @@
                     :list-checkpoints (constantly [])
                     :list-ingestion-runs (constantly [])
                     :find-lineage-candidate-by-id (fn [id]
-                                                     (when (= id mock-candidate-id)
-                                                       {:lineage-candidate/id mock-candidate-id
-                                                        :resource-id mock-candidate-resource-id}))
+                                                    (when (= id mock-candidate-id)
+                                                      {:lineage-candidate/id mock-candidate-id
+                                                       :resource-id mock-candidate-resource-id}))
                     :record-review-decision! (fn [obs] (swap! recorded-decisions conj obs) nil)
                     :recorded-decisions recorded-decisions}
      :index {:search (constantly [])
@@ -59,9 +58,9 @@
 
 (deftest problem-response-with-errors
   (testing "problem-response includes errors"
-    (let [resp (http/problem-response 422 "Unprocessable" "invalid" :errors ["err1" "err2"])]
-      (let [body (json/read-str (:body resp) :key-fn keyword)]
-        (is (= ["err1" "err2"] (:errors body)))))))
+    (let [resp (http/problem-response 422 "Unprocessable" "invalid" :errors ["err1" "err2"])
+          body (json/read-str (:body resp) :key-fn keyword)]
+      (is (= ["err1" "err2"] (:errors body))))))
 
 (deftest unavailable-problem-returns-503
   (testing "unavailable-problem returns 503"

@@ -41,7 +41,7 @@
 
 (deftest resolve-adapters-rejects-unknown-profile
   (is (thrown? clojure.lang.ExceptionInfo
-              (profile/resolve-adapters {:profile :unknown}))))
+               (profile/resolve-adapters {:profile :unknown}))))
 
 ;; ---------------------------------------------------------------------------
 ;; :local profile

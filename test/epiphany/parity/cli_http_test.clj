@@ -7,7 +7,7 @@
   http per the design doc) is deferred — see the ENG-017G card comment;
   this namespace locks down the outcome-parity contract that already
   holds today so a future refactor can't silently regress it."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.shell] [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
             [epiphany.infra.main :as main]
             [epiphany.infra.http :as http]
@@ -23,7 +23,7 @@
     (if (zero? exit)
       (str/trim out)
       (throw (ex-info (str "Not a Git repository: " path)
-                       {:repository-path path :git-error (str/trim err)})))))
+                      {:repository-path path :git-error (str/trim err)})))))
 
 (defn- http-adapters []
   (in-memory/make {:common-git-dir-fn shell-git-resolve}))
@@ -103,7 +103,7 @@
   (testing "limit beyond the shared upper bound: both surfaces reject"
     (is (= :rejected (cli-outcome (main/run ["search" "-l" (str (inc http/max-search-limit)) "test"]))))
     (is (= :rejected (http-outcome (http-search {:query "test" :mode :hybrid
-                                                  :limit (inc http/max-search-limit)}))))))
+                                                 :limit (inc http/max-search-limit)}))))))
 
 ;; ---------------------------------------------------------------------------
 ;; status parity (ENG-017G2 extension)

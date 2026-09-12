@@ -3,6 +3,8 @@
  :mvn/repos {"clojars" {:url "https://repo.clojars.org"}}
 
  :deps {org.clojure/clojure {:mvn/version "1.12.2"}
+         eta-mu/clio {:local/root "../eta-mu/packages/clio"}
+         org.slf4j/slf4j-simple {:mvn/version "2.0.9"}
          metosin/malli {:mvn/version "0.16.4"}
          org.clojure/tools.cli {:mvn/version "1.1.230"}
          com.vladsch.flexmark/flexmark {:mvn/version "0.64.8"}
@@ -62,7 +64,7 @@
 
    ;; Static lint gate — pinned linter, .clj-kondo/config.edn baseline.
    :lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2025.07.28"}}
-          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "dev" "--fail-level" "error"]}
+          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test" "dev" "--fail-level" "warning"]}
 
    ;; Layer-boundary + interop-inventory ratchet (STYLE.md law/shape/extern/domain/infra).
    :boundary-check {:extra-paths ["tools"]

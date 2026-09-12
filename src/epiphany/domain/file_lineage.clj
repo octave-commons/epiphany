@@ -1,7 +1,6 @@
 (ns epiphany.domain.file-lineage
   "Generate file-level lineage candidates from Git diff entries.
-   Translates raw git-diff observations into provisional lineage candidates."
-  (:require [epiphany.domain.lineage :as lineage]))
+   Translates raw git-diff observations into provisional lineage candidates.")
 
 (def file-lineage-version "file-lineage-git-diff-v1")
 

@@ -12,6 +12,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch pinned canonical Clio source
+        run: bash bin/fetch-clio-source
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,6 +29,10 @@ jobs:
           key: deps-${{ hashFiles('deps.edn') }}
       - name: Unit tests (no Docker, no network services)
         run: clojure -M:unit-test
+      - name: Compile JVM entry point
+        run: bash bin/build
+      - name: Durable Clio and Lucene process proof
+        run: bash bin/verify-clio-edn
       - name: Shipped CLI help smoke
         run: |
           output="$(bin/ep --help)"
@@ -39,6 +45,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch pinned canonical Clio source
+        run: bash bin/fetch-clio-source
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -54,6 +62,8 @@ jobs:
           key: deps-${{ hashFiles('deps.edn') }}
       - name: Lint (clj-kondo, .clj-kondo/config.edn baseline)
         run: clojure -M:lint
+      - name: Formatting
+        run: clojure -M:cljfmt
       - name: Layer-boundary check (law/shape/domain/application/infra)
         run: clojure -M:boundary-check
       - name: Interop ratchet (reports/interop.edn baseline)
@@ -69,6 +79,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch pinned canonical Clio source
+        run: bash bin/fetch-clio-source
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -101,6 +113,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch pinned canonical Clio source
+        run: bash bin/fetch-clio-source
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

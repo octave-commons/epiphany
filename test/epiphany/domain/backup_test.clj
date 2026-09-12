@@ -1,5 +1,5 @@
 (ns epiphany.domain.backup-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [epiphany.domain.backup :as backup]
@@ -125,10 +125,10 @@
                        [{:repository/path {:path/raw "/nonexistent/repo"
                                            :path/source :user
                                            :path/comparison :exact}
-                         :resource-id (random-uuid)}]}]
-      (let [inaccessible (backup/inaccessible-sources git backup-data)]
-        (is (= 1 (count inaccessible)))
-        (is (= "/nonexistent/repo" (:path (first inaccessible))))))))
+                         :resource-id (random-uuid)}]}
+          inaccessible (backup/inaccessible-sources git backup-data)]
+      (is (= 1 (count inaccessible)))
+      (is (= "/nonexistent/repo" (:path (first inaccessible)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; import integrity checks
@@ -208,7 +208,7 @@
   (testing "a corrupted intermediate file surfaces as :round-trip-mismatch, never silently :complete"
     (let [adapters (test-adapters)
           obs (:observations adapters)
-          git (:git adapters)
+          _git (:git adapters)
           drill-dir (str test-dir "/drill-mismatch-" (random-uuid))]
       ((:record-repository-location! obs) (test-observation (random-uuid) (random-uuid)))
       ;; Directly exercise the manifest-comparison contract the drill relies

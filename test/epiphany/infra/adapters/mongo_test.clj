@@ -154,11 +154,11 @@
   (testing "Invalid observation is rejected with the shared schema-validation category"
     (let [obs-adapter (mongo/make-observations-adapter @conn)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                             #"Schema validation failed for :record-repository-location!"
-                             ((:record-repository-location! obs-adapter)
-                              {:observation/type :repository/location-observed
+                            #"Schema validation failed for :record-repository-location!"
+                            ((:record-repository-location! obs-adapter)
+                             {:observation/type :repository/location-observed
                                ;; missing required fields
-                               }))))))
+                              }))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Ingestion run adapter tests
@@ -176,13 +176,13 @@
                        :observation/schema-version 1
                        :resource-id                #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
                        :ingestion/repo-path        {:path/raw       "/repo"
-                                                     :path/source    :filesystem-argument
-                                                     :path/comparison :exact}
+                                                    :path/source    :filesystem-argument
+                                                    :path/comparison :exact}
                        :ingestion/selected-refs    ["refs/heads/main"]
                        :ingestion/commit-count     42
                        :ingestion/failure-count    1
                        :ingestion/failures         [{:failure/reason "object-unreadable"
-                                                      :failure/message "boom"}]}]
+                                                     :failure/message "boom"}]}]
       ((:record-ingestion-run! obs-adapter) record)
       ((:record-ingestion-run! obs-adapter) record)
       ;; Verify the run was recorded (find by _id)

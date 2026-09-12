@@ -362,23 +362,23 @@
                     {:post {:handler (workbench/search-htmx-handler adapters)}}]
                    ["htmx/evidence"
                     {:get {:handler (workbench/evidence-htmx-handler adapters)}}]
-     ["htmx/evidence/empty"
-      {:get {:handler (workbench/evidence-empty-handler adapters)}}]
-     ["timeline"
-      {:get {:handler (workbench/timeline-page-handler adapters)}}]
-     ["htmx/timeline"
-      {:post {:handler (workbench/timeline-htmx-handler adapters)}}]
-     ["inbox"
-      {:get {:handler (workbench/inbox-page-handler adapters)}}]
-     ["htmx/inbox"
-      {:post {:handler (workbench/inbox-htmx-handler adapters)}}]
-     ["htmx/inbox/decide"
-      {:post {:handler (workbench/inbox-decide-htmx-handler adapters)}}]
-     ["health"
-      {:get {:handler (workbench/health-page-handler adapters)}}]
-     ["htmx/health"
-      {:post {:handler (workbench/health-htmx-handler adapters)}}]
-     ["api/v1/search"
+                   ["htmx/evidence/empty"
+                    {:get {:handler (workbench/evidence-empty-handler adapters)}}]
+                   ["timeline"
+                    {:get {:handler (workbench/timeline-page-handler adapters)}}]
+                   ["htmx/timeline"
+                    {:post {:handler (workbench/timeline-htmx-handler adapters)}}]
+                   ["inbox"
+                    {:get {:handler (workbench/inbox-page-handler adapters)}}]
+                   ["htmx/inbox"
+                    {:post {:handler (workbench/inbox-htmx-handler adapters)}}]
+                   ["htmx/inbox/decide"
+                    {:post {:handler (workbench/inbox-decide-htmx-handler adapters)}}]
+                   ["health"
+                    {:get {:handler (workbench/health-page-handler adapters)}}]
+                   ["htmx/health"
+                    {:post {:handler (workbench/health-htmx-handler adapters)}}]
+                   ["api/v1/search"
                     {:post {:handler (search-handler adapters)}}]
                    ["api/v1/register"
                     {:post {:handler (register-handler adapters)}}]

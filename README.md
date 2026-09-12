@@ -212,3 +212,27 @@ Read `AGENTS.md` before making changes. It defines architectural invariants, epi
 - Native desktop packaging
 
 These are planned expansion areas, but they must not delay the evidence-preserving Git/Markdown foundation.
+
+## Durable local development with Clio
+
+Initialize Foresight's `eta-mu` sibling checkout, or run
+`bash bin/fetch-clio-source` from a standalone checkout to fetch the pinned Clio
+package. That command refuses to replace an existing sibling directory.
+
+```bash
+export EPIPHANY_EDN_DIR=/absolute/path/to/local-observations
+clojure -M:run register --profile edn /path/to/repository
+clojure -M:run ingest --profile edn --index-dir /path/to/index /path/to/repository
+clojure -M:run search --profile edn --mode lexical --index-dir /path/to/index orchard
+bash bin/build
+clojure -M:unit-test
+clojure -M:lint
+clojure -M:cljfmt
+bash bin/verify-clio-edn
+```
+
+The `edn` profile persists observations and review decisions through Clio and
+uses real Lucene search. It preserves the memory and Mongo profiles. See the
+[provider design](docs/designs/clio-edn-development.md) and
+[recovery report](docs/notes/clio-edn-recovery-2026-09-12.md) for restart semantics,
+verification and remaining optional embedding limitations.

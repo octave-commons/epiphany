@@ -25,12 +25,12 @@
             [epiphany.shape.markdown :as md])
   (:import [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.document Document Field$Store TextField StringField
-                                       KnnFloatVectorField]
+            KnnFloatVectorField]
            [org.apache.lucene.index IndexWriter IndexWriterConfig IndexWriterConfig$OpenMode
-                                    DirectoryReader Term VectorSimilarityFunction]
+            DirectoryReader Term VectorSimilarityFunction]
            [org.apache.lucene.queryparser.classic QueryParser]
            [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery
-                                      BooleanQuery$Builder BooleanClause$Occur]
+            BooleanQuery$Builder BooleanClause$Occur]
            [org.apache.lucene.store FSDirectory]
            [java.nio.file Files Path]))
 

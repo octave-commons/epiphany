@@ -49,7 +49,7 @@
 (deftest ^:integration embed-query-test
   (testing "single text embedding returns correct dimensions"
     (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"})
+                                                   :model "nomic-embed-text"})
           vector ((:embed-query adapter) "Hello world")]
       (is (vector? vector))
       (is (= 768 (count vector)))
@@ -58,8 +58,8 @@
 (deftest ^:integration embed-sections-test
   (testing "batch embedding of extraction records"
     (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"
-                                                    :batch-size 2})
+                                                   :model "nomic-embed-text"
+                                                   :batch-size 2})
           record (make-test-record "# First\n\nAlpha.\n\n# Second\n\nBeta."
                                    "doc.md" "c1" "b1")
           results ((:embed-sections! adapter) [record])]
@@ -76,19 +76,19 @@
 (deftest ^:integration embed-version-test
   (testing "version is deterministic for the same immutable model artifact"
     (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-a"})
+                                              :model-digest "sha256:model-a"})
           a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-a"})
+                                              :model-digest "sha256:model-a"})
           a3 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-b"})]
+                                              :model-digest "sha256:model-b"})]
       (is (= ((:embedding-version a1)) ((:embedding-version a2))))
       (is (not= ((:embedding-version a1)) ((:embedding-version a3)))))))
 
 (deftest ^:integration embed-batch-size-test
   (testing "batching works with small batch size"
     (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"
-                                                    :batch-size 1})
+                                                   :model "nomic-embed-text"
+                                                   :batch-size 1})
           r1 (make-test-record "# A\n\nText." "a.md" "c1" "b1")
           r2 (make-test-record "# B\n\nText." "b.md" "c2" "b2")
           results ((:embed-sections! adapter) [r1 r2])]
