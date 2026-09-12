@@ -11,8 +11,10 @@
     (:observation/id record)))
 
 (defn- comparable-record [collection record]
-  (if (= collection "revision-at-path")
-    (dissoc record :observation/id :revision-at-path/id :observation/observed-at)
+  (case collection
+    "revision-at-path" (dissoc record :observation/id :revision-at-path/id :observation/observed-at)
+    ("ingestion-run" "projection-checkpoint" "section-extraction")
+    (dissoc record :observation/observed-at)
     record))
 
 (defn- retain-record [{:keys [index] :as state} collection record]

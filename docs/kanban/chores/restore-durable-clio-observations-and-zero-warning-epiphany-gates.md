@@ -2,7 +2,7 @@
 category: "chores"
 dependency: []
 type: "chore"
-write-id: "1789215685431-0.pii9d0xpd2b2tfog1g"
+write-id: "1789218200585-0.jqka5iwfi3gjotlu1m"
 points: "5"
 title: "Restore durable Clio observations and zero-warning Epiphany gates"
 priority: "P0"
@@ -59,5 +59,7 @@ Resumed PR18 review at immutable 816531ecadcaee2e3856f43a258ebc193ae301be after 
 Correction of abbreviated identifiers in earlier immutable comments: the then-current Clio revision was fd7cd25645d6acf80c3e5909f3ceecb65b7b1148. The root eta-mu gitlink was a7b19825fb5d7c624c38f1d41043c42e92d7f0c3; the actual recovered eta-mu checkout was dbbe64154895e6e63af04054059c4bf34bc5a297. These facts append to history without rewriting prior events. Current failed-fsync tests use canonical Clio f22199ee8a8903b4b69eceee9a18ae4d3e7b3c32, complete tree d2278e9d4dd0a53518b5afc53081a44e9479d2dd, which the standalone fetch also verified from the public source. HTTP now dispatches to explicitly configured profile adapters and refuses unconfigured selections; 42 focused HTTP/Clio tests and 83 assertions pass. Full updated gates are in progress.
 
 Review recovery checkpoint 942934e69f38fc355a6db70dc20b2f29aa47b032: immutable Clio37b720ddded5dbb83a2d55fabbe0415dc7302b1e full unit780/2165, lint0/0, formatting, boundary, interop, AOT, actual launcher and separate-JVM durable Lucene proof pass. Revision admission and repeated import are locked and idempotent; no-op retries use canonical force barrier; HTTP uses selected configured adapters or refuses. Fetch failure cleanup and metadata fixes pass. Corrected Rheos1659ec9173c39999bb33bb9aaba503716f3864e0 retains inline labels in116-card snapshot. JVM advisories, legacy service integrations, parent promotion and newer upstream read-lock successor remain explicit limits in docs/notes/clio-review-recovery-2026-09-12.md.
+
+Actual follow-up reviews reproduced and corrected timestamp-only backup import retries (Codex 3996201045) and trailing-slash Clio fetch staging (CodeRabbit 3996200917). Source checkpoint 152b8f5c88fe597c723425788d7fab06b916d962, tree 757a7ada2c2fdbc0cb6340e6d894d67f99ac770d, passed full 781 tests / 2180 assertions, lint 0 errors / 0 warnings, format, boundaries, interop, AOT, multiprocess Clio/Lucene and actual shipped launcher against separately fetched immutable Clio 690aad83ff54ef5225a1f1533b4a7bd0eaef3561 (tree 8799304eb2cba6975d925cbd9dd27e87f1e10fea). Classpath and unchanged-source proof retained. Runtime advisories remain visible. This supersedes the historical 37b720 consumer gate; legacy Mongo/S3/Ollama integration and root promotion remain pending. Updated report and self-contained actual output: docs/notes/clio-review-recovery-2026-09-12.md and evidence/clio-final-review.*. Snapshot uses the corrected linear Rheos parser; no card status bypass.
 
 ---

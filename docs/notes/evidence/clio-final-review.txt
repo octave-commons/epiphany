@@ -1,0 +1,116 @@
+Actual command output for source 152b8f5c88fe597c723425788d7fab06b916d962 and immutable Clio 690aad83ff54ef5225a1f1533b4a7bd0eaef3561
+
+===== dependency (exit 0, 2.395s) =====
+#object[java.net.URL 0x569bf9eb file:<workspace>/runtime/epiphany-clio-690aad/packages/clio/src/clio/infra/ledger.cljc]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== unit (exit 0, 69.364s) =====
+[(.......................................................................................)(.......................)(...........................................)(...................................................................)(................................................................................)(..............................)(.......)(........................................)(.......................)(....................................)(...................................)(............................................)(....................................................................................................................................................................)(..............................................)(.......................)(.....................................................)(.........................................................)(........)(..............................................................................)(.......................................................)(...........................................................................................)(.........................)(..........)(.......................)(...................................................................)(.....................................................)(.............................)(.................................)(.....................................................)(......)(..................)(........................................................)(..........................)(............................)(.................................................................)(........................)(............)(......................................)(..................................)(..........................................)(...............................)(...........)(...................................)(........................)(...........................)(....................................)(.....)(..................................................)(....)(..............)(........................................)(......)(................................)(...........................................................)(.............................)(..........................)(...................)]
+[32m781 tests, 2180 assertions, 0 failures.[m
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== lint (exit 0, 22.025s) =====
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:324:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:330:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 3802ms, errors: 0, warnings: 0
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== format (exit 0, 11.52s) =====
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+All source files formatted correctly
+
+===== boundary (exit 0, 7.6s) =====
+Layer-boundary check: clean.
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== interop (exit 0, 7.108s) =====
+Interop ratchet: clean (law/domain/application unchanged or reduced).
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== build (exit 0, 27.808s) =====
+epiphany.infra.main
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== process (exit 0, 65.628s) =====
+Registered: <owned-temporary-directory>/repo
+  Resource ID:     a51029ec-0bd4-40a5-8141-1d4706889b28
+  Common Git dir:  <owned-temporary-directory>/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+Ingested: <owned-temporary-directory>/repo
+  Request ID:          19f3c46d-d716-4f1f-a9f6-309b0f91683f
+  Resource ID:         a51029ec-0bd4-40a5-8141-1d4706889b28
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           <owned-temporary-directory>/index
+Ingested: <owned-temporary-directory>/repo
+  Request ID:          b3a1d97f-95ee-4b68-a2be-83f882fd94a3
+  Resource ID:         a51029ec-0bd4-40a5-8141-1d4706889b28
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           <owned-temporary-directory>/index
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 9:51:21 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[Local JVM configuration omitted; same JVM 21 runtime.]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 9:51:28 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]
+
+===== launcher (exit 0, 16.409s) =====
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.
+[Local JVM configuration omitted; same JVM 21 runtime.]
+[Local JVM configuration omitted; same JVM 21 runtime.]

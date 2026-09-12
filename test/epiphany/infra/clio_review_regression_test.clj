@@ -107,3 +107,25 @@
                        ((:import-all port) {"revision-at-path" [(dissoc record :revision/blob-oid)]})))
           (is (= visible (fs/read-text (:file store))))))
       (finally (fs/remove-tree! directory)))))
+
+(deftest timestamped-record-retries-and-imports-preserve-accepted-facts
+  (let [directory (temporary-directory)]
+    (try
+      (let [store (clio/open-store directory)
+            port (clio/make-observations-adapter store)]
+        (doseq [[collection operation material-field changed-value]
+                [["ingestion-run" :record-ingestion-run! :ingestion/commit-count 99]
+                 ["projection-checkpoint" :record-checkpoint! :checkpoint/processed-count 99]
+                 ["section-extraction" :record-section-extraction! :extraction/extractor-version "changed"]]]
+          (let [record (fixture operation)
+                retry (assoc record :observation/observed-at #inst "2026-09-12T12:00:00.000Z")]
+            ((get port operation) record)
+            (let [before (fs/read-text (:file store))
+                  snapshot ((:export-all port))]
+              (is (nil? ((get port operation) retry)) "Direct observation-ID retries already keep the first fact")
+              (is (nil? ((:import-all port) {collection [retry]})) "Import retries must also ignore observation time")
+              (is (= before (fs/read-text (:file store))))
+              (is (= snapshot ((:export-all port))))
+              (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
+                                    ((:import-all port) {collection [(assoc retry material-field changed-value)]})))))))
+      (finally (fs/remove-tree! directory)))))

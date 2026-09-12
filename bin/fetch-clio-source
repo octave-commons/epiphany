@@ -2,13 +2,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 destination="${1:-../eta-mu}"
-revision=37b720ddded5dbb83a2d55fabbe0415dc7302b1e
+revision=690aad83ff54ef5225a1f1533b4a7bd0eaef3561
+while [[ "$destination" != / && "$destination" == */ ]]; do
+  destination=${destination%/}
+done
 if [[ -e "$destination" || -L "$destination" ]]; then
   echo "Refusing to replace an existing Clio workspace: $destination" >&2
   exit 1
 fi
 mkdir -p -- "$(dirname -- "$destination")"
-staging=$(mktemp -d "${destination}.fetch.XXXXXXXX")
+staging=$(mktemp -d -- "$(dirname -- "$destination")/.$(basename -- "$destination").fetch.XXXXXXXX")
 trap 'rm -rf -- "$staging"' EXIT
 git init -q "$staging"
 git -C "$staging" remote add origin https://github.com/open-hax/eta-mu.git

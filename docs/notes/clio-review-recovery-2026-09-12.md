@@ -9,6 +9,54 @@ labels: [development, clio, verification]
 
 # Clio review recovery
 
+## Current immutable successor verification
+
+The latest implementation checkpoint is
+`152b8f5c88fe597c723425788d7fab06b916d962`, tree
+`757a7ada2c2fdbc0cb6340e6d894d67f99ac770d`. It passed every owned gate below
+against separately fetched Clio `690aad83ff54ef5225a1f1533b4a7bd0eaef3561`,
+repository tree `8799304eb2cba6975d925cbd9dd27e87f1e10fea`. This kernel locks
+canonical per-file snapshots during concurrent appends. A classpath probe checked
+the exact selected source before testing; the application source remained unchanged
+through the final launcher check.
+
+The full unit suite passed **781 tests / 2,180 assertions**. Lint reported zero
+errors or warnings; formatting, architecture boundaries, interop inventory, AOT
+build, multi-process Clio/Lucene verification, and the actual shipped launcher
+all passed. [Current revision metadata](evidence/clio-final-review.json) and
+[actual command output](evidence/clio-final-review.txt) retain the separate gate
+durations and visible runtime advisories. These results supersede the earlier
+37b720 consumer run recorded below; the legacy service integration alias remains
+pending and is not included in this claim.
+
+Two subsequent actual review findings were reproduced and corrected:
+
+- Codex 3996201045 prompted a retry check for timestamped ingestion, checkpoint,
+  and section-extraction observations. The existing direct observation writer
+  already kept the first record; the affected backup-import admission instead
+  rejected identical facts with a newer observation timestamp. Its failure-first
+  test produced three idempotency-conflict errors. Comparison now ignores that
+  observation timestamp for those three collections while retaining material-field
+  conflict detection, original accepted facts, and byte-identical no-op imports.
+  The focused corrected suite passed eight tests / 36 assertions. Before the
+  behavioral RED, an incorrect top-level dependency override selected the old
+  kernel, and one test delimiter failed to parse; neither is counted as evidence
+  of the admission defect. The corrected invocation puts `:override-deps` inside
+  the selected `:verified-clio` alias.
+- CodeRabbit 3996200917 identified that a trailing slash in a nonexistent fetch
+  destination made staging creation fail before Git ran. The script now removes
+  trailing separators and creates its owned staging directory beside the intended
+  destination. Injected fetch failures with zero, one, and three trailing slashes
+  all reached the fetch step and left no partial destination or staging directory.
+  A real public fetch with three trailing slashes produced the exact 690aad kernel
+  above. The script now pins that immutable revision.
+
+Root dependency promotion, actual reviewer clearance, and the explicitly pending
+legacy service integration gate remain separate work. The card remains under its
+existing canonical state transition requirements.
+
+## Previous immutable checkpoint and obstacle history
+
 Epiphany executes its JVM unit, lint, formatting, boundary, interop, AOT build,
 shipped launcher and durable Clio/Lucene process gates in the same sandbox.
 The implementation checkpoint is `942934e69f38fc355a6db70dc20b2f29aa47b032`,
@@ -16,7 +64,7 @@ tree `0b9cce9e8183b81c3120f356375e8b071b7845b7`. Its source was unchanged
 between the final gate run and that local checkpoint. Documentation and evidence
 added afterward do not claim a later production-source test.
 
-The final dependency was fetched separately at immutable Clio revision
+That checkpoint's dependency was fetched separately at immutable Clio revision
 `37b720ddded5dbb83a2d55fabbe0415dc7302b1e`, repository tree
 `00e8c694f70f456f8d03c3c9a86fca825b2e6d63`. Explicit `:override-deps`
 selected this checkout. An earlier shared worktree changed during verification;
@@ -97,10 +145,10 @@ passed. The root workspace's real 384-dimension MiniLM provider can support a
 future explicit embedding configuration; its shape must not be silently
 substituted for the old fixture contract.
 
-After the immutable run, upstream Codex identified a canonical Clio read race
-during a partial concurrent append. That successor is being fixed and tested in
-a separate worktree. This report retains the exact tested revision and does not
-claim that the unpublished kernel correction has passed these consumer gates.
+After that earlier immutable run, upstream Codex identified a canonical Clio read
+race during a partial concurrent append. The separately fixed successor is the
+690aad kernel tested in the current verification above; the older 780-test result
+is retained here as historical evidence rather than relabeled as successor coverage.
 The existing Rheos card remains `in_progress` because its inherited parent build
 gate awaits coordinated root dependency promotion; no status was edited around
-that gate. Remote reviews and the immutable kernel successor remain merge gates.
+that gate. Remote reviews and the remaining integration work remain merge gates.
