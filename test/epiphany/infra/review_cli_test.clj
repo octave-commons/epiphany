@@ -19,14 +19,15 @@
       (is (nil? (:errors parsed)) (pr-str {:profile spelling :errors (:errors parsed)}))
       (is (= profile (get-in parsed [:options :profile]))))))
 
-(deftest generated-register-command-id-is-visible-durable-and-retryable
+(deftest explicit-register-command-id-is-visible-durable-and-retryable
   (let [directory (str (System/getProperty "java.io.tmpdir")
                        "/epiphany-register-review-" (random-uuid))
         repository (str directory "/repo")
         ledger (str directory "/observations")
         resolve-adapters profile/resolve-adapters
         decode commands/decode
-        decoded (atom [])]
+        decoded (atom [])
+        requested-id (random-uuid)]
     (try
       (fs/ensure-dir! repository)
       (with-open [_git (.call (.setDirectory (Git/init) (java.io.File. repository)))])
@@ -36,14 +37,14 @@
                                                :index-dir (str directory "/index"))))
                     commands/decode
                     (fn [candidate] (swap! decoded conj candidate) (decode candidate))]
-        (let [first-result (main/run ["register" "--profile" "edn" repository])
+        (let [first-result (main/run ["register" "--profile" "edn" "--request-id" (str requested-id) repository])
               request-id (:request-id (first @decoded))
               before (clio/history (clio/open-store ledger))
               retry (when request-id
                       (main/run ["register" "--profile" ":edn"
                                  "--request-id" (str request-id) repository]))]
           (is (zero? (:exit first-result)))
-          (is (uuid? request-id))
+          (is (= requested-id request-id))
           (is (and request-id (string/includes? (:out first-result) (str request-id))))
           (is (= request-id (get-in (first before) [:event/data :arguments 0 :observation/request-id])))
           (is (= first-result retry))

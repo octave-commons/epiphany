@@ -32,11 +32,24 @@ an exclusive hard link after forcing a complete temporary file. Corrupt snapshot
 and failed synchronization stop before clear. Clio clear retries keep their
 existing event semantics and never rewrite history.
 
-All profile options accept both `edn` and `:edn` spellings, likewise for `local`
-and `services`. Registration generates one request ID before CLI/HTTP command
-decoding when the caller omits one, and returns the same ID stored on its
-observation. Retry with the returned `--request-id`; a new invocation without
-that ID represents a new command, not an inferred identity match.
+All CLI profile options, HTTP `X-Profile` headers and HTTP profile query
+parameters accept both `edn` and `:edn` spellings, likewise for `local` and
+`services`. HTTP dispatch still requires explicitly configured adapters for the
+selected profile; normalization never selects a different provider.
+
+Registration requires a caller-owned UUID request ID at the application, CLI and
+HTTP boundaries. Missing or invalid IDs and non-map application calls fail before
+Git, metadata or observation access. Supply `--request-id UUID` on the CLI or
+`:request-id` in the HTTP body, and reuse it unchanged for retries. The returned
+ID is the one stored on the observation. Reusing an ID for a different exact
+repository path is refused. An identical retry reaffirms durability through the
+observation adapter before returning the persisted registration.
+
+Read-only `diff` needs no ID. `diff --seed-candidate RELATION` additionally
+requires `--request-id UUID`. Candidate retries return the originally persisted
+candidate UUID, preserve the provisional tier and leave ledger history unchanged.
+Changed relation or evidence under the same ID is refused. Even a logical no-op
+uses the adapter's durability fence before success; a failed force stays visible.
 
 `bin/verify-clio-edn` now runs the full native proof through
 `bin/with-zero-warnings`. It preserves stdout, stderr and nonzero command status;

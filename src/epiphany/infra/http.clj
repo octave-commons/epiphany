@@ -192,7 +192,9 @@
      (let [profile (or (get-in request [:query-params :profile])
                        (get-in request [:headers "x-profile"])
                        default-profile)
-           profile (keyword profile)]
+           profile (if (string? profile)
+                     (keyword (str/replace-first profile #"^:" ""))
+                     profile)]
        (if (profile/valid-profile? profile)
          (handler (assoc request :profile profile))
          (bad-request-problem (str "Invalid profile: " (pr-str profile)
@@ -280,9 +282,7 @@
     (let [body (:body-params request)
           candidate {:command/name :command/register
                      :repository-path (or (:path body) (:repository-path body) "")
-                     :request-id (if (some? (:request-id body))
-                                   (parse-uuid-or-raw (:request-id body))
-                                   (random-uuid))}
+                     :request-id (parse-uuid-or-raw (:request-id body))}
           decoded (commands/decode candidate)]
       (if (commands/rejected? decoded)
         (rejected->problem decoded)

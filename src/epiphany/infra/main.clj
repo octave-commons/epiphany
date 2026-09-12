@@ -14,6 +14,7 @@
             [epiphany.infra.repository-identity :as repository-identity]
             [epiphany.application.registration :as registration]
             [epiphany.application.commands :as commands]
+            [epiphany.application.candidate-seeding :as candidate-seeding]
             [epiphany.domain.ingestion :as ingestion]
             [epiphany.domain.observation-admission :as observation-admission]
             [epiphany.domain.extraction-projection :as extraction]
@@ -57,7 +58,7 @@
 ;; Register subcommand
 
 (def register-options
-  [["-r" "--request-id UUID" "Idempotent request ID (UUID format)"
+  [["-r" "--request-id UUID" "Required command ID; reuse the UUID for retries"
     :parse-fn #(java.util.UUID/fromString %)]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
@@ -99,7 +100,7 @@
 
       :else
       (let [repository-path (first arguments)
-            request-id (or (:request-id options) (random-uuid))
+            request-id (:request-id options)
             candidate {:command/name :command/register
                        :repository-path repository-path
                        :request-id request-id}
@@ -850,6 +851,8 @@
     :parse-fn keyword
     :validate [candidates/relation-types
                (str "Must be one of: " (string/join ", " (map name candidates/relation-types)))]]
+   [nil "--request-id UUID" "Required with --seed-candidate; reuse the UUID for retries"
+    :parse-fn #(java.util.UUID/fromString %)]
    ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
     :parse-fn parse-profile
@@ -889,10 +892,10 @@
 (defn- seed-candidate!
   "Seed a provisional lineage candidate relating `left` to `right` (parsed
    section expressions) under `relation`, durably recorded through the
-   observations port for `repo`/`profile`. Returns the candidate map (the
+   observations port for `repo`/`profile`. Returns the persisted observation (the
    candidate is always PROVISIONAL — it is never auto-accepted; a human
    reviews it via the ENG-005A decision events)."
-  [repo profile relation left right]
+  [repo profile relation left right request-id]
   (let [{:keys [resource-id]} (repository-identity/resolve-repository repo)
         source-span (candidates/make-span {:path-raw (:path left)
                                            :heading-path (:heading left)
@@ -901,13 +904,13 @@
                                            :heading-path (:heading right)
                                            :commit-oid (:commit-oid right)})
         candidate (candidates/make-candidate relation source-span target-span
+                                             :request-id request-id
                                              :confidence 1.0
                                              :generator-version "ep-diff-v1")
         observation (candidates/candidate->observation
                      candidate {:resource-id resource-id :adapter-version "0.1.0"})]
     (with-observations-adapter profile
-      (fn [obs-adapter] ((:record-lineage-candidate! obs-adapter) observation)))
-    candidate))
+      (fn [obs-adapter] (candidate-seeding/record! obs-adapter observation)))))
 
 (defn- run-diff
   "Execute the diff subcommand. Returns {:exit int, :out string}."
@@ -924,6 +927,9 @@
       (not= 2 (count arguments))
       {:exit 1 :out "Error: exactly two section expressions required.\nUsage: ep diff [options] <left-expr> <right-expr>"}
 
+      (and (:seed-candidate options) (nil? (:request-id options)))
+      {:exit 1 :out "Error: --seed-candidate requires --request-id UUID; reuse it for retries."}
+
       :else
       (try
         (let [repo (:repo options)
@@ -935,7 +941,8 @@
                                             {:left left :right right})
               seeded (when (and (:seed-candidate options)
                                 (nil? (:diff/failure result)))
-                       (seed-candidate! repo (:profile options) (:seed-candidate options) left right))
+                       (seed-candidate! repo (:profile options) (:seed-candidate options)
+                                        left right (:request-id options)))
               output (str (case (:format options)
                             :edn (pr-str result)
                             (str (diff/format-diff-text (:diff/lines result)

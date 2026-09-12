@@ -20,7 +20,7 @@
   (let [app (http/create-handler (http-adapters))]
     (app {:request-method :post
           :uri "/api/v1/register"
-          :body-params (if path {:path path} {})
+          :body-params (cond-> {:request-id (random-uuid)} path (assoc :path path))
           :headers {"content-type" "application/json"}})))
 
 (defn- http-search [{:keys [query mode limit]}]
@@ -58,12 +58,12 @@
 
 (deftest register-non-git-path-parity
   (testing "a real but non-Git path: both surfaces reject"
-    (is (= :rejected (cli-outcome (main/run ["register" "-p" :local "/tmp"]))))
+    (is (= :rejected (cli-outcome (main/run ["register" "--request-id" (str (random-uuid)) "-p" :local "/tmp"]))))
     (is (= :rejected (http-outcome (http-register "/tmp"))))))
 
 (deftest register-real-repo-path-parity
   (testing "this repo's own working tree: both surfaces accept"
-    (is (= :accepted (cli-outcome (main/run ["register" "-p" :local "."]))))
+    (is (= :accepted (cli-outcome (main/run ["register" "--request-id" (str (random-uuid)) "-p" :local "."]))))
     (is (= :accepted (http-outcome (http-register "."))))))
 
 ;; ---------------------------------------------------------------------------

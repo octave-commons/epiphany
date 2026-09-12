@@ -113,7 +113,7 @@
 (deftest bootstrap-local-mode-composes-with-registration
   (let [adapters (profile/resolve-adapters {:profile :local
                                             :common-git-dir-fn fake-common-git-dir})
-        result (registration/register! adapters "/repos/notes")]
+        result (registration/register! adapters {:repository-path "/repos/notes" :request-id (random-uuid)})]
     (is (= "/repos/notes" (:repository-path result)))
     (is (= "/repos/notes/.git" (:common-git-dir result)))
     (is (uuid? (:resource-id result)))))

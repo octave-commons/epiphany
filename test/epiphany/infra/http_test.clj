@@ -53,7 +53,7 @@
                                  {:default-profile :local
                                   :profile-adapters {:edn (marked :edn)}})
         request {:request-method :post :uri "/api/v1/register"
-                 :body-params {:path "/tmp/profile-repo"} :headers {}}]
+                 :body-params {:path "/tmp/profile-repo" :request-id (random-uuid)} :headers {}}]
     (is (= 201 (:status (app (assoc request :query-string "profile=edn")))))
     (is (= 201 (:status (app (assoc request :headers {"x-profile" "local"})))))
     (is (= [:edn :local] @writes))
@@ -148,7 +148,7 @@
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test-repo"}
+                     :body-params {:path "/tmp/test-repo" :request-id (random-uuid)}
                      :headers {}})]
       (is (= 201 (:status resp)))
       (is (.contains (get-in resp [:headers "Content-Type"]) "application/json")))))
@@ -158,7 +158,7 @@
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path ""}
+                     :body-params {:path "" :request-id (random-uuid)}
                      :headers {}})]
       (is (= 400 (:status resp))))))
 
@@ -308,7 +308,7 @@
           app (http/make-router error-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})]
       (is (or (= 404 (:status resp))
               (= 400 (:status resp))))
@@ -368,7 +368,7 @@
           resp (app {:request-method :post
                      :uri "/api/v1/register"
                      :body (java.io.ByteArrayInputStream.
-                            (.getBytes "{:path \"/tmp/test-repo\"}"))
+                            (.getBytes (pr-str {:path "/tmp/test-repo" :request-id (random-uuid)})))
                      :headers {"content-type" "application/edn"}})]
       (is (= 201 (:status resp))))))
 
@@ -439,7 +439,7 @@
           app (http/make-router leaky-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 500 (:status resp)))
@@ -470,7 +470,7 @@
           app (http/make-router leaky-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 400 (:status resp)))

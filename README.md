@@ -221,7 +221,7 @@ package. That command refuses to replace an existing sibling directory.
 
 ```bash
 export EPIPHANY_EDN_DIR=/absolute/path/to/local-observations
-clojure -M:run register --profile edn /path/to/repository
+clojure -M:run register --profile edn --request-id 00000000-0000-4000-8000-000000000123 /path/to/repository
 clojure -M:run ingest --profile edn --index-dir /path/to/index /path/to/repository
 clojure -M:run search --profile edn --mode lexical --index-dir /path/to/index orchard
 bash bin/build

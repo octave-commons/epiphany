@@ -18,7 +18,7 @@
 
 (deftest registers-a-new-repository-with-a-new-resource-id
   (let [{:keys [ports writes observations]} (fake-ports {})
-        result (registration/register! ports "/repos/notes")]
+        result (registration/register! ports {:repository-path "/repos/notes" :request-id (random-uuid)})]
     (is (= "/repos/notes" (:repository-path result)))
     (is (= "/repos/notes/.git" (:common-git-dir result)))
     (is (uuid? (:resource-id result)))
@@ -34,7 +34,7 @@
 
 (deftest registration-reuses-an-existing-git-local-resource-id
   (let [{:keys [ports writes observations]} (fake-ports {:existing-resource-id resource-id})
-        result (registration/register! ports "/repos/notes")]
+        result (registration/register! ports {:repository-path "/repos/notes" :request-id (random-uuid)})]
     (is (= resource-id (:resource-id result)))
     (is (empty? @writes))
     (is (= 1 (count @observations)))
@@ -56,7 +56,7 @@
                               :record-repository-location! (fn [observation]
                                                              (swap! observations conj observation))}}]
     (is (thrown? clojure.lang.ExceptionInfo
-                 (registration/register! ports "/not-a-repository")))
+                 (registration/register! ports {:repository-path "/not-a-repository" :request-id (random-uuid)})))
     (is (empty? @writes))
     (is (empty? @observations))))
 
