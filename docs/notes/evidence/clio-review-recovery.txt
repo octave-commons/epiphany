@@ -1,0 +1,112 @@
+Actual immutable Clio consumer verification. Local JVM configuration lines are redacted; disposable paths normalized; diagnostics and test counts retained.
+
+COMMAND clojure -M:unit-test
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+[(.......................)(........................................................)(...................)(.................................................................)(...................................................................)(..............................................................................)(..............................................)(..............................)(......................................)(........................)(.....................................................)(.........................)(........................................)(...........)(.......................)(..................)(...................................)(............................)(.........................................................)(.....)(................................)(....................................................................................................................................................................)(..............)(.....................)(...........................................................)(.......................)(.....................................................)(...........................................)(...................................)(......)(........................)(........)(..................................................)(...............................)(..........................................)(....)(......)(.................................)(.......................................................)(....................................)(..........................)(..........................)(.............................)(.....................................................)(.......)(...........................)(............)(..................................)(...........................................................................................)(................................................................................)(.............................)(............................................)(........................................)(..........)(.......................)(...................................................................)(.......................................................................................)]
+780 tests, 2165 assertions, 0 failures.
+
+COMMAND clojure -M:lint
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:324:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:330:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 3405ms, errors: 0, warnings: 0
+
+COMMAND clojure -M:cljfmt
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+All source files formatted correctly
+
+COMMAND clojure -M:boundary-check
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+Layer-boundary check: clean.
+
+COMMAND clojure -M:interop-inventory
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+Interop ratchet: clean (law/domain/application unchanged or reduced).
+
+COMMAND bash bin/build
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+epiphany.infra.main
+
+COMMAND bash bin/verify-clio-edn
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+Registered: <disposable-epiphany-directory>/repo
+  Resource ID:     1610ec89-7ac9-48b1-865a-fa355766ccd6
+  Common Git dir:  <disposable-epiphany-directory>/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+[local JVM home and truststore options redacted]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 9:13:00 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Ingested: <disposable-epiphany-directory>/repo
+  Request ID:          843fd472-b040-46e7-affe-626b7aadbd6e
+  Resource ID:         1610ec89-7ac9-48b1-865a-fa355766ccd6
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           <disposable-epiphany-directory>/index
+[local JVM home and truststore options redacted]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 9:13:10 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[local JVM home and truststore options redacted]
+Ingested: <disposable-epiphany-directory>/repo
+  Request ID:          90a859ba-4197-4b03-83cc-819e62ff34d5
+  Resource ID:         1610ec89-7ac9-48b1-865a-fa355766ccd6
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           <disposable-epiphany-directory>/index
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.
+
+COMMAND bin/ep --help
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.
+[local JVM home and truststore options redacted]
+[local JVM home and truststore options redacted]

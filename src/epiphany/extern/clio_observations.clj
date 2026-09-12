@@ -18,7 +18,7 @@
   (when-not (and (string? directory) (not (string/blank? directory)))
     (throw (ex-info "EDN observations require an explicit directory"
                     {:code :unavailable :profile :edn})))
-  (str (.normalize (.toAbsolutePath (Paths/get directory (make-array String 0))))))
+  (str (.toAbsolutePath (Paths/get directory (make-array String 0)))))
 
 (defn with-lock!
   "Serialize complete read/decision/append cycles on a separate lock inode."

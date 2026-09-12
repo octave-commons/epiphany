@@ -43,6 +43,30 @@
              :index-stats (constantly {:document-count 0})}
      :embeddings {:embed (constantly [0.1 0.2 0.3])}}))
 
+(deftest configured-request-profile-selects-the-actual-observation-port
+  (let [writes (atom [])
+        marked (fn [profile]
+                 (update-in (mock-adapters) [:observations :record-repository-location!]
+                            (fn [write]
+                              (fn [record] (swap! writes conj profile) (write record)))))
+        app (http/create-handler (marked :local)
+                                 {:default-profile :local
+                                  :profile-adapters {:edn (marked :edn)}})
+        request {:request-method :post :uri "/api/v1/register"
+                 :body-params {:path "/tmp/profile-repo"} :headers {}}]
+    (is (= 201 (:status (app (assoc request :query-string "profile=edn")))))
+    (is (= 201 (:status (app (assoc request :headers {"x-profile" "local"})))))
+    (is (= [:edn :local] @writes))
+    (is (= 503 (:status (app (assoc request :query-string "profile=services")))))
+    (is (= [:edn :local] @writes))))
+
+(deftest server-default-profile-does-not-silently-select-local
+  (let [app (http/create-handler (mock-adapters) {:default-profile :edn})
+        request {:request-method :get :uri "/api/v1/unknown" :headers {}}]
+    (is (= 404 (:status (app request))))
+    (is (= 404 (:status (app (assoc request :uri "/api/v1/unknown?profile=edn")))))
+    (is (= 503 (:status (app (assoc request :headers {"x-profile" "local"})))))))
+
 ;; ---------------------------------------------------------------------------
 ;; problem-response tests
 

@@ -292,7 +292,8 @@
                  hits (.search searcher combined 100)]
              (mapv (fn [^ScoreDoc hit]
                      (let [doc (.document sf (.-doc hit))]
-                       {:result/path-raw (.get doc "path_raw")
+                       {:resource-id (.get doc "resource_id")
+                        :result/path-raw (.get doc "path_raw")
                         :result/commit-oid (.get doc "commit_oid")
                         :result/heading-path (vec (str/split (.get doc "heading_path") #" "))
                         :result/score (.-score hit)}))
@@ -328,7 +329,8 @@
                  hits (.search searcher combined (or k 10))]
              (mapv (fn [^ScoreDoc hit]
                      (let [doc (.document sf (.-doc hit))]
-                       {:result/path-raw (.get doc "embedding_path_raw")
+                       {:resource-id (.get doc "resource_id")
+                        :result/path-raw (.get doc "embedding_path_raw")
                         :result/commit-oid (.get doc "embedding_commit_oid")
                         :result/heading-path (vec (str/split (.get doc "embedding_heading_path") #" "))
                         :result/score (.-score hit)

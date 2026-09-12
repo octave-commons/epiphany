@@ -7,26 +7,14 @@
   http per the design doc) is deferred — see the ENG-017G card comment;
   this namespace locks down the outcome-parity contract that already
   holds today so a future refactor can't silently regress it."
-  (:require [clojure.java.shell] [clojure.test :refer [deftest is testing]]
-            [clojure.string :as str]
+  (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.main :as main]
+            [epiphany.infra.git :as git]
             [epiphany.infra.http :as http]
             [epiphany.infra.adapters.in-memory :as in-memory]))
 
-(defn- shell-git-resolve
-  "Same resolution strategy epiphany.infra.main's :local register/serve
-  paths use: shell out to `git rev-parse --git-common-dir`."
-  [path]
-  (let [{:keys [exit out err]}
-        (clojure.java.shell/sh "git" "-C" path "rev-parse"
-                               "--path-format=absolute" "--git-common-dir")]
-    (if (zero? exit)
-      (str/trim out)
-      (throw (ex-info (str "Not a Git repository: " path)
-                      {:repository-path path :git-error (str/trim err)})))))
-
 (defn- http-adapters []
-  (in-memory/make {:common-git-dir-fn shell-git-resolve}))
+  (in-memory/make {:common-git-dir-fn git/common-git-directory}))
 
 (defn- http-register [path]
   (let [app (http/create-handler (http-adapters))]

@@ -6,6 +6,9 @@
   (:require [clio.infra.ledger :as ledger]
             [clio.infra.runtime :as runtime]
             [clio.infra.schema-store :as schema-store]
+            [epiphany.application.validation :as validation]
+            [epiphany.domain.backup :as backup]
+            [epiphany.domain.observation-admission :as admission]
             [epiphany.extern.clio-observations :as host]
             [epiphany.infra.adapters.in-memory :as memory]
             [epiphany.law.clio-observations :as law]))
@@ -64,19 +67,32 @@
 (defn- invoke-write
   [store operation arguments]
   (law/assert-arguments! operation arguments)
+  ;; Validate even a duplicate before admission can remove it. Historical replay
+  ;; still executes the original recorded arguments through the old reference.
+  (if (= operation :import-all)
+    (doseq [[collection records] (first arguments)
+            record records]
+      (backup/validate-record collection record))
+    (when (= operation :record-revision-at-path!)
+      ((validation/wrap-write operation (constantly nil)) (first arguments))))
   (host/with-lock!
     (:directory store)
     (fn []
       (let [events (history store)
             port (replay events)
             before ((:export-all port))
-            result (apply (get port operation) arguments)
+            arguments (admission/invocation-arguments before operation arguments)
+            result (when arguments (apply (get port operation) arguments))
             after ((:export-all port))]
-        (when (not= before after)
-          (when (some? result)
-            (throw (ex-info "A refused observation command changed staged state"
-                            {:code :integrity/invalid-reference :operation operation})))
+        (if (= before after)
+          ;; A previous append may be visible after its force failed. A logical
+          ;; no-op still needs a durability fence while the operation lock is held.
+          (ledger/ensure-durable! (:schema/revisions (runtime/refresh (:runtime store)))
+                                  (:file store))
           (let [previous (last events)]
+            (when (some? result)
+              (throw (ex-info "A refused observation command changed staged state"
+                              {:code :integrity/invalid-reference :operation operation})))
             (runtime/append!
              (:runtime store) (:file store) :epiphany.observations/operation-accepted
              {:event/stream "epiphany/observations"

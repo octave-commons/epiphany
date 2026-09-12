@@ -1,5 +1,6 @@
 ---
 slug: clio-edn-recovery-2026-09-12
+uuid: ee636742-247f-4246-a4d1-fb4da7577e6c
 kind: report
 status: open
 description: "Fresh recovery evidence and remaining limitations for the local Clio profile."
@@ -7,6 +8,10 @@ labels: [development, clio, verification]
 ---
 
 # Epiphany recovery
+
+This report records the initial recovery checkpoint. Its 771-test result and
+Clio dependency below are historical. The [review successor report](clio-review-recovery-2026-09-12.md)
+contains the current fixes, immutable dependency rerun and remaining limits.
 
 Scratch cleanup removed the former local Clio implementation. Commit
 `17ec28f41a0d6274f8a09f11fd9b5350a4f42041` was unavailable from the remote, and

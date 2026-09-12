@@ -1,8 +1,7 @@
 (ns epiphany.infra.main
   "Single executable entry point for `epiphany` (short alias: `ep`).
   Dispatches subcommands and wires profile/adapter resolution."
-  (:require [clojure.java.shell :as shell]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [clojure.tools.cli :as cli]
             [clojure.data.json :as json]
             [epiphany.infra.services :as services]
@@ -263,16 +262,9 @@
 ;; Shared Git evidence helpers (show / diff / trace / ingest / search)
 
 (defn- resolve-common-git-dir
-  "Resolve a repository path's common Git directory via `git rev-parse`."
+  "Resolve a repository path's common Git directory through JGit."
   [repository-path]
-  (let [{:keys [exit out err]}
-        (shell/sh "git" "-C" repository-path "rev-parse"
-                  "--path-format=absolute" "--git-common-dir")]
-    (if (zero? exit)
-      (string/trim out)
-      (throw (ex-info (str "Not a Git repository: " repository-path)
-                      {:repository-path repository-path
-                       :git-error (string/trim err)})))))
+  (git/common-git-directory repository-path))
 
 ;; ---------------------------------------------------------------------------
 ;; Search subcommand
@@ -744,7 +736,7 @@
                              :index-dir default-index-dir})))]
           (println (str "Epiphany workbench starting on http://localhost:" port))
           (println (str "Profile: " (name profile)))
-          (http/start-server! adapters port)
+          (http/start-server! adapters port {:default-profile profile})
           ;; Block until interrupted
           (.addShutdownHook (Runtime/getRuntime)
                             (Thread. (fn []
@@ -769,14 +761,7 @@
 (defn- resolve-commit-oid
   "Resolve a ref, short OID, or HEAD-relative expression to a full commit OID."
   [repository-path expr]
-  (let [{:keys [exit out err]}
-        (shell/sh "git" "-C" repository-path "rev-parse" "--verify"
-                  (str expr "^{commit}"))]
-    (if (zero? exit)
-      (string/trim out)
-      (throw (ex-info (str "Could not resolve commit: " expr)
-                      {:repository-path repository-path
-                       :git-error (string/trim err)})))))
+  (git/resolve-commit-oid repository-path expr))
 
 (defn- make-evidence-git-port
   "Build a :git port backed by real Git object access for a repository's

@@ -190,7 +190,7 @@
             lex-normalized (normalize-scores (map :result/score lexical-raw))
             sem-normalized (normalize-scores (map :result/score semantic-raw))
             ;; Index lexical results by key
-            lex-index (into {} (map (fn [r s] [((juxt :result/path-raw :result/heading-path) r)
+            lex-index (into {} (map (fn [r s] [((juxt :resource-id :result/commit-oid :result/path-raw :result/heading-path) r)
                                                {:result r :lexical-score s :semantic-score nil}])
                                     lexical-raw lex-normalized))
             ;; Merge semantic results into index (prefer semantic as base)
@@ -207,7 +207,7 @@
                                         :lexical-score nil
                                         :semantic-score semantic-score}))))
                     lex-index
-                    (into {} (map (fn [r s] [((juxt :result/path-raw :result/heading-path) r)
+                    (into {} (map (fn [r s] [((juxt :resource-id :result/commit-oid :result/path-raw :result/heading-path) r)
                                              {:result r :semantic-score s}])
                                   semantic-raw sem-normalized)))
             ;; Build combined results

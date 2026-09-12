@@ -125,8 +125,9 @@
       :index-dir          Lucene index dir — required for :services"
   [{:keys [profile] :as opts}]
   (validate-profile! profile)
-  (update (resolve-raw-adapters opts)
-          :observations validation/validating-observations-port))
+  (vary-meta (update (resolve-raw-adapters opts)
+                     :observations validation/validating-observations-port)
+             assoc :epiphany/profile profile))
 
 ;; ---------------------------------------------------------------------------
 ;; Diagnostics

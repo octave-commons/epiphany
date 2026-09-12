@@ -186,16 +186,17 @@
 
 (defn wrap-profile
   "Middleware to inject profile from query params or header."
-  [handler]
-  (fn [request]
-    (let [profile (or (get-in request [:query-params :profile])
-                      (get-in request [:headers "x-profile"])
-                      "local")
-          profile (keyword profile)]
-      (if (profile/valid-profile? profile)
-        (handler (assoc request :profile profile))
-        (bad-request-problem (str "Invalid profile: " (pr-str profile)
-                                  ". Valid: " (pr-str profile/valid-profiles)))))))
+  ([handler] (wrap-profile handler :local))
+  ([handler default-profile]
+   (fn [request]
+     (let [profile (or (get-in request [:query-params :profile])
+                       (get-in request [:headers "x-profile"])
+                       default-profile)
+           profile (keyword profile)]
+       (if (profile/valid-profile? profile)
+         (handler (assoc request :profile profile))
+         (bad-request-problem (str "Invalid profile: " (pr-str profile)
+                                   ". Valid: " (pr-str profile/valid-profiles))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Handlers
@@ -401,18 +402,31 @@
   unknown tag, or malformed EDN/JSON — is rejected here as a stable
   :boundary/malformed-edn problem response (ENG-017K); it never reaches a
   route handler and never throws past this boundary."
-  [adapters]
-  (let [router (make-router adapters)]
-    (fn [request]
-      (try
-        (let [body-params (or (:body-params request)
-                              (when (:body request) (read-body request)))
-              request (cond-> request
-                        body-params (assoc :body-params body-params)
-                        (not (:path-params request)) (assoc :path-params {}))]
-          ((wrap-profile router) request))
-        (catch Exception e
-          (malformed-edn-problem (.getMessage e)))))))
+  ([adapters]
+   (create-handler adapters {}))
+  ([adapters {:keys [default-profile profile-adapters]}]
+   (let [default-profile (or default-profile (:epiphany/profile (meta adapters)) :local)
+         configured (assoc profile-adapters default-profile adapters)
+         _ (when-not (every? profile/valid-profile? (keys configured))
+             (throw (ex-info "HTTP adapters contain an invalid profile" {:profiles (keys configured)})))
+         routers (into {} (map (fn [[selected ports]] [selected (make-router ports)])) configured)
+         dispatch (wrap-query-params (wrap-profile
+                                      (fn [request]
+                                        (if-let [router (get routers (:profile request))]
+                                          (router request)
+                                          (unavailable-problem (str "Profile " (:profile request)
+                                                                    " is not configured on this server."))))
+                                      default-profile))]
+     (fn [request]
+       (try
+         (let [body-params (or (:body-params request)
+                               (when (:body request) (read-body request)))
+               request (cond-> request
+                         body-params (assoc :body-params body-params)
+                         (not (:path-params request)) (assoc :path-params {}))]
+           (dispatch request))
+         (catch Exception e
+           (malformed-edn-problem (.getMessage e))))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Server
@@ -420,9 +434,10 @@
 (defn start-server!
   "Start the HTTP server on the specified port.
    Returns the server instance."
-  [adapters port]
-  (let [handler (create-handler adapters)]
-    (jetty/run-jetty handler {:port port :join? false})))
+  ([adapters port] (start-server! adapters port {}))
+  ([adapters port options]
+   (let [handler (create-handler adapters options)]
+     (jetty/run-jetty handler {:port port :join? false}))))
 
 (defn stop-server!
   "Stop the HTTP server."

@@ -1,8 +1,10 @@
 ---
 slug: clio-edn-development
+uuid: 21d8a09a-b7f0-4cec-81fc-76e18c79e4a2
 kind: design
 status: implemented
 description: "Durable local observations through the canonical Clio event kernel."
+labels: [development, clio, persistence]
 requires-decisions: ["ADR-000", "ADR-001"]
 dependencies: []
 dependendents: []
@@ -35,6 +37,13 @@ Standalone CI fetches only that package at the explicit revision in
 
 Each complete read/decision/append cycle holds a separate OS-backed lock file.
 Clio independently validates and locks the canonical ledger during append.
+New revision observations are admitted by their resource, commit and exact path
+identity while the operation lock is held. Repeated imports remove identical
+accepted facts before staging; changed-content reuse and malformed duplicates
+are rejected. This admission affects new commands only, so historical operation
+replay retains its original meaning. A logical no-op calls Clio's durability
+barrier before returning: visible bytes from a previously failed force are not
+treated as proof that a retry has become durable.
 Readers rebuild from full historical schema snapshots and verify each recorded
 result, canonical before/after state hashes and state change. Missing history, malformed events, absent historical
 schemas and semantic replay conflicts fail visibly. Opening a store validates
@@ -46,6 +55,13 @@ adapter. Lexical registration, ingestion, search, status and review storage need
 no Mongo or inference process. Semantic operations still require a configured
 real embedding provider; EDN storage does not fabricate embeddings. This recovery
 does not claim restoration of the lost historical optional embedding adapter.
+
+HTTP servers carry their configured default profile. A request selecting another
+profile is dispatched only when that profile has explicitly supplied adapters;
+otherwise it receives an unavailable response before any handler uses storage.
+The server never acknowledges an EDN selection while writing through another
+provider. JGit resolves normal, bare and linked-worktree common directories for
+registration and CLI/HTTP parity without requiring a Git command subprocess.
 
 This intentionally favors inspectability over speed. Replaying and validating
 the whole ledger on every call is unsuitable for large production workloads.
