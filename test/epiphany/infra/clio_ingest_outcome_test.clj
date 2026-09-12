@@ -1,32 +1,28 @@
 (ns epiphany.infra.clio-ingest-outcome-test
   (:require [clio.extern.jvm.fs :as fs]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.test :refer [deftest is]]
             [epiphany.domain.extraction-projection :as extraction]
             [epiphany.domain.observation-admission :as admission]
             [epiphany.infra.adapters.clio :as clio]
             [epiphany.infra.git :as git]
             [epiphany.infra.main :as main]
-            [epiphany.law.registry :as registry]))
-
-(defn- git! [directory & arguments]
-  (let [result (apply shell/sh "git" "-C" directory arguments)]
-    (when-not (zero? (:exit result))
-      (throw (ex-info "Literal Git fixture command failed" result)))
-    result))
+            [epiphany.law.registry :as registry])
+  (:import [org.eclipse.jgit.api Git]))
 
 (defn- with-repository [f]
   (let [directory (str (System/getProperty "java.io.tmpdir") "/epiphany-ingest-outcome-" (random-uuid))
         repository (str directory "/repo")]
     (try
       (.mkdirs (io/file repository))
-      (git! repository "init" "-q")
-      (git! repository "config" "user.name" "Epiphany test")
-      (git! repository "config" "user.email" "fixture@example.invalid")
-      (spit (io/file repository "notes.md") "# Accepted facts\n\nConcurrency preserves one observation.\n")
-      (git! repository "add" "notes.md")
-      (git! repository "commit" "-qm" "Literal extraction fixture")
+      (with-open [repository-git (.call (.setDirectory (Git/init) (io/file repository)))]
+        (spit (io/file repository "notes.md") "# Accepted facts\n\nConcurrency preserves one observation.\n")
+        (.call (.addFilepattern (.add repository-git) "notes.md"))
+        (-> (.commit repository-git)
+            (.setAuthor "Epiphany test" "fixture@example.invalid")
+            (.setCommitter "Epiphany test" "fixture@example.invalid")
+            (.setMessage "Literal extraction fixture")
+            (.call)))
       (let [store (clio/open-store (str directory "/ledger"))
             ports (mapv (fn [_] (clio/make-observations-adapter
                                  (clio/open-store (str directory "/ledger")))) (range 2))]
