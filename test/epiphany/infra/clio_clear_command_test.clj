@@ -5,7 +5,7 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]]
-            [epiphany.domain.backup :as backup]
+            [epiphany.infra.backup :as backup]
             [epiphany.extern.clio-observations :as host]
             [epiphany.infra.adapters.clio :as clio]
             [epiphany.infra.adapters.in-memory :as memory]

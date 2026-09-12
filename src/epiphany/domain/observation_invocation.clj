@@ -1,4 +1,4 @@
-(ns epiphany.shape.observation-invocation
+(ns epiphany.domain.observation-invocation
   "Normalize validated port arguments into command metadata and replay arguments."
   (:require [epiphany.law.clio-observations :as law]))
 

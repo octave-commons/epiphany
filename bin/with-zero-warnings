@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Preserve both streams and the command status; warnings independently fail.
+set -euo pipefail
+if [[ $# -eq 0 ]]; then
+  echo 'Usage: with-zero-warnings command [arguments...]' >&2
+  exit 2
+fi
+capture=$(mktemp -d "${TMPDIR:-/tmp}/epiphany-warning-gate.XXXXXXXX")
+cleanup() {
+  rm -f -- "$capture/stdout" "$capture/stderr"
+  rmdir -- "$capture"
+}
+trap cleanup EXIT
+status=0
+"$@" >"$capture/stdout" 2>"$capture/stderr" &
+child=$!
+interrupt() {
+  kill -TERM "$child" 2>/dev/null || true
+  wait "$child" 2>/dev/null || true
+  cat "$capture/stdout"
+  cat "$capture/stderr" >&2
+  exit "$1"
+}
+trap 'interrupt 130' INT
+trap 'interrupt 143' TERM
+wait "$child" || status=$?
+trap - INT TERM
+cat "$capture/stdout"
+cat "$capture/stderr" >&2
+if grep -Eiq '(^|[^[:alnum:]_])(WARN|WARNING)([^[:alnum:]_]|$)' "$capture/stdout" "$capture/stderr"; then
+  echo 'Zero-warning gate failed: command emitted a warning; original output is preserved above.' >&2
+  if [[ $status -eq 0 ]]; then status=1; fi
+fi
+exit "$status"

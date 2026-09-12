@@ -31,7 +31,7 @@ jobs:
         run: clojure -M:unit-test
       - name: Compile JVM entry point
         run: bash bin/build
-      - name: Durable Clio and Lucene process proof
+      - name: Durable Clio and Lucene process proof (warnings fail)
         run: bash bin/verify-clio-edn
       - name: Shipped CLI help smoke
         run: |

@@ -11,7 +11,8 @@
 (defn register! [{:keys [git repository-metadata observations]} command]
   (let [{:keys [request-id repository-path]} (if (map? command)
                                                command
-                                               {:repository-path command})]
+                                               {:repository-path command})
+        request-id (or request-id (random-uuid))]
     (or (when-let [existing ((:find-by-request-id observations) request-id)]
           {:resource-id (:resource-id existing)
            :repository-path repository-path
@@ -23,7 +24,7 @@
                               (repository-identity/new-resource-id))
               observation {:observation/type :repository/location-observed
                            :observation/id (random-uuid)
-                           :observation/request-id (or request-id (random-uuid))
+                           :observation/request-id request-id
                            :observation/observed-at (java.util.Date.)
                            :observation/adapter-version "0.1.0"
                            :observation/schema-version 1

@@ -1,0 +1,42 @@
+PASS native Mongo answered its command protocol
+PASS S3rver create/put/get preserves actual EDN object bytes
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Integration failed (1); inspect /workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/evidence/integration.log
+
+1 !== 0
+
+    at observeIntegration (file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:134:10)
+    at async integration (file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:111:46)
+    at async runServices (file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:196:20)
+    at async file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:272:39 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.20.0
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Service supervisor failed (1); inspect /workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/evidence/run-Gw6D8Z
+
+1 !== 0
+
+    at superviseIntegration (file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:252:10)
+    at async file:///workspace/scratch/3655842e43cf/recovery/epiphany-reviewed-services.5FgNueVj/devtools/epiphany-integration.mjs:273:8 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.20.0

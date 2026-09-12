@@ -3,6 +3,7 @@
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [epiphany.domain.backup :as backup]
+            [epiphany.infra.backup :as restore]
             [epiphany.infra.adapters.in-memory :as in-memory]))
 
 (def ^:private test-dir (str (System/getProperty "java.io.tmpdir") "/epiphany-backup-test-" (System/currentTimeMillis)))
@@ -184,7 +185,7 @@
       ((:record-repository-location! obs) obs2)
       ((:record-ingestion-run! obs) run1)
 
-      (let [report (backup/restore-drill obs git drill-dir)]
+      (let [report (restore/restore-drill obs git drill-dir)]
         (is (= :complete (:drill-status report)))
         (is (true? (:round-trip-identical? report)))
         (is (= 3 (:total-docs (:export report))))

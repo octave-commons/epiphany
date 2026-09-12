@@ -1,0 +1,3 @@
+PASS native Mongo answered its command protocol
+PASS S3rver create/put/get preserves actual EDN object bytes
+PASS actual JVM integration with real MiniLM: 22 tests, 108 assertions, 0 failures.

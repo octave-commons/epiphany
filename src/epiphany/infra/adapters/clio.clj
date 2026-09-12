@@ -10,7 +10,7 @@
             [epiphany.extern.clio-observations :as host]
             [epiphany.infra.adapters.in-memory :as memory]
             [epiphany.law.clio-observations :as law]
-            [epiphany.shape.observation-invocation :as invocation]))
+            [epiphany.domain.observation-invocation :as invocation]))
 
 (defn- reference-port []
   (:observations (memory/make {:common-git-dir-fn identity})))

@@ -278,10 +278,11 @@
   [adapters]
   (fn [request]
     (let [body (:body-params request)
-          candidate (cond-> {:command/name :command/register
-                             :repository-path (or (:path body) (:repository-path body) "")}
-                      (:request-id body)
-                      (assoc :request-id (parse-uuid-or-raw (:request-id body))))
+          candidate {:command/name :command/register
+                     :repository-path (or (:path body) (:repository-path body) "")
+                     :request-id (if (some? (:request-id body))
+                                   (parse-uuid-or-raw (:request-id body))
+                                   (random-uuid))}
           decoded (commands/decode candidate)]
       (if (commands/rejected? decoded)
         (rejected->problem decoded)

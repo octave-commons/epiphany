@@ -13,6 +13,47 @@ epics: []
 
 # Clio EDN development profile
 
+## Restore retry and command review follow-up
+
+The programmatic restore entry point is now `epiphany.infra.backup/restore-drill`,
+migrated from `epiphany.domain.backup/restore-drill` because effect orchestration
+cannot depend upward from the pure domain layer. Its three-argument legacy clear
+contract and four-argument UUID contract remain. Existing payload validation and
+file export/import functions remain at their existing public names. The two
+internal restore callers were migrated; historical review records remain intact.
+
+An identified drill durably retains the first snapshot in `backup.edn`, with its
+`:restore/command-id`, before clearing observations. A failed import can be retried
+with the same directory and UUID after reopening the ledger. The original bytes
+are reused and synchronized again. A different command, or an unidentified legacy
+drill, cannot replace that backup. Use a new directory and UUID for a new drill.
+The directory lock spans the full drill; the original snapshot is published by
+an exclusive hard link after forcing a complete temporary file. Corrupt snapshots
+and failed synchronization stop before clear. Clio clear retries keep their
+existing event semantics and never rewrite history.
+
+All profile options accept both `edn` and `:edn` spellings, likewise for `local`
+and `services`. Registration generates one request ID before CLI/HTTP command
+decoding when the caller omits one, and returns the same ID stored on its
+observation. Retry with the returned `--request-id`; a new invocation without
+that ID represents a new command, not an inferred identity match.
+
+`bin/verify-clio-edn` now runs the full native proof through
+`bin/with-zero-warnings`. It preserves stdout, stderr and nonzero command status;
+any warning also fails the gate. The operations companion is not a substitute
+for the gated entry point. Current JDK 21 and Lucene 10.5 require explicit warning
+disclosure: `--enable-native-access=ALL-UNNAMED` and
+`--add-modules=jdk.incubator.vector` enable the documented native/vector paths,
+but the JDK itself prints `WARNING: Using incubator modules: jdk.incubator.vector`.
+An actual 32-element SIMD dot product returned 64.0 with 512-bit vectors and FMA
+enabled while that warning remained. Omitting the vector module instead produces
+Lucene's fallback warning. No diagnostic suppression, disabled vector capability,
+or changed JDK is used to manufacture a passing zero-warning result. Until a
+supported warning-free configuration is demonstrated, this process gate remains
+a blocker even when its functional checks pass. The configuration guidance is
+documented by [Lucene VectorUtil](https://lucene.apache.org/core/10_5_0/core/org/apache/lucene/util/VectorUtil.html)
+and [MMapDirectory](https://lucene.apache.org/core/10_5_0/core/org/apache/lucene/store/MMapDirectory.html).
+
 The user explicitly authorized a development provider that removes Mongo as a
 prerequisite while retaining existing providers. This scoped decision extends
 ADR-000's earlier Mongo durability wording: Git remains canonical for source,

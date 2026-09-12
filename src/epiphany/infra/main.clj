@@ -30,6 +30,12 @@
 
 (def version "0.1.0")
 
+(defn- parse-profile
+  "Accept both ordinary CLI names and the documented EDN keyword spelling."
+  [value]
+  (let [text (if (keyword? value) (name value) value)]
+    (keyword (if (string/starts-with? text ":") (subs text 1) text))))
+
 (declare resolve-common-git-dir make-durable-index-ports default-index-dir)
 
 (defn- make-edn-adapters
@@ -55,7 +61,7 @@
     :parse-fn #(java.util.UUID/fromString %)]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword]
+    :parse-fn parse-profile]
    ["-h" "--help" "Show register help and exit."]])
 
 (defn- format-register-result
@@ -93,10 +99,10 @@
 
       :else
       (let [repository-path (first arguments)
-            request-id (:request-id options)
-            candidate (cond-> {:command/name :command/register
-                               :repository-path repository-path}
-                        request-id (assoc :request-id request-id))
+            request-id (or (:request-id options) (random-uuid))
+            candidate {:command/name :command/register
+                       :repository-path repository-path
+                       :request-id request-id}
             decoded (commands/decode candidate)]
         (if (commands/rejected? decoded)
           {:exit 1 :out (str "Error: " (:detail (:outcome/payload decoded)))}
@@ -163,7 +169,7 @@
     :parse-fn #(java.util.UUID/fromString %)]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword]
+    :parse-fn parse-profile]
    ["-h" "--help" "Show status help and exit."]])
 
 (defn format-checkpoint
@@ -308,7 +314,7 @@
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :id :profile
     :default :local
-    :parse-fn keyword]
+    :parse-fn parse-profile]
    ["-h" "--help" "Show search help and exit."
     :id :help]])
 
@@ -438,7 +444,7 @@
    ["-p" "--profile PROFILE" "Profile for observations: :local (memory), :edn (Clio), or :services (MongoDB)"
     :id :profile
     :default :services
-    :parse-fn keyword]
+    :parse-fn parse-profile]
    [nil "--refs REFS" "Comma-separated Git refs to ingest"
     :id :refs
     :default "HEAD"]
@@ -677,11 +683,6 @@
 ;; ---------------------------------------------------------------------------
 ;; Serve subcommand
 
-(defn- parse-profile
-  "Parse a profile keyword from CLI string, stripping leading colon."
-  [s]
-  (keyword (if (.startsWith ^String s ":") (subs s 1) s)))
-
 (def serve-options
   [["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :services
@@ -851,7 +852,7 @@
                (str "Must be one of: " (string/join ", " (map name candidates/relation-types)))]]
    ["-p" "--profile PROFILE" "Profile for candidate seeding: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword
+    :parse-fn parse-profile
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-h" "--help" "Show diff help and exit."]])
 
@@ -1098,7 +1099,7 @@
    [nil "--include-suppressed" "Also show rejected/do-not-suggest candidates"]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword
+    :parse-fn parse-profile
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-f" "--format FORMAT" "Output format: text or edn"
     :default :text
@@ -1116,7 +1117,7 @@
    [nil "--annotation TEXT" "Free-text annotation (for annotated decisions)"]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword
+    :parse-fn parse-profile
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-h" "--help" "Show inbox decide help and exit."]])
 
@@ -1247,7 +1248,7 @@
    [nil "--label TEXT" "Human-readable packet label" :default "Evidence Packet"]
    ["-p" "--profile PROFILE" "Profile: :local (memory), :edn (Clio), or :services (MongoDB)"
     :default :local
-    :parse-fn keyword
+    :parse-fn parse-profile
     :validate [profile/valid-profile? (str "Valid: " (pr-str profile/valid-profiles))]]
    ["-f" "--format FORMAT" "Output format: markdown, edn, or json"
     :default :markdown

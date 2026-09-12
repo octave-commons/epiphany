@@ -25,6 +25,8 @@
     (is (= [(:resource-id result)] @writes))
     (is (= 1 (count @observations)))
     (let [obs (first @observations)]
+      (is (uuid? (:request-id result)))
+      (is (= (:request-id result) (:observation/request-id obs)))
       (is (= (:resource-id result) (:resource-id obs)))
       (is (= :repository/location-observed (:observation/type obs)))
       (is (= "/repos/notes" (get-in obs [:repository/path :path/raw])))
