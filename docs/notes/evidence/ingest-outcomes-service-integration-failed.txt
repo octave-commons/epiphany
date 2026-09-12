@@ -1,0 +1,15 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Owned Mongo did not answer its actual ping within the startup bound: connect ECONNREFUSED 127.0.0.1:37441
+    at file:///workspace/scratch/3655842e43cf/foresight-restored/devtools/epiphany-integration.mjs:134:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.20.0

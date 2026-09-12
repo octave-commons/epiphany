@@ -1,0 +1,3 @@
+From https://github.com/open-hax/eta-mu
+ * branch            ff48f090965be5c17cca1e3662d7402b383510c1 -> FETCH_HEAD
+Clio source ready at ff48f090965be5c17cca1e3662d7402b383510c1 in target/verified-clio-fetch

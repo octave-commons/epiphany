@@ -46,6 +46,9 @@
 ;;
 ;; Append-only durable observation store. Records are never updated or
 ;; deleted; corrections append new observations.
+;; Clio direct record writes return the transient observation/write-result
+;; contract: {:observation/write-status :accepted|:duplicate}. Legacy providers
+;; retain nil acknowledgements. Import/clear and persisted replay results are nil.
 ;;
 ;; The observations port distinguishes:
 ;;   - :find-by-request-id — idempotent lookup (returns nil when absent)

@@ -1,0 +1,46 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Registered: /tmp/epiphany-clio-live.Ss6Ljn/repo
+  Resource ID:     6101afff-557f-4f2e-a6dc-5b9d155196f8
+  Common Git dir:  /tmp/epiphany-clio-live.Ss6Ljn/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 13, 2026 2:11:18 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Ingested: /tmp/epiphany-clio-live.Ss6Ljn/repo
+  Request ID:          9785a025-a788-4adf-9fc2-f1a5db9ec1de
+  Resource ID:         6101afff-557f-4f2e-a6dc-5b9d155196f8
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.Ss6Ljn/index
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 13, 2026 2:11:26 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Ingested: /tmp/epiphany-clio-live.Ss6Ljn/repo
+  Request ID:          ea0d16a6-4a43-4d0b-a27b-3126cf2d6d5e
+  Resource ID:         6101afff-557f-4f2e-a6dc-5b9d155196f8
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.Ss6Ljn/index
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+#:observation{:write-status :accepted}
+#:observation{:write-status :accepted}
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-xfd9qf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41149 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41149 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.

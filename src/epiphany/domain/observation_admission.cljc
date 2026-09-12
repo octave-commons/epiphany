@@ -2,7 +2,8 @@
   "Pure admission of new observations against the locked accepted snapshot.
 
   Historical operation replay remains unchanged. Only new invocations remove
-  already accepted identities before the reference adapter stages a write.")
+  already accepted identities before the reference adapter stages a write."
+  (:require [epiphany.law.observation-write :as write]))
 
 (def record-collections
   "Prospective direct writes and the accepted collection whose identity they reuse."
@@ -13,6 +14,21 @@
    :record-revision-at-path! "revision-at-path"
    :record-review-decision! "review-decision"
    :record-lineage-candidate! "lineage-candidate"})
+
+(defn write-result
+  "Report a direct record's locked admission without changing historical results."
+  [operation changed? legacy-result]
+  (if (contains? record-collections operation)
+    {:observation/write-status (if changed? :accepted :duplicate)}
+    legacy-result))
+
+(defn newly-stored?
+  "Interpret a validated result; nil retains the legacy provider's acknowledgement."
+  [result]
+  (when-not (write/valid-result? result)
+    (throw (ex-info "Invalid observation write result"
+                    {:code :invalid-observation-write-result})))
+  (or (nil? result) (= :accepted (:observation/write-status result))))
 
 (defn- identity-keys [collection record]
   (if (= collection "section-extraction")

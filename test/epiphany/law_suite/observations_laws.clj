@@ -193,13 +193,14 @@
 (defn- fail [detail] {:outcome :fail :detail detail})
 
 (defn- law-valid-write-accepted
-  [port op {:keys [make-valid]}]
+  [port op {:keys [make-valid write-results?]}]
   (let [record (make-valid #uuid "10000000-0000-0000-0000-000000000001")]
     (try
-      (let [result ((get port op) record)]
-        (if (nil? result)
+      (let [result ((get port op) record)
+            expected (when write-results? {:observation/write-status :accepted})]
+        (if (= expected result)
           (pass)
-          (fail (str "expected nil for a valid first write, got " (pr-str result)))))
+          (fail (str "expected " (pr-str expected) " for a valid first write, got " (pr-str result)))))
       (catch Exception e
         (fail (str "valid write threw " (.getName (class e)) ": " (.getMessage e)))))))
 
@@ -228,14 +229,15 @@
         (fail "export-all differs before vs after a rejected write")))))
 
 (defn- law-idempotent-replay-stable
-  [port op {:keys [make-valid]}]
+  [port op {:keys [make-valid write-results?]}]
   (let [rid #uuid "20000000-0000-0000-0000-000000000001"
         record (make-valid rid)]
     (try
       ((get port op) record)
-      (let [result ((get port op) record)]
-        (if (some? result)
-          (fail (str "replay with identical content must return nil, got " (pr-str result)))
+      (let [result ((get port op) record)
+            expected (when write-results? {:observation/write-status :duplicate})]
+        (if (not= expected result)
+          (fail (str "replay with identical content must return " (pr-str expected) ", got " (pr-str result)))
           (pass)))
       (catch Exception e
         (fail (str "idempotent replay threw " (.getName (class e)) ": " (.getMessage e)))))))
@@ -340,6 +342,8 @@
      :strict-admission? — require every record kind to refuse materially changed
                      identity reuse, beyond the legacy first-write-wins contract.
                      Generated envelope IDs are not the material conflict fixture.
+     :write-results? — require explicit accepted/duplicate acknowledgement maps
+                     for every direct record; default preserves legacy nil results.
 
    Registered write ops WITHOUT a fixture are not silently skipped —
    they produce a :fail outcome naming the missing fixture, so a new
@@ -359,7 +363,7 @@
 
    This function emits no clojure.test assertions; callers inspect the
    returned data. Skip and pass are distinguishable outcomes."
-  [{:keys [capabilities ops strict-admission?] :as args}]
+  [{:keys [capabilities ops strict-admission? write-results?] :as args}]
   (let [caps (or capabilities #{})
         provider (resolve-port-provider args)
         judged-ops (or ops (operations/registered-write-operations))]
@@ -373,7 +377,8 @@
                             " has no law-suite fixture — the harness would "
                             "silently skip it")}])
            (for [op judged-ops
-                 :let [fixture (fixture-for op strict-admission?)]
+                 :let [fixture (some-> (fixture-for op strict-admission?)
+                                       (assoc :write-results? write-results?))]
                  :when fixture
                  {:keys [law capability run]} universal-laws]
              [[op law]
@@ -381,7 +386,8 @@
                 {:outcome :skip :capability capability}
                 (run (provider) op fixture))])
            (for [op judged-ops
-                 :let [fixture (fixture-for op strict-admission?)]
+                 :let [fixture (some-> (fixture-for op strict-admission?)
+                                       (assoc :write-results? write-results?))]
                  :when (and fixture (not= :none (:idempotency fixture)))
                  {:keys [law capability run]} idempotency-laws]
              [[op law]

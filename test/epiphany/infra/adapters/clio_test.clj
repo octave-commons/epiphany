@@ -28,7 +28,7 @@
                                       (clio/make-observations-adapter
                                        (clio/open-store directory))))
                        :capabilities #{:schema-validation :idempotency :export-import}
-                       :strict-admission? true})]
+                       :strict-admission? true :write-results? true})]
         (is (seq outcomes))
         (is (= #{} (laws/failed-laws outcomes)) (pr-str outcomes))
         (is (= #{} (laws/skipped-laws outcomes))))
@@ -41,11 +41,11 @@
             port (clio/make-observations-adapter store)
             request-id (random-uuid)
             record (location request-id)]
-        (is (nil? ((:record-repository-location! port) record)))
+        (is (= {:observation/write-status :accepted} ((:record-repository-location! port) record)))
         (let [first-bytes (fs/read-text (:file store))
               restarted (clio/make-observations-adapter (clio/open-store directory))]
           (is (= record ((:find-by-request-id restarted) request-id)))
-          (is (nil? ((:record-repository-location! restarted) record)))
+          (is (= {:observation/write-status :duplicate} ((:record-repository-location! restarted) record)))
           (is (= :idempotency-conflict
                  (:code (error-data #((:record-repository-location! restarted)
                                       (assoc record :resource-id (random-uuid)))))))
@@ -71,7 +71,7 @@
             records (repeatedly 4 #(location (random-uuid)))
             writes (mapv (fn [port record]
                            (future ((:record-repository-location! port) record))) ports records)]
-        (doseq [write writes] (is (nil? (deref write 10000 ::timeout))))
+        (doseq [write writes] (is (= {:observation/write-status :accepted} (deref write 10000 ::timeout))))
         (is (= (set records) (set (clio/list-repository-locations (clio/open-store directory))))))
       (finally (fs/remove-tree! directory)))))
 

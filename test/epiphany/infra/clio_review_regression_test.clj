@@ -38,7 +38,8 @@
             writes (mapv (fn [port record]
                            (future @start ((:record-revision-at-path! port) record))) ports records)]
         (deliver start true)
-        (doseq [write writes] (is (nil? (deref write 10000 ::timeout))))
+        (is (= #{:accepted :duplicate}
+               (set (map #(-> (deref % 10000 ::timeout) :observation/write-status) writes))))
         (is (= 1 (count (clio/history store))))
         (is (= 1 (count ((:list-revision-at-path-by-resource (first ports)) (:resource-id base))))))
       (finally (fs/remove-tree! directory)))))
@@ -65,7 +66,8 @@
             ((get port operation) record)
             (let [accepted (fs/read-text (:file store))
                   snapshot ((:export-all port))]
-              (is (nil? ((get port operation) retry)) (str operation " preserves the original accepted fact"))
+              (is (= {:observation/write-status :duplicate} ((get port operation) retry))
+                  (str operation " preserves the original accepted fact"))
               (is (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content"
                                     ((get port operation) (assoc retry material-field changed)))
                   (str operation " must not silently acknowledge changed content"))
@@ -88,7 +90,8 @@
             writes (mapv (fn [port record]
                            (future @start ((:record-section-extraction! port) record))) ports [base retry])]
         (deliver start true)
-        (doseq [write writes] (is (nil? (deref write 10000 ::timeout))))
+        (is (= #{:accepted :duplicate}
+               (set (map #(-> (deref % 10000 ::timeout) :observation/write-status) writes))))
         (is (= 1 (count (clio/history store))))
         (is (= 1 (count ((:list-section-extractions-by-revision (first ports))
                          (:extraction/revision-at-path-id base)))))
@@ -101,9 +104,9 @@
                                 ((:record-section-extraction! reopened)
                                  (assoc imported :extraction/content-sha256 "changed-content"))))
           (is (= accepted (fs/read-text (:file store))))
-          (is (nil? ((:record-section-extraction! reopened)
-                     (assoc imported :observation/id (random-uuid) :observation/request-id (random-uuid)
-                            :extraction/extractor-version "extractor-v2"))))
+          (is (= {:observation/write-status :accepted} ((:record-section-extraction! reopened)
+                                                        (assoc imported :observation/id (random-uuid) :observation/request-id (random-uuid)
+                                                               :extraction/extractor-version "extractor-v2"))))
           (is (= 2 (count ((:list-section-extractions-by-revision reopened)
                            (:extraction/revision-at-path-id base)))))
           (is (= 2 (count (clio/history (clio/open-store directory)))))))
@@ -164,7 +167,7 @@
           (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Injected file force failure"
                                 (with-redefs [fs/force-file! fail-force] (write))))
           (is (= visible (fs/read-text (:file store))))
-          (is (nil? (write)))
+          (is (= {:observation/write-status :duplicate} (write)))
           (is (= visible (fs/read-text (:file store))))
           (is (= 1 (count (clio/history (clio/open-store directory)))))))
       (finally (fs/remove-tree! directory)))))
@@ -199,7 +202,8 @@
             ((get port operation) record)
             (let [before (fs/read-text (:file store))
                   snapshot ((:export-all port))]
-              (is (nil? ((get port operation) retry)) "Direct observation-ID retries already keep the first fact")
+              (is (= {:observation/write-status :duplicate} ((get port operation) retry))
+                  "Direct observation-ID retries already keep the first fact")
               (is (nil? ((:import-all port) {collection [retry]})) "Import retries must also ignore observation time")
               (is (= before (fs/read-text (:file store))))
               (is (= snapshot ((:export-all port))))

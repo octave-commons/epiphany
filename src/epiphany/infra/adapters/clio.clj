@@ -3,9 +3,7 @@
 
   The reference is disposable, never a fallback. Every read rebuilds from
   canonical events. No Mongo query language or destructive ledger edit is used."
-  (:require [clio.infra.ledger :as ledger]
-            [clio.infra.runtime :as runtime]
-            [clio.infra.schema-store :as schema-store]
+  (:require [clio.infra.runtime :as runtime]
             [epiphany.application.validation :as validation]
             [epiphany.domain.backup :as backup]
             [epiphany.domain.observation-admission :as admission]
@@ -21,7 +19,7 @@
   "Return validated causal history, refusing deleted files and historical schemas."
   [{:keys [file schemas]}]
   (:canonical/events
-   (ledger/canonicalize-files (schema-store/load-revisions schemas) [file])))
+   (runtime/canonicalize-files {:schema/directory schemas} [file])))
 
 (defn- replay
   [events]
@@ -59,10 +57,13 @@
         (let [file (host/ensure-ledger! directory)
               schemas (str directory "/schemas")
               store {:directory directory :file file :schemas schemas}]
-         ;; Validate before runtime/open can materialize the current schema.
-         ;; A deleted historical snapshot is corruption, even when it happens
-         ;; to equal today's catalog and could otherwise be regenerated.
+          ;; Validate before runtime/open can materialize the current schema.
+          ;; A deleted historical snapshot is corruption, even when it happens
+          ;; to equal today's catalog and could otherwise be regenerated.
           (replay (history store))
+          ;; A failed force can leave a fully valid, visible append behind.
+          ;; Reopening acknowledges durability only after fencing those bytes.
+          (runtime/ensure-durable! {:schema/directory schemas} file)
           (assoc store :runtime (runtime/open schemas law/catalog)))))))
 
 (defn- invoke-read
@@ -96,8 +97,7 @@
           (if (and (= before after) (not= :new command-status))
           ;; A previous append may be visible after its force failed. A logical
           ;; no-op still needs a durability fence while the operation lock is held.
-            (ledger/ensure-durable! (:schema/revisions (runtime/refresh (:runtime store)))
-                                    (:file store))
+            (runtime/ensure-durable! (:runtime store) (:file store))
             (let [previous (last events)]
               (when (some? result)
                 (throw (ex-info "A refused observation command changed staged state"
@@ -113,7 +113,7 @@
                                      :before-hash (host/state-hash before)
                                      :after-hash (host/state-hash after)}
                               command-id (assoc :command-id command-id))})))
-          result)))))
+          (admission/write-result operation (not= before after) result))))))
 
 (defn make-observations-adapter
   "Expose every existing observation-port method through durable Clio replay."

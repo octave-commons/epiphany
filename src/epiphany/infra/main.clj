@@ -15,6 +15,7 @@
             [epiphany.application.registration :as registration]
             [epiphany.application.commands :as commands]
             [epiphany.domain.ingestion :as ingestion]
+            [epiphany.domain.observation-admission :as observation-admission]
             [epiphany.domain.extraction-projection :as extraction]
             [epiphany.domain.revision-at-path :as revision-at-path]
             [epiphany.domain.markdown-selection :as markdown-selection]
@@ -524,9 +525,8 @@
                       :observed-at (java.util.Date.)}))))
                (remove #(contains? existing (revision-at-path/observation-id-key %))))
               commits)]
-    (doseq [observation new-observations]
-      ((:record-revision-at-path! observations) observation))
-    (count new-observations)))
+    (count (filter observation-admission/newly-stored?
+                   (mapv (:record-revision-at-path! observations) new-observations)))))
 
 (defn- hydrate-extraction-content
   "Rehydrate one durable extraction from its canonical Git blob. Extraction

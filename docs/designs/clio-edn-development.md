@@ -44,6 +44,14 @@ are rejected. This admission affects new commands only, so historical operation
 replay retains its original meaning. A logical no-op calls Clio's durability
 barrier before returning: visible bytes from a previously failed force are not
 treated as proof that a retry has become durable.
+Direct record writes now return an explicit transient
+`{:observation/write-status :accepted}` or `:duplicate` result after that locked
+admission and durability fence. Revision and extraction counters consume this
+result, and a deduplicated extraction's discarded UUID never enters the index.
+Legacy adapters retain their existing nil acknowledgement contract. The durable
+operation event still records the reference implementation's nil result, so
+historical replay and schema identities retain their meaning. A later index
+failure remains observable without retracting the successful observation count.
 Readers rebuild from full historical schema snapshots and verify each recorded
 result, canonical before/after state hashes and state change. Missing history, malformed events, absent historical
 schemas and semantic replay conflicts fail visibly. Opening a store validates

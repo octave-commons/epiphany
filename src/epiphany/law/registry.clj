@@ -9,6 +9,7 @@
             [epiphany.law.git :as git]
             [epiphany.law.markdown :as markdown]
             [epiphany.law.observation :as observation]
+            [epiphany.law.observation-write :as observation-write]
             [epiphany.law.ports :as ports]
             [epiphany.law.selection :as selection]
             [malli.core :as m]
@@ -17,7 +18,7 @@
 (def schemas
   "Registry data: schema name -> schema body, all EDN-serializable."
   (merge git/schemas observation/schemas selection/schemas commands/schemas
-         assurance/schemas markdown/schemas
+         assurance/schemas markdown/schemas observation-write/schemas
          {"git-port"                        ports/git-port-schema
           "repository-metadata-port"        ports/repository-metadata-port-schema
           "observations-port"               ports/observations-port-schema
