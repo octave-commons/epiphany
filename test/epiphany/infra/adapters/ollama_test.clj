@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.string :as string]
             [epiphany.infra.adapters.ollama :as ollama]
+            [epiphany.infra.integration-config :as config]
             [epiphany.domain.section-extraction :as se]
             [epiphany.shape.markdown :as md]))
 
@@ -44,22 +45,19 @@
             (is (integer? (:embedding-version result)))))))))
 
 ;; ---------------------------------------------------------------------------
-;; Live Ollama integration tests (require running Ollama with nomic-embed-text)
+;; Actual HTTP integration: configured provider, or original Ollama/nomic defaults.
 
 (deftest ^:integration embed-query-test
   (testing "single text embedding returns correct dimensions"
-    (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"})
+    (let [adapter (ollama/make-embeddings-adapter (config/embedding-options))
           vector ((:embed-query adapter) "Hello world")]
       (is (vector? vector))
-      (is (= 768 (count vector)))
+      (is (= (config/embedding-dimensions) (count vector)))
       (is (every? float? vector)))))
 
 (deftest ^:integration embed-sections-test
   (testing "batch embedding of extraction records"
-    (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"
-                                                    :batch-size 2})
+    (let [adapter (ollama/make-embeddings-adapter (assoc (config/embedding-options) :batch-size 2))
           record (make-test-record "# First\n\nAlpha.\n\n# Second\n\nBeta."
                                    "doc.md" "c1" "b1")
           results ((:embed-sections! adapter) [record])]
@@ -67,30 +65,28 @@
       (is (= "doc.md" (:embedding/path-raw (first results))))
       (is (= "c1" (:embedding/commit-oid (first results))))
       (is (= ["First"] (:embedding/heading-path (first results))))
-      (is (= 768 (:embedding/dimensions (first results))))
-      (is (= "nomic-embed-text" (:embedding/model (first results))))
+      (is (= (config/embedding-dimensions) (:embedding/dimensions (first results))))
+      (is (= (:model (config/embedding-options)) (:embedding/model (first results))))
       (is (string? (:embedding/model-digest (first results))))
       (is (vector? (:embedding/vector (first results))))
-      (is (= 768 (count (:embedding/vector (first results))))))))
+      (is (= (config/embedding-dimensions) (count (:embedding/vector (first results))))))))
 
 (deftest ^:integration embed-version-test
   (testing "version is deterministic for the same immutable model artifact"
     (let [a1 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-a"})
+                                              :model-digest "sha256:model-a"})
           a2 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-a"})
+                                              :model-digest "sha256:model-a"})
           a3 (ollama/make-embeddings-adapter {:model "nomic-embed-text"
-                                               :model-digest "sha256:model-b"})]
+                                              :model-digest "sha256:model-b"})]
       (is (= ((:embedding-version a1)) ((:embedding-version a2))))
       (is (not= ((:embedding-version a1)) ((:embedding-version a3)))))))
 
 (deftest ^:integration embed-batch-size-test
   (testing "batching works with small batch size"
-    (let [adapter (ollama/make-embeddings-adapter {:base-url "http://localhost:11434"
-                                                    :model "nomic-embed-text"
-                                                    :batch-size 1})
+    (let [adapter (ollama/make-embeddings-adapter (assoc (config/embedding-options) :batch-size 1))
           r1 (make-test-record "# A\n\nText." "a.md" "c1" "b1")
           r2 (make-test-record "# B\n\nText." "b.md" "c2" "b2")
           results ((:embed-sections! adapter) [r1 r2])]
       (is (= 2 (count results)))
-      (is (every? #(= 768 (:embedding/dimensions %)) results)))))
+      (is (every? #(= (config/embedding-dimensions) (:embedding/dimensions %)) results)))))

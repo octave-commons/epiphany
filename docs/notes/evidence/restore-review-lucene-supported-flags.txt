@@ -1,0 +1,7 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-HEB86z -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=45117 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=45117 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-HEB86z -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=45117 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=45117 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+WARNING: Using incubator modules: jdk.incubator.vector
+org.apache.lucene.util.VectorUtil
+Sep 13, 2026 3:46:05 AM org.apache.lucene.internal.vectorization.PanamaVectorizationProvider <init>
+INFO: Java vector incubator API enabled; uses preferredBitSize=512; FMA enabled
+Actual SIMD dot product: 64.0

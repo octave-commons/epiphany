@@ -51,8 +51,8 @@
         full-text (str doc-text)
         before (subs full-text 0 (min node-start (count full-text)))
         node-text (subs full-text
-                       (min node-start (count full-text))
-                       (min node-end (count full-text)))
+                        (min node-start (count full-text))
+                        (min node-end (count full-text)))
         start-line (count (re-seq #"\n" before))
         end-line (+ start-line (count (re-seq #"\n" node-text)))]
     {:span/start-byte (char-offset->byte-offset full-text node-start)
@@ -138,7 +138,7 @@
     {:block/type :ordered-list
      :list/loose? (.isLoose node)
      :list/start-number (when-let [first-item (first items)]
-                           (parse-marker first-item))
+                          (parse-marker first-item))
      :list-items (mapv (fn [^com.vladsch.flexmark.ast.OrderedListItem item]
                          {:block/type :list-item
                           :item/number (parse-marker item)

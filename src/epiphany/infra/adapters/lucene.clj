@@ -25,12 +25,12 @@
             [epiphany.shape.markdown :as md])
   (:import [org.apache.lucene.analysis.standard StandardAnalyzer]
            [org.apache.lucene.document Document Field$Store TextField StringField
-                                       KnnFloatVectorField]
+            KnnFloatVectorField]
            [org.apache.lucene.index IndexWriter IndexWriterConfig IndexWriterConfig$OpenMode
-                                    DirectoryReader Term VectorSimilarityFunction]
+            DirectoryReader Term VectorSimilarityFunction]
            [org.apache.lucene.queryparser.classic QueryParser]
            [org.apache.lucene.search IndexSearcher ScoreDoc TermQuery
-                                      BooleanQuery$Builder BooleanClause$Occur]
+            BooleanQuery$Builder BooleanClause$Occur]
            [org.apache.lucene.store FSDirectory]
            [java.nio.file Files Path]))
 
@@ -292,7 +292,8 @@
                  hits (.search searcher combined 100)]
              (mapv (fn [^ScoreDoc hit]
                      (let [doc (.document sf (.-doc hit))]
-                       {:result/path-raw (.get doc "path_raw")
+                       {:resource-id (.get doc "resource_id")
+                        :result/path-raw (.get doc "path_raw")
                         :result/commit-oid (.get doc "commit_oid")
                         :result/heading-path (vec (str/split (.get doc "heading_path") #" "))
                         :result/score (.-score hit)}))
@@ -328,7 +329,8 @@
                  hits (.search searcher combined (or k 10))]
              (mapv (fn [^ScoreDoc hit]
                      (let [doc (.document sf (.-doc hit))]
-                       {:result/path-raw (.get doc "embedding_path_raw")
+                       {:resource-id (.get doc "resource_id")
+                        :result/path-raw (.get doc "embedding_path_raw")
                         :result/commit-oid (.get doc "embedding_commit_oid")
                         :result/heading-path (vec (str/split (.get doc "embedding_heading_path") #" "))
                         :result/score (.-score hit)

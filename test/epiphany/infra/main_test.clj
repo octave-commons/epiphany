@@ -54,13 +54,13 @@
 
 (deftest register-local-mode-succeeds-on-this-repo
   (testing "register --profile :local on the epiphany repo itself succeeds"
-    (let [{:keys [exit out]} (main/run ["register" "-p" :local "."])]
+    (let [{:keys [exit out]} (main/run ["register" "--request-id" (str (random-uuid)) "-p" :local "."])]
       (is (zero? exit))
       (is (string/includes? out "Registered:"))
       (is (string/includes? out "Resource ID:")))))
 
 (deftest register-local-mode-fails-on-non-git-path
-  (let [{:keys [exit out]} (main/run ["register" "-p" :local "/tmp"])]
+  (let [{:keys [exit out]} (main/run ["register" "--request-id" (str (random-uuid)) "-p" :local "/tmp"])]
     (is (= 1 exit))
     (is (string/includes? out "Error:"))))
 
@@ -338,7 +338,7 @@
           calls (atom 0)]
       (with-redefs [validation/validating-observations-port
                     (fn [port] (swap! calls inc) (orig port))]
-        (main/run ["register" "-p" "local" "."])
+        (main/run ["register" "--request-id" (str (random-uuid)) "-p" "local" "."])
         (is (pos? @calls) "register must compose through profile/resolve-adapters")
         (reset! calls 0)
         (main/run ["inbox" "decide" (str (random-uuid)) "accepted"])
@@ -412,7 +412,7 @@
 
 (deftest diff-seed-candidate-records-a-provisional-candidate
   (testing "--seed-candidate durably records a provisional lineage candidate via the observations port"
-    (let [{:keys [exit out]} (main/run ["diff" "--seed-candidate" "continues"
+    (let [{:keys [exit out]} (main/run ["diff" "--request-id" (str (random-uuid)) "--seed-candidate" "continues"
                                         "AGENTS.md@HEAD~3" "AGENTS.md@HEAD"])]
       (is (zero? exit))
       (is (string/includes? out "Seeded candidate "))
@@ -432,7 +432,7 @@
         {seed-var (fn [& _] (swap! seed-calls inc))}
         (fn []
           (let [{:keys [exit out]}
-                (main/run ["diff" "--seed-candidate" "continues"
+                (main/run ["diff" "--request-id" (str (random-uuid)) "--seed-candidate" "continues"
                            "definitely-missing.md@HEAD" "AGENTS.md@HEAD"])]
             (is (= 1 exit))
             (is (zero? @seed-calls))

@@ -1,5 +1,5 @@
 (ns epiphany.law.operations-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.set] [clojure.test :refer [deftest is testing]]
             [epiphany.law.operations :as operations]
             [epiphany.law.registry :as registry]))
 

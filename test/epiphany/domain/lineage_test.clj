@@ -1,5 +1,5 @@
 (ns epiphany.domain.lineage-test
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require [clojure.test :refer [deftest testing is]]
             [epiphany.domain.lineage :as lineage]))
 
 ;; ---------------------------------------------------------------------------
@@ -8,7 +8,7 @@
 (defn- make-section
   "Build a minimal section map for testing."
   [path heading commit-oid & {:keys [body timestamp]
-                               :or {body "" timestamp nil}}]
+                              :or {body "" timestamp nil}}]
   {:path-raw path
    :heading-path heading
    :commit-oid commit-oid
@@ -71,10 +71,10 @@
           tgt (make-section "a.md" ["Intro"] "def"
                             :body "Much longer content that expands on the original."
                             :timestamp (java.util.Date. 2000))
-          features (make-features :text-similarity 0.6)]
-      (let [rels (lineage/classify-relation src tgt features)]
-        (is (contains? rels :refines))
-        (is (contains? rels :continues))))))
+          features (make-features :text-similarity 0.6)
+          rels (lineage/classify-relation src tgt features)]
+      (is (contains? rels :refines))
+      (is (contains? rels :continues)))))
 
 (deftest classify-references-test
   (testing "significant link overlap → :references"
@@ -128,14 +128,14 @@
 (deftest compute-confidence-near-duplicate-test
   (testing "near-duplicate confidence tracks text similarity"
     (is (= 0.95 (lineage/compute-confidence :near-duplicate
-                   (make-features :text-similarity 0.95))))
+                                            (make-features :text-similarity 0.95))))
     (is (= 0.90 (lineage/compute-confidence :near-duplicate
-                   (make-features :text-similarity 0.90))))))
+                                            (make-features :text-similarity 0.90))))))
 
 (deftest compute-confidence-references-test
   (testing "references confidence tracks link overlap"
     (is (= 0.8 (lineage/compute-confidence :references
-                  (make-features :link-overlap-ratio 0.8))))))
+                                           (make-features :link-overlap-ratio 0.8))))))
 
 (deftest compute-confidence-bounded-test
   (testing "confidence is always in [0, 1]"
@@ -155,7 +155,7 @@
                             :timestamp (java.util.Date. 2000))
           features (make-features :text-similarity 0.6)
           candidates (lineage/generate-candidates src [tgt]
-                       (make-features-fn features))]
+                                                  (make-features-fn features))]
       (is (= 1 (count candidates)))
       (is (= 1 (count (first candidates))))
       (let [c (first (first candidates))]
@@ -177,7 +177,7 @@
                             :timestamp (java.util.Date. 2000))
           features (make-features :text-similarity 0.7)
           candidates (lineage/generate-candidates src [tgt]
-                       (make-features-fn features))]
+                                                  (make-features-fn features))]
       ;; :continues and :refines are both triggered
       (is (>= (count (first candidates)) 1)))))
 
@@ -189,7 +189,7 @@
                                   :link-overlap-ratio 0.1
                                   :name-token-overlap 0.1)
           candidates (lineage/generate-candidates src [tgt]
-                       (make-features-fn features))]
+                                                  (make-features-fn features))]
       (is (empty? candidates)))))
 
 (deftest generate-candidates-fork-test
@@ -200,7 +200,7 @@
                    (make-section "d.md" ["Intro"] "jkl")]
           features (make-features :text-similarity 0.95)
           candidates (lineage/generate-candidates src targets
-                       (make-features-fn features))]
+                                                  (make-features-fn features))]
       ;; 3 targets × 1 relation each (near-duplicate)
       (is (= 3 (count candidates)))
       (is (every? #(= :near-duplicate
@@ -215,7 +215,7 @@
                                   :link-overlap-ratio 0.3
                                   :name-token-overlap 0.4)
           candidates (lineage/generate-candidates src [tgt]
-                       (make-features-fn features))
+                                                  (make-features-fn features))
           c (first (first candidates))]
       (is (seq (:lineage-candidate/evidence-spans c)))
       (is (some #(= :text-similarity (:evidence/signal %))
@@ -242,12 +242,12 @@
           tgt (make-section "a.md" ["Intro"] "def")
           c1 (first (first
                      (lineage/generate-candidates src [tgt]
-                       (make-features-fn (make-features :text-similarity 0.95)))))
+                                                  (make-features-fn (make-features :text-similarity 0.95)))))
           c2 (first (first
                      (lineage/generate-candidates src [tgt]
-                       (make-features-fn (make-features :text-similarity 0.98)))))]
+                                                  (make-features-fn (make-features :text-similarity 0.98)))))
       ;; Both are :near-duplicate for same source+target, so merge to 1
-      (let [merged (lineage/merge-candidates [c1] [c2])]
-        (is (= 1 (count merged)))
+          merged (lineage/merge-candidates [c1] [c2])]
+      (is (= 1 (count merged)))
         ;; Should keep the higher-confidence one
-        (is (= 0.98 (:lineage-candidate/confidence (first merged))))))))
+      (is (= 0.98 (:lineage-candidate/confidence (first merged)))))))

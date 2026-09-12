@@ -1,10 +1,8 @@
 (ns epiphany.infra.workbench-test
-  (:require [clojure.test :refer [deftest is testing]]
-            [epiphany.infra.workbench :as wb]
+  (:require [clojure.java.io] [clojure.test :refer [deftest is testing]]
             [epiphany.infra.http :as http]
             [epiphany.infra.adapters.in-memory :as in-memory]
-            [epiphany.domain.candidates :as candidates]
-            [epiphany.domain.review :as review]))
+            [epiphany.domain.candidates :as candidates]))
 
 ;; ---------------------------------------------------------------------------
 ;; Mock adapters

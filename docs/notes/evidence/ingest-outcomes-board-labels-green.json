@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-09-12T17:26:28.216Z",
+  "rheosCommit": "c94e789070e15a4f7c9da51baa50ed520a6d1203",
+  "cliSha256": "35eb33a238f4a869091302b1ec0c7aa7a46f7a2b0ab9f069899ee6539d5795d4",
+  "taskCount": 116,
+  "columnCount": 12,
+  "unchangedMarkdownInputs": 116,
+  "originalLabelsPreserved": true,
+  "exampleLabels": [
+    "graph",
+    "relationships",
+    "code",
+    "provenance"
+  ],
+  "snapshotSha256": "3414eb1bb6a89ec9322108cf25b23442aebaad0e26188cbdcfbc8a32af8b338c"
+}

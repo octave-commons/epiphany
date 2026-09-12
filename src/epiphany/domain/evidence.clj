@@ -27,9 +27,9 @@
   (let [[path-with-commit rest-expr] (str/split expr #"#" 2)
         ;; Handle @commit in path when no # is present
         [actual-path commit-from-path] (if (.contains path-with-commit "@")
-                                          (let [[p c] (str/split path-with-commit #"@" 2)]
-                                            [p c])
-                                          [path-with-commit nil])
+                                         (let [[p c] (str/split path-with-commit #"@" 2)]
+                                           [p c])
+                                         [path-with-commit nil])
         ;; rest-expr may be "heading" or "heading@commit"
         [heading-str commit-from-heading] (cond
                                             (nil? rest-expr) [nil nil]
@@ -134,12 +134,12 @@
           (let [commit-result (when commit-fn (commit-fn nil commit-oid))
                 commit (:commit commit-result)
                 commit-info (when commit
-                             {:commit/author (:commit/author commit)
-                              :commit/committer (:commit/committer commit)
-                              :commit/message-text (:commit/message-text commit)})
-                parent-oids (:commit/parent-oids commit)]
+                              {:commit/author (:commit/author commit)
+                               :commit/committer (:commit/committer commit)
+                               :commit/message-text (:commit/message-text commit)})
+                parent-oids (:commit/parent-oids commit)
           ;; Get tree entries to find the blob OID for this path
-          (let [tree-result (when tree-fn
+                tree-result (when tree-fn
                               (tree-fn nil commit-oid))
                 entries (:entries tree-result)
                 entry (first (filter #(= path (:git/path %)) entries))
@@ -162,7 +162,7 @@
                   ;; Find the section in content
                   (let [content (:blob/content blob)
                         section (when (seq heading)
-                                   (find-section-in-content content heading))]
+                                  (find-section-in-content content heading))]
                     (cond
                       section
                       {:evidence/path path
@@ -204,7 +204,7 @@
                        :evidence/parent-oids parent-oids
                        :evidence/failure {:failure/reason "heading-not-found"
                                           :failure/message (str "Heading not found: " (str/join " > " heading))}
-                       :evidence/unavailable false})))))))
+                       :evidence/unavailable false}))))))
           (catch Exception e
             {:evidence/path path
              :evidence/commit-oid commit-oid

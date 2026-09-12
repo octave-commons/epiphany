@@ -10,13 +10,22 @@
            [org.eclipse.jgit.storage.file FileRepositoryBuilder]
            [org.eclipse.jgit.errors MissingObjectException]))
 
-(defn common-git-directory [repository-path]
-  (let [{:keys [exit out err]} (shell/sh "git" "-C" repository-path "rev-parse" "--path-format=absolute" "--git-common-dir")]
-    (if (zero? exit)
-      (string/trim out)
+(defn- repository-builder [repository-path]
+  (let [directory (io/file repository-path)
+        builder (doto (FileRepositoryBuilder.) (.setMustExist true))]
+    (when (.isDirectory directory)
+      (.findGitDir builder (.getAbsoluteFile directory)))
+    (when-not (.getGitDir builder)
       (throw (ex-info "Could not resolve Git common directory"
-                      {:repository-path repository-path
-                       :git-error (string/trim err)})))))
+                      {:repository-path repository-path :git-error "Not a Git repository"})))
+    builder))
+
+(defn common-git-directory
+  "Resolve normal, bare and linked-worktree metadata through pinned JGit."
+  [repository-path]
+  (let [^FileRepositoryBuilder builder (repository-builder repository-path)]
+    (.setup builder)
+    (.getCanonicalPath (.getGitCommonDir builder))))
 
 (defn- person-ident->map
   "Convert a JGit PersonIdent to a plain map."
@@ -41,11 +50,7 @@
 (defn- open-repository
   "Open a JGit Repository from a filesystem path."
   [^String repository-path]
-  (-> (FileRepositoryBuilder.)
-      (.setGitDir (io/file repository-path ".git"))
-      (.readEnvironment)
-      (.findGitDir)
-      .build))
+  (.build ^FileRepositoryBuilder (repository-builder repository-path)))
 
 (defn resolve-commit-oid
   "Resolve a ref, abbreviated OID, or rev expression to a full commit OID

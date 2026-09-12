@@ -76,18 +76,18 @@
           port (make-mock-git-port {"blob123" content}
                                    {"commit1" [{:git/path "docs/notes/foo.md"
                                                 :git/blob-oid "blob123"}]})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "docs/notes/foo.md"
-                                                 :heading ["Title"]
-                                                 :commit-oid "commit1"})]
-        (is (= "docs/notes/foo.md" (:evidence/path result)))
-        (is (= "commit1" (:evidence/commit-oid result)))
-        (is (= ["Title"] (:evidence/heading-path result)))
-        (is (.contains (:evidence/source result) "# Title"))
-        (is (= 1 (:evidence/start-line result)))
-        (is (pos-int? (:evidence/end-line result)))
-        (is (= false (:evidence/unavailable result)))
-        (is (nil? (:evidence/failure result)))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "docs/notes/foo.md"
+                                              :heading ["Title"]
+                                              :commit-oid "commit1"})]
+      (is (= "docs/notes/foo.md" (:evidence/path result)))
+      (is (= "commit1" (:evidence/commit-oid result)))
+      (is (= ["Title"] (:evidence/heading-path result)))
+      (is (.contains (:evidence/source result) "# Title"))
+      (is (= 1 (:evidence/start-line result)))
+      (is (pos-int? (:evidence/end-line result)))
+      (is (= false (:evidence/unavailable result)))
+      (is (nil? (:evidence/failure result))))))
 
 (deftest retrieve-evidence-with-subsection
   (testing "retrieve evidence for a subsection"
@@ -95,52 +95,52 @@
           port (make-mock-git-port {"blob123" content}
                                    {"commit1" [{:git/path "doc.md"
                                                 :git/blob-oid "blob123"}]})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "doc.md"
-                                                 :heading ["Section"]
-                                                 :commit-oid "commit1"})]
-        (is (= "doc.md" (:evidence/path result)))
-        (is (= "commit1" (:evidence/commit-oid result)))
-        (is (some? (:evidence/source result)))
-        (is (= false (:evidence/unavailable result)))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "doc.md"
+                                              :heading ["Section"]
+                                              :commit-oid "commit1"})]
+      (is (= "doc.md" (:evidence/path result)))
+      (is (= "commit1" (:evidence/commit-oid result)))
+      (is (some? (:evidence/source result)))
+      (is (= false (:evidence/unavailable result))))))
 
 (deftest retrieve-evidence-missing-path
   (testing "path not found in commit"
     (let [port (make-mock-git-port {}
                                    {"commit1" [{:git/path "other.md"
                                                 :git/blob-oid "blob1"}]})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "missing.md"
-                                                 :heading []
-                                                 :commit-oid "commit1"})]
-        (is (= true (:evidence/unavailable result)))
-        (is (= "path-not-found" (get-in result [:evidence/failure :failure/reason])))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "missing.md"
+                                              :heading []
+                                              :commit-oid "commit1"})]
+      (is (= true (:evidence/unavailable result)))
+      (is (= "path-not-found" (get-in result [:evidence/failure :failure/reason]))))))
 
 (deftest retrieve-evidence-missing-commit
   (testing "commit not reachable"
     (let [port (make-mock-git-port {} {})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "doc.md"
-                                                 :heading []
-                                                 :commit-oid "nonexistent"})]
-        (is (= true (:evidence/unavailable result)))
-        (is (= "path-not-found" (get-in result [:evidence/failure :failure/reason])))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "doc.md"
+                                              :heading []
+                                              :commit-oid "nonexistent"})]
+      (is (= true (:evidence/unavailable result)))
+      (is (= "path-not-found" (get-in result [:evidence/failure :failure/reason]))))))
 
 (deftest retrieve-evidence-no-commit-oid
   (testing "missing commit-oid"
     (let [port (make-mock-git-port {} {})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "doc.md"
-                                                 :heading []
-                                                 :commit-oid nil})]
-        (is (= true (:evidence/unavailable result)))
-        (is (= "commit-required" (get-in result [:evidence/failure :failure/reason])))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "doc.md"
+                                              :heading []
+                                              :commit-oid nil})]
+      (is (= true (:evidence/unavailable result)))
+      (is (= "commit-required" (get-in result [:evidence/failure :failure/reason]))))))
 
 (deftest retrieve-evidence-no-git-port
   (testing "git port missing"
     (let [result (ev/retrieve-evidence {:git {}} {:path "doc.md"
-                                                    :heading []
-                                                    :commit-oid "abc"})]
+                                                  :heading []
+                                                  :commit-oid "abc"})]
       (is (= true (:evidence/unavailable result)))
       (is (= "port-missing" (get-in result [:evidence/failure :failure/reason]))))))
 
@@ -150,13 +150,13 @@
           port (make-mock-git-port {"blob123" content}
                                    {"commit1" [{:git/path "doc.md"
                                                 :git/blob-oid "blob123"}]})
-          ports {:git port}]
-      (let [result (ev/retrieve-evidence ports {:path "doc.md"
-                                                 :heading ["Nonexistent"]
-                                                 :commit-oid "commit1"})]
-        (is (= false (:evidence/unavailable result)))
-        (is (= "heading-not-found" (get-in result [:evidence/failure :failure/reason])))
-        (is (= content (:evidence/source result)))))))
+          ports {:git port}
+          result (ev/retrieve-evidence ports {:path "doc.md"
+                                              :heading ["Nonexistent"]
+                                              :commit-oid "commit1"})]
+      (is (= false (:evidence/unavailable result)))
+      (is (= "heading-not-found" (get-in result [:evidence/failure :failure/reason])))
+      (is (= content (:evidence/source result))))))
 
 ;; ---------------------------------------------------------------------------
 ;; format-evidence-text
@@ -164,14 +164,14 @@
 (deftest format-evidence-text-available
   (testing "format available evidence"
     (let [result (ev/format-evidence-text {:evidence/path "doc.md"
-                                            :evidence/commit-oid "abc123"
-                                            :evidence/heading-path ["Title"]
-                                            :evidence/source "# Title"
-                                            :evidence/start-line 1
-                                            :evidence/end-line 2
-                                            :evidence/blob-size 42
-                                            :evidence/failure nil
-                                            :evidence/unavailable false})]
+                                           :evidence/commit-oid "abc123"
+                                           :evidence/heading-path ["Title"]
+                                           :evidence/source "# Title"
+                                           :evidence/start-line 1
+                                           :evidence/end-line 2
+                                           :evidence/blob-size 42
+                                           :evidence/failure nil
+                                           :evidence/unavailable false})]
       (is (.contains result "doc.md"))
       (is (.contains result "abc123"))
       (is (.contains result "Title"))
@@ -180,11 +180,11 @@
 (deftest format-evidence-text-unavailable
   (testing "format unavailable evidence"
     (let [result (ev/format-evidence-text {:evidence/path "doc.md"
-                                            :evidence/commit-oid "abc123"
-                                            :evidence/heading-path []
-                                            :evidence/source nil
-                                            :evidence/failure {:failure/reason "path-not-found"
+                                           :evidence/commit-oid "abc123"
+                                           :evidence/heading-path []
+                                           :evidence/source nil
+                                           :evidence/failure {:failure/reason "path-not-found"
                                                               :failure/message "Not found"}
-                                            :evidence/unavailable true})]
+                                           :evidence/unavailable true})]
       (is (.contains result "UNAVAILABLE"))
       (is (.contains result "Not found")))))

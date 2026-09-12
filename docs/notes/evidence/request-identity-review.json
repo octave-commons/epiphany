@@ -1,0 +1,319 @@
+{
+  "status": "review-repairs-verified-native-warning-gate-still-blocked",
+  "source_base": "81ddbce198e0963e270ddc2b0532c58db57e6f93",
+  "published_base": "a9166b2db3e272fe025339de72e28aab43267510",
+  "verified_equal_base_tree": "ee1b6aea670ac107f9d9cd78647288cab4e6168b",
+  "clio_source": "2b7bfbefa580d512262ca18f9163ecba43e54cc5",
+  "clio_package": "/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio",
+  "dependency_selection": "Test/static commands explicitly override eta-mu/clio. Actual bin/build, bin/ep and bin/verify-clio-edn resolve the existing declared sibling symlink to the same frozen combined Clio checkout. deps.edn and tool versions are unchanged.",
+  "source_sha256": {
+    ".github/workflows/test.yml": "c976a45b9e8e14ac11a2767d1fb073c2cc0bfc79462b41518f07d8bc299ce73c",
+    "AGENTS.md": "30294ee05d9e0f769f60af4f67680c80c80b80b4f0bafbf17c5997d0a5de66e6",
+    "README.md": "f9aaa38c7408d0c7a309826239b5c0c955dcb1c364e45c95e1ea8535afa9ddc1",
+    "docs/designs/clio-edn-development.md": "ca410ff5b4328ed86fb0d1d7f1700fa3068537d385db44f8559313f3a912e9e6",
+    "src/epiphany/application/registration.clj": "f044303e6ae3b5c32ce451a7f09177bdf54fc1c3ec1fdce7bb61157544c030f8",
+    "src/epiphany/infra/http.clj": "49a5929699d5970c3976ceb9846f80d787aac11e4fffe51cd5f73b7af014cfa7",
+    "src/epiphany/infra/main.clj": "d00803a86c73ff8c409058b21ac3309d49a590c94f334d50fd0121545aa229bc",
+    "src/epiphany/law/commands.clj": "fdceb1386ca8e5588fd8dcfc3aa9c1e345315decd8029cbe8d7cc22378a184dc",
+    "test/epiphany/application/commands_test.clj": "0f3ba7ceafcafb025bb749b2cae75ba6fd8d30ba8520f918d4186fd54ce3af99",
+    "test/epiphany/application/registration_test.clj": "2cc986668719c2f92aac8a3a751164bf05e8395c4a0e990f54d1a57fcc03dfde",
+    "test/epiphany/infra/http_test.clj": "d2718966ecbb1d560357ac0ada87eed4fa16be7e3c73951fb9d60e69ffa3c3da",
+    "test/epiphany/infra/main_test.clj": "baaa70474bc76c30aab3bcd8e60013f6a7b9c44b78e2eedab8256c030e6e2066",
+    "test/epiphany/infra/profile_test.clj": "5073989f2bbdab8be151b941452159bf586f617e6689e55fcd95541383456279",
+    "test/epiphany/infra/review_cli_test.clj": "a6bd27a32a497ca5ab151debb65221728d8a99f7b5bf15058b6038e947b959a9",
+    "test/epiphany/parity/cli_http_test.clj": "a12928b813fe797bec97af38623cea07ac9a70eb148f088d84949a9a4bbe8637",
+    "src/epiphany/application/candidate_seeding.clj": "db77b7be0ed0a912d7878f0b275ea3343b229e398099a589b6001a18dc4c2960",
+    "test/epiphany/infra/request_identity_review_test.clj": "54bf61730d61c6461087bc7c8aa4609910d1cb751a5a50f147711234c783e678"
+  },
+  "review_sources": [
+    "https://github.com/octave-commons/epiphany/pull/18#discussion_r3997282605",
+    "https://github.com/octave-commons/epiphany/pull/18#discussion_r3997300601",
+    "https://github.com/octave-commons/epiphany/pull/18#pullrequestreview-5187731466"
+  ],
+  "behavioral_red": [
+    {
+      "case": "HTTP profile and mandatory registration/candidate command identity",
+      "tests": 6,
+      "assertions": 51,
+      "failures": 26,
+      "errors": 0,
+      "exit_code": 26
+    },
+    {
+      "case": "Candidate existing-read shortcut omitted durability fence",
+      "tests": 1,
+      "assertions": 3,
+      "failures": 2,
+      "errors": 0,
+      "exit_code": 2
+    },
+    {
+      "case": "Registration reused ID with changed path and omitted retry durability fence",
+      "tests": 1,
+      "assertions": 5,
+      "failures": 3,
+      "errors": 0,
+      "exit_code": 3
+    }
+  ],
+  "full_unit": {
+    "tests": 811,
+    "assertions": 2552,
+    "failures": 0,
+    "errors": 0,
+    "exit_code": 0
+  },
+  "gates": [
+    {
+      "gate": "unit",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}",
+        "-M:unit-test:verified-clio"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 89.88416025100014,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-unit.txt",
+        "sha256": "de547e725c127d272ae5c02977ed2d53f81a51ea1018f3e9ba7c4d90650c358b",
+        "bytes": 3537
+      }
+    },
+    {
+      "gate": "lint",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}",
+        "-M:lint:verified-clio"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 22.29481801899965,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-lint.txt",
+        "sha256": "c528ab3fff5bf99532955245c04027d2a39a3333fdd7c4fe42af16a4effd0a9b",
+        "bytes": 1373
+      }
+    },
+    {
+      "gate": "format",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}",
+        "-M:cljfmt:verified-clio"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 14.259449721001147,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-format.txt",
+        "sha256": "389c6815dda2b04e54acea7989e0155c854900dc169a7f2d39a329e1c4849eb4",
+        "bytes": 841
+      }
+    },
+    {
+      "gate": "boundary",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}",
+        "-M:boundary-check:verified-clio"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 3.8957376850012224,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-boundary.txt",
+        "sha256": "e439bca17b7c94cca0cc0e29975736c246e4fe0f63ae00d06eacb2cbc9f106b4",
+        "bytes": 833
+      }
+    },
+    {
+      "gate": "interop",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}",
+        "-M:interop-inventory:verified-clio"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 11.262765207000484,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-interop.txt",
+        "sha256": "167e5769fe88407311566e02553d6eb957de2e7fb451beea2f6d43d78646a30f",
+        "bytes": 874
+      }
+    },
+    {
+      "gate": "build",
+      "command": [
+        "bash",
+        "bin/build"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 19.519214905994886,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-build.txt",
+        "sha256": "50490a3780561ffab0822828d21a25e99086aac45fb989a70e80379811fb8953",
+        "bytes": 824
+      }
+    },
+    {
+      "gate": "cli",
+      "command": [
+        "bash",
+        "bin/ep",
+        "--help"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 12.738667967001675,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-cli.txt",
+        "sha256": "24905d151193ae827382f0262b7742f8ac6085fbeec8820117448a543e86128b",
+        "bytes": 1890
+      }
+    },
+    {
+      "gate": "native",
+      "command": [
+        "bash",
+        "bin/verify-clio-edn"
+      ],
+      "exit_code": 1,
+      "duration_seconds": 82.68056831700233,
+      "log": {
+        "path": "docs/notes/evidence/request-identity-final-native.txt",
+        "sha256": "bd7d8d9a3f0e56d1122d7c7faa9f3d68a51ed513a9a52553feef4df4c1b50c5d",
+        "bytes": 5404
+      }
+    }
+  ],
+  "workflow_validation": {
+    "yaml_parse": "passed",
+    "contents_permission": "read",
+    "checkout_count": 4,
+    "all_persist_credentials": false,
+    "all_fetch_depth": 0
+  },
+  "peer_review": {
+    "agent": "/root/identity_review_repair",
+    "scope": "Read-only exact registration and candidate admission/retry boundaries and CLI plumbing",
+    "result": "No remaining concrete issue after exact-path validation and both no-op durability fences. No independent execution claim."
+  },
+  "other_attempts": [
+    {
+      "case": "Misplaced candidate-seeding test require",
+      "outcome": "Compiler error, corrected before the recorded candidate-fence behavioral RED; never counted as a product failure."
+    },
+    {
+      "case": "First full suite after schema change",
+      "outcome": "809 tests/2544 assertions with one raw-EDN success fixture missing request-id; migrated the fixture and retained its original response assertion."
+    },
+    {
+      "case": "Appended fix to existing cljfmt check alias",
+      "outcome": "No such file: fix; solved with a temporary alias using the same pinned formatter and only owned files. Final configured formatting check passed."
+    }
+  ],
+  "native_warning_blocker": {
+    "functional_checks": "passed",
+    "canonical_gate_exit": 1,
+    "warnings": [
+      "WARNING: A restricted method in java.lang.foreign.Linker has been called",
+      "WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module",
+      "WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module",
+      "WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.",
+      "WARNING: A restricted method in java.lang.foreign.Linker has been called",
+      "WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module",
+      "WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module",
+      "WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API."
+    ],
+    "disposition": "Original output and nonzero gate preserved. Previous supported-flag attempts and the JDK incubator warning conflict remain documented in clio-restore-review-2026-09-12.md; no warning suppression, vector disabling, dependency change, or different JDK/environment used."
+  },
+  "receipts": [
+    {
+      "path": "docs/notes/evidence/request-identity-red.txt",
+      "sha256": "f4070d60ba6694f090e40a6bde4cc3dd0b3a8efda288b9c042800d4a07ef25f2",
+      "bytes": 8655
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-green.txt",
+      "sha256": "1c961f576d1b48bff8063ac40af570cc7c40a045d408e9e5570fdaaa25475cd4",
+      "bytes": 905
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-unit.txt",
+      "sha256": "a57d96e47c9bb4c7db418ebb52bf984d04327eaa519f6582d9b5480f30646570",
+      "bytes": 3776
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-unit-final.txt",
+      "sha256": "522cacf5fa8d4f62851bfb55cb5893fae0e628abe271f47c47f0283fbdbdefe3",
+      "bytes": 3532
+    },
+    {
+      "path": "docs/notes/evidence/candidate-fence-red.txt",
+      "sha256": "153f0bcbd0ea5e56dce25dced5f2d8c33ed2f1f6a21e782ea3b194c66fc9a0ce",
+      "bytes": 1480
+    },
+    {
+      "path": "docs/notes/evidence/candidate-fence-red-corrected.txt",
+      "sha256": "7f4caba9274968c2984d1c95deefb9a972f1ecbe72d172bc059b629f478e91ff",
+      "bytes": 1365
+    },
+    {
+      "path": "docs/notes/evidence/registration-fence-red.txt",
+      "sha256": "db2bcf964a14983a717887808272e6a746074028f3dd90ab597ec3b49cc2ea87",
+      "bytes": 1630
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-format-fix.txt",
+      "sha256": "d2ec6671866c51488491ee6943fc11b45182906f6622c9730e1415ab44b3e813",
+      "bytes": 822
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-unit.txt",
+      "sha256": "de547e725c127d272ae5c02977ed2d53f81a51ea1018f3e9ba7c4d90650c358b",
+      "bytes": 3537
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-lint.txt",
+      "sha256": "c528ab3fff5bf99532955245c04027d2a39a3333fdd7c4fe42af16a4effd0a9b",
+      "bytes": 1373
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-format.txt",
+      "sha256": "389c6815dda2b04e54acea7989e0155c854900dc169a7f2d39a329e1c4849eb4",
+      "bytes": 841
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-boundary.txt",
+      "sha256": "e439bca17b7c94cca0cc0e29975736c246e4fe0f63ae00d06eacb2cbc9f106b4",
+      "bytes": 833
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-interop.txt",
+      "sha256": "167e5769fe88407311566e02553d6eb957de2e7fb451beea2f6d43d78646a30f",
+      "bytes": 874
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-build.txt",
+      "sha256": "50490a3780561ffab0822828d21a25e99086aac45fb989a70e80379811fb8953",
+      "bytes": 824
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-cli.txt",
+      "sha256": "24905d151193ae827382f0262b7742f8ac6085fbeec8820117448a543e86128b",
+      "bytes": 1890
+    },
+    {
+      "path": "docs/notes/evidence/request-identity-final-native.txt",
+      "sha256": "bd7d8d9a3f0e56d1122d7c7faa9f3d68a51ed513a9a52553feef4df4c1b50c5d",
+      "bytes": 5404
+    }
+  ],
+  "limits": [
+    "No remote mutation or shared Foresight application source change.",
+    "Fresh service integration with Mongo/embedding was not part of this command-boundary repair; historical service receipts remain attached to their original source.",
+    "A passing native zero-warning gate is not claimed."
+  ]
+}

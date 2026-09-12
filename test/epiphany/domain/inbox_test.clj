@@ -1,5 +1,5 @@
 (ns epiphany.domain.inbox-test
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require [clojure.string] [clojure.test :refer [deftest testing is]]
             [epiphany.domain.inbox :as inbox]
             [epiphany.domain.review :as review]))
 

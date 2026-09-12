@@ -1,5 +1,5 @@
 (ns epiphany.domain.lineage-trace-test
-  (:require [clojure.test :refer [deftest testing is are]]
+  (:require [clojure.test :refer [deftest testing is]]
             [epiphany.domain.lineage-trace :as lt]))
 
 ;; ---------------------------------------------------------------------------
@@ -8,7 +8,7 @@
 (defn- make-section
   "Build a minimal section map for testing."
   [path heading commit-oid & {:keys [body timestamp]
-                               :or {body "" timestamp nil}}]
+                              :or {body "" timestamp nil}}]
   {:path-raw path
    :heading-path heading
    :commit-oid commit-oid

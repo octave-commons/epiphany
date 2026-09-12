@@ -135,7 +135,7 @@
 (deftest query-discovery-unavailable
   (testing "Unavailable adapter returns :unavailable"
     (let [result (status/query-discovery-status unavailable-observations
-                                                 test-resource-id)]
+                                                test-resource-id)]
       (is (= :unavailable (:stage/status result))))))
 
 ;; ---------------------------------------------------------------------------
@@ -171,7 +171,7 @@
 (deftest query-extraction-unavailable
   (testing "Unavailable adapter returns :unavailable"
     (let [result (status/query-extraction-status unavailable-observations
-                                                  test-resource-id)]
+                                                 test-resource-id)]
       (is (= :unavailable (:stage/status result))))))
 
 ;; ---------------------------------------------------------------------------
@@ -181,14 +181,14 @@
   (testing "Indexing with stats returns :ok"
     (let [adapter (mock-index-adapter {:document-count 500 :term-count 10000})
           result (status/query-indexing-status adapter
-                                                test-resource-id)]
+                                               test-resource-id)]
       (is (= :ok (:stage/status result)))
       (is (= {:documents 500 :terms 10000} (:stage/counts result))))))
 
 (deftest query-indexing-unavailable
   (testing "Unavailable adapter returns :unavailable"
     (let [result (status/query-indexing-status unavailable-index
-                                                test-resource-id)]
+                                               test-resource-id)]
       (is (= :unavailable (:stage/status result))))))
 
 ;; ---------------------------------------------------------------------------

@@ -93,7 +93,7 @@
 
    Parameters:
      text-a, text-b — section body text
-     features-a, features-b — optional feature maps (for enhanced detection)
+     features-a, features-b — reserved arguments; current policy uses text only
 
    Returns a map:
      {:relation keyword
@@ -102,7 +102,7 @@
       :signals [{:signal keyword :value any :weight double}]}"
   ([text-a text-b]
    (classify-pair text-a text-b {} {}))
-  ([text-a text-b features-a features-b]
+  ([text-a text-b _features-a _features-b]
    (let [word-sim (word-overlap text-a text-b)
          sent-sim (sentence-overlap text-a text-b)
          neg-info (negation-in-pair text-a text-b)
@@ -127,8 +127,7 @@
          (when mutual-excl
            (swap! signals conj {:signal :mutual-exclusion :value true :weight 0.6}))
 
-         (let [total-weight (reduce + 0.0 (map :weight @signals))
-               neg-weight (if neg-info 0.5 0.0)
+         (let [neg-weight (if neg-info 0.5 0.0)
                excl-weight (if mutual-excl 0.6 0.0)]
 
            (cond

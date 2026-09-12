@@ -1,0 +1,39 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-LvNQaf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=35261 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=35261 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Downloading: lambdaisland/deep-diff2/2.11.216/deep-diff2-2.11.216.pom from clojars
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-LvNQaf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=35261 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=35261 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[([31mF[m...[31mF[m...[31mF[m..[31mF[m[31mF[m)]
+Randomized with --seed 1470195434
+
+[31mFAIL[m in epiphany.infra.clio-ingest-outcome-test/index-failure-does-not-retract-a-durable-extraction (clio_ingest_outcome_test.clj:98)
+The canonical append succeeded before the index failed
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+
+[31mFAIL[m in epiphany.infra.clio-ingest-outcome-test/overlapping-revision-projections-count-only-accepted-writes (clio_ingest_outcome_test.clj:62)
+The losing projection must report zero newly stored revisions
+Expected:
+  [1;31m[[0m[36m0[0m [36m1[0m[1;31m][0m
+Actual:
+  [1;31m[[0m[31m-0[0m [32m+1[0m [36m1[0m[1;31m][0m
+
+[31mFAIL[m in epiphany.infra.clio-ingest-outcome-test/overlapping-extraction-projections-count-and-index-only-accepted-records (clio_ingest_outcome_test.clj:82)
+Expected:
+  [1;31m[[0m[36m0[0m [36m1[0m[1;31m][0m
+Actual:
+  [1;31m[[0m[31m-0[0m [32m+1[0m [36m1[0m[1;31m][0m
+
+[31mFAIL[m in epiphany.infra.clio-ingest-outcome-test/overlapping-extraction-projections-count-and-index-only-accepted-records (clio_ingest_outcome_test.clj:85)
+A discarded observation must never reach the index
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+2[0m
+
+[31mFAIL[m in epiphany.infra.clio-ingest-outcome-test/overlapping-extraction-projections-count-and-index-only-accepted-records (clio_ingest_outcome_test.clj:86)
+Expected:
+  [1;31m[[0m[35m#uuid[0m [1;35m"c976cdf4-3a59-416c-a089-3f2a30082d32"[0m[1;31m][0m
+Actual:
+  [1;31m[[0m[35m#uuid[0m [1;35m"c976cdf4-3a59-416c-a089-3f2a30082d32"[0m [32m+#uuid "2950d061-ca79-4d7a-a537-672c94062d14"[0m[1;31m][0m
+[31m3 tests, 13 assertions, 5 failures.[m

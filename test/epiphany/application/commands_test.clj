@@ -79,11 +79,11 @@
     (let [rid (random-uuid)
           cid (random-uuid)
           cases [{:name "register, minimal"
-                  :cli (cli-register-candidate "/repo/a" nil)
-                  :http (http-register-candidate {:repository-path "/repo/a"})}
+                  :cli (cli-register-candidate "/repo/a" rid)
+                  :http (http-register-candidate {:repository-path "/repo/a" :request-id rid})}
                  {:name "register, HTTP :path spelling"
-                  :cli (cli-register-candidate "/repo/a" nil)
-                  :http (http-register-candidate {:path "/repo/a"})}
+                  :cli (cli-register-candidate "/repo/a" rid)
+                  :http (http-register-candidate {:path "/repo/a" :request-id rid})}
                  {:name "register with request-id"
                   :cli (cli-register-candidate "/repo/a" rid)
                   :http (http-register-candidate {:repository-path "/repo/a" :request-id rid})}

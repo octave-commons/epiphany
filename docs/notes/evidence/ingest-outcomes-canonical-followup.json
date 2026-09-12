@@ -1,0 +1,11 @@
+{
+  "recordedAt": "2026-09-12T17:28:17.743Z",
+  "rheosCommit": "c94e789070e15a4f7c9da51baa50ed520a6d1203",
+  "cliSha256": "35eb33a238f4a869091302b1ec0c7aa7a46f7a2b0ab9f069899ee6539d5795d4",
+  "ledgerBeforeBytes": 285644,
+  "ledgerAfterBytes": 287162,
+  "ledgerPrefixPreserved": true,
+  "ledgerBeforeSha256": "93cbd1c67469f01468fa7313c6c040e9840d630fadb6aeb94f8bb0cb9d6d0429",
+  "ledgerAfterSha256": "155132b0257d2ec85951623c00a580dddf1711a22ce916d8aaaece0759a7d5f9",
+  "snapshotSha256": "243042c3bf04bd627b2aff79be6dfb57535674a0a6606ac1ec0977ff3403e286"
+}

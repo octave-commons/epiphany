@@ -70,11 +70,11 @@
 (deftest diff->file-candidates
   (testing "converts multiple entries"
     (let [entries [{:diff/change-type :modify :diff/old-path "a.md" :diff/new-path "a.md"
-                   :diff/old-blob-oid "1" :diff/new-blob-oid "2"}
-                  {:diff/change-type :delete :diff/old-path "b.md" :diff/new-path nil
-                   :diff/old-blob-oid "3" :diff/new-blob-oid nil}
-                  {:diff/change-type :add :diff/old-path nil :diff/new-path "c.md"
-                   :diff/old-blob-oid nil :diff/new-blob-oid "4"}]
+                    :diff/old-blob-oid "1" :diff/new-blob-oid "2"}
+                   {:diff/change-type :delete :diff/old-path "b.md" :diff/new-path nil
+                    :diff/old-blob-oid "3" :diff/new-blob-oid nil}
+                   {:diff/change-type :add :diff/old-path nil :diff/new-path "c.md"
+                    :diff/old-blob-oid nil :diff/new-blob-oid "4"}]
           candidates (fl/diff->file-candidates entries "c1" "c2")]
       ;; delete is skipped
       (is (= 2 (count candidates)))

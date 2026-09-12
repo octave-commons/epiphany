@@ -1,0 +1,110 @@
+{
+  "recorded_at": "2026-09-12T12:21:24.854Z",
+  "source_local_checkpoint": "942934e69f38fc355a6db70dc20b2f29aa47b032",
+  "source_tree": "0b9cce9e8183b81c3120f356375e8b071b7845b7",
+  "source_binding": "The uncommitted implementation tested by these gates was committed unchanged; later changes are documentation and evidence only.",
+  "clio_revision": "37b720ddded5dbb83a2d55fabbe0415dc7302b1e",
+  "clio_repository_tree": "00e8c694f70f456f8d03c3c9a86fca825b2e6d63",
+  "dependency_selection": "Explicit :override-deps eta-mu/clio to separately fetched immutable packages/clio, including owned Bash script Clojure calls; launcher uses the same sibling source layout.",
+  "gate_supervisor_exit_code": 0,
+  "records": [
+    {
+      "id": "unit",
+      "command": [
+        "clojure",
+        "-M:unit-test"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:11:54.217Z",
+      "published_output_sha256": "d38a19284fc6495150c792c831fc4098817b4473f9d214e3514c38b6b4b84c0a"
+    },
+    {
+      "id": "lint",
+      "command": [
+        "clojure",
+        "-M:lint"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:12:10.617Z",
+      "published_output_sha256": "a1a0e4dbd9dedc3918fbb300c901b9849f5edd357b433ca52e79de772ad9285a"
+    },
+    {
+      "id": "format",
+      "command": [
+        "clojure",
+        "-M:cljfmt"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:12:23.621Z",
+      "published_output_sha256": "9915d519d5060b4ec8235db66715f32ef9c6bbfa310f0fef97bafde043261220"
+    },
+    {
+      "id": "boundary",
+      "command": [
+        "clojure",
+        "-M:boundary-check"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:12:26.401Z",
+      "published_output_sha256": "a851175ec02712fdf82f5c7aca102b245570d32cc8c0a87cbdebaff32b755c21"
+    },
+    {
+      "id": "interop",
+      "command": [
+        "clojure",
+        "-M:interop-inventory"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:12:30.089Z",
+      "published_output_sha256": "8e5fedd128069a840eb5154c959fbc54132b7168ded892c5bb1cbe5b0722bdee"
+    },
+    {
+      "id": "build",
+      "command": [
+        "bash",
+        "bin/build"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:12:40.572Z",
+      "published_output_sha256": "d2e9540360fab2a7b1c0ff316302e542c713d085dd5473a3a460b17446abdc89"
+    },
+    {
+      "id": "process",
+      "command": [
+        "bash",
+        "bin/verify-clio-edn"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:13:31.564Z",
+      "published_output_sha256": "9b94c65afb203c3d4b913edcdfbaa0d55d1e793e97e594eb44722b3cc8670da9"
+    },
+    {
+      "id": "launcher",
+      "command": [
+        "bin/ep",
+        "--help"
+      ],
+      "exit_code": 0,
+      "output_last_modified": "2026-09-12T12:18:54.399Z",
+      "published_output_sha256": "6e0103bb4b0088a7e9e8e2a20facb64a27b9a155f1ff06c7e0357e1fc02ee98e"
+    }
+  ],
+  "launcher": {
+    "started": "2026-09-12T12:18:37.046Z",
+    "finished": "2026-09-12T12:18:54.403Z",
+    "command": [
+      "bin/ep",
+      "--help"
+    ],
+    "clio_revision": "37b720ddded5dbb83a2d55fabbe0415dc7302b1e",
+    "exit_code": 0,
+    "actual_entrypoint": true,
+    "independent_caller": true,
+    "help_present": true
+  },
+  "limitations": [
+    "Lucene native-access and vector-module advisories remain visible.",
+    "Legacy Mongo/S3/Ollama integration alias has not passed this checkpoint.",
+    "Upstream concurrent snapshot read correction is a later untested dependency."
+  ]
+}

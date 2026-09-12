@@ -18,11 +18,8 @@
   (:require [clojure.test :refer [deftest is use-fixtures testing]]
             [epiphany.infra.adapters.in-memory :as in-memory]
             [epiphany.infra.adapters.mongo :as mongo]
+            [epiphany.infra.integration-config :as config]
             [epiphany.law-suite.observations-laws :as laws]))
-
-(def ^:private test-uri
-  "MongoDB URI with authentication for integration tests."
-  "mongodb://openplanner:GamG7Ly2g7eyMJoIa-4zS17eAUlWiUup@127.0.0.1:27017/openplanner?authSource=openplanner")
 
 (def ^:private law-conns (atom []))
 
@@ -30,11 +27,8 @@
   "Open a uniquely-prefixed connection (fresh, empty collections) and
    return a Mongo observations port over it. Tracked for teardown."
   []
-  (let [conn (mongo/connect! {:uri               test-uri
-                              :database          "openplanner"
-                              :collection-prefix (str "epiphany_law_"
-                                                      (java.util.UUID/randomUUID)
-                                                      "_")})]
+  (let [conn (mongo/connect! (assoc (config/mongo-options)
+                                    :collection-prefix (str "epiphany_law_" (random-uuid) "_")))]
     (swap! law-conns conj conn)
     (mongo/make-observations-adapter conn)))
 

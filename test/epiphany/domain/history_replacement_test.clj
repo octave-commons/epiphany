@@ -1,5 +1,5 @@
 (ns epiphany.domain.history-replacement-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is]]
             [epiphany.domain.history-replacement :as hr]))
 
 (deftest make-replacement-record-has-required-fields
