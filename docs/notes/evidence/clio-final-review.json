@@ -1,0 +1,126 @@
+{
+  "source": {
+    "local_head": "152b8f5c88fe597c723425788d7fab06b916d962",
+    "tree": "757a7ada2c2fdbc0cb6340e6d894d67f99ac770d",
+    "clio_revision": "690aad83ff54ef5225a1f1533b4a7bd0eaef3561",
+    "clio_tree": "8799304eb2cba6975d925cbd9dd27e87f1e10fea"
+  },
+  "records": [
+    {
+      "id": "dependency",
+      "command": [
+        "clojure",
+        "-M",
+        "-e",
+        "(require (quote clojure.java.io)) (println (clojure.java.io/resource \"clio/infra/ledger.cljc\"))"
+      ],
+      "started": "2026-09-12T12:48:20.973Z",
+      "finished": "2026-09-12T12:48:23.368Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 2.395
+    },
+    {
+      "id": "unit",
+      "command": [
+        "clojure",
+        "-M:unit-test"
+      ],
+      "started": "2026-09-12T12:48:23.370Z",
+      "finished": "2026-09-12T12:49:32.734Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 69.364
+    },
+    {
+      "id": "lint",
+      "command": [
+        "clojure",
+        "-M:lint"
+      ],
+      "started": "2026-09-12T12:49:32.736Z",
+      "finished": "2026-09-12T12:49:54.761Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 22.025
+    },
+    {
+      "id": "format",
+      "command": [
+        "clojure",
+        "-M:cljfmt"
+      ],
+      "started": "2026-09-12T12:49:54.762Z",
+      "finished": "2026-09-12T12:50:06.282Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 11.52
+    },
+    {
+      "id": "boundary",
+      "command": [
+        "clojure",
+        "-M:boundary-check"
+      ],
+      "started": "2026-09-12T12:50:06.283Z",
+      "finished": "2026-09-12T12:50:13.883Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 7.6
+    },
+    {
+      "id": "interop",
+      "command": [
+        "clojure",
+        "-M:interop-inventory"
+      ],
+      "started": "2026-09-12T12:50:13.883Z",
+      "finished": "2026-09-12T12:50:20.991Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 7.108
+    },
+    {
+      "id": "build",
+      "command": [
+        "bash",
+        "bin/build"
+      ],
+      "started": "2026-09-12T12:50:20.999Z",
+      "finished": "2026-09-12T12:50:48.807Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 27.808
+    },
+    {
+      "id": "process",
+      "command": [
+        "bash",
+        "bin/verify-clio-edn"
+      ],
+      "started": "2026-09-12T12:50:48.809Z",
+      "finished": "2026-09-12T12:51:54.437Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 65.628
+    },
+    {
+      "id": "launcher",
+      "command": [
+        "bin/ep",
+        "--help"
+      ],
+      "started": "2026-09-12T12:51:54.483Z",
+      "finished": "2026-09-12T12:52:10.892Z",
+      "exit_code": 0,
+      "seconds": 16.409,
+      "actual_entrypoint": true,
+      "independent_caller": true
+    }
+  ],
+  "source_unchanged": true,
+  "notes": [
+    "The commands used a verified-clio alias containing :override-deps; a classpath probe confirmed the separately fetched immutable kernel.",
+    "Only local JAVA_TOOL_OPTIONS configuration and owned disposable paths are normalized in the companion output. Runtime warnings remain visible."
+  ]
+}

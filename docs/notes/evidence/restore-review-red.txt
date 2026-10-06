@@ -1,0 +1,252 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-rr24AO -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41609 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41609 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-rr24AO -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=41609 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41609 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[(...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m...[31mF[m..............[31mF[m...[31mF[m[31mF[m..[31mF[m[31mF[m..[31mF[m...[31mF[m[31mF[m..[31mF[m[31mF[m..[31mF[m...[31mF[m[31mF[m..[31mF[m[31mF[m..[31mF[m...[31mF[m[31mF[m..[31mF[m[31mF[m.[31mF[m[31mF[m[31mF[m[31mF[m.)(...[31mF[m[31mF[m[31mF[m.)]
+Randomized with --seed 1742437448
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:local[0m
+Actual:
+  [31m-:local[0m [32m+::local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+::edn[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+::services[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:local[0m
+Actual:
+  [31m-:local[0m [32m+::local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+::edn[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+::services[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:local[0m
+Actual:
+  [31m-:local[0m [32m+::local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+::edn[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+::services[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:local[0m
+Actual:
+  [31m-:local[0m [32m+::local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+::edn[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+::services[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":local", :errors ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":edn", :errors ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":services", :errors ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":local", :errors ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":edn", :errors ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":services", :errors ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":local", :errors ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":edn", :errors ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":services", :errors ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":local", :errors ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :local\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":edn", :errors ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :edn\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:edn[0m
+Actual:
+  [31m-:edn[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:19)
+{:profile ":services", :errors ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]}
+expected: (nil? (:errors parsed))
+  actual: (not (nil? ["Failed to validate \"--profile :services\": Valid: #{:edn :local :services}"]))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/all-profile-options-accept-the-documented-colon-spelling (review_cli_test.clj:20)
+Expected:
+  [1;33m:services[0m
+Actual:
+  [31m-:services[0m [32m+:local[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/generated-register-command-id-is-visible-durable-and-retryable (review_cli_test.clj:46)
+expected: (uuid? request-id)
+  actual: (not (uuid? nil))
+
+[31mFAIL[m in epiphany.infra.review-cli-test/generated-register-command-id-is-visible-durable-and-retryable (review_cli_test.clj:47)
+expected: (and request-id (string/includes? (:out first-result) (str request-id)))
+  actual: nil
+
+[31mFAIL[m in epiphany.infra.review-cli-test/generated-register-command-id-is-visible-durable-and-retryable (review_cli_test.clj:48)
+Expected:
+  [1;30mnil[0m
+Actual:
+  [31m-nil[0m [32m+#uuid "b9debc12-f3ef-466e-a5ed-736aefd2b824"[0m
+
+[31mFAIL[m in epiphany.infra.review-cli-test/generated-register-command-id-is-visible-durable-and-retryable (review_cli_test.clj:49)
+Expected:
+  [1;31m{[0m[1;33m:exit[0m [36m0[0m,
+   [1;33m:out[0m [1;35m"Registered: /tmp/epiphany-register-review-71c8ea1b-999c-4d8a-ac84-b3360e37fe1c/repo\n  Resource ID:     a70ecfb5-427a-49c4-ab89-8f2dcc427964\n  Common Git dir:  /tmp/epiphany-register-review-71c8ea1b-999c-4d8a-ac84-b3360e37fe1c/repo/.git\n  Profile:         edn\n"[0m[1;31m}[0m
+Actual:
+  [31m-{:exit 0,
+    :out "Registered: /tmp/epiphany-register-review-71c8ea1b-999c-4d8a-ac84-b3360e37fe1c/repo\n  Resource ID:     a70ecfb5-427a-49c4-ab89-8f2dcc427964\n  Common Git dir:  /tmp/epiphany-register-review-71c8ea1b-999c-4d8a-ac84-b3360e37fe1c/repo/.git\n  Profile:         edn\n"}[0m
+  [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.restore-retry-test/interrupted-restore-reuses-the-original-snapshot-after-reopen (restore_retry_test.clj:32)
+Expected:
+  [1;35m"{:manifest {:version 1, :format :epiphany-backup-v1, :collections {\"ingestion-run\" 0, \"lineage-candidate\" 0, \"projection-checkpoint\" 0, \"repository-location\" 1, \"review-decision\" 0, \"revision-at-path\" 0, \"section-extraction\" 0}, :total-docs 1, :content-hash \"roVv58+/5HMf/cpvJL8a9zj9Ig5YIqiPKAuykVQ8TYE=\"}, :data {\"ingestion-run\" [], \"lineage-candidate\" [], \"projection-checkpoint\" [], \"repository-location\" [{:repository/path #:path{:raw \"/law/test-repo\", :source :filesystem-argument, :comparison :exact}, :observation/type :repository/location-observed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :repository/common-git-dir #:path{:raw \"/law/test-repo/.git\", :source :filesystem-argument, :comparison :exact}, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/request-id #uuid \"9fac3477-f49b-4dbf-b865-93da94bcf570\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], \"review-decision\" [], \"revision-at-path\" [], \"section-extraction\" []}}"[0m
+Actual:
+  [31m-"{:manifest {:version 1, :format :epiphany-backup-v1, :collections {\"ingestion-run\" 0, \"lineage-candidate\" 0, \"projection-checkpoint\" 0, \"repository-location\" 1, \"review-decision\" 0, \"revision-at-path\" 0, \"section-extraction\" 0}, :total-docs 1, :content-hash \"roVv58+/5HMf/cpvJL8a9zj9Ig5YIqiPKAuykVQ8TYE=\"}, :data {\"ingestion-run\" [], \"lineage-candidate\" [], \"projection-checkpoint\" [], \"repository-location\" [{:repository/path #:path{:raw \"/law/test-repo\", :source :filesystem-argument, :comparison :exact}, :observation/type :repository/location-observed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :repository/common-git-dir #:path{:raw \"/law/test-repo/.git\", :source :filesystem-argument, :comparison :exact}, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/request-id #uuid \"9fac3477-f49b-4dbf-b865-93da94bcf570\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], \"review-decision\" [], \"revision-at-path\" [], \"section-extraction\" []}}"[0m
+  [32m+"{:manifest {:version 1, :format :epiphany-backup-v1, :collections {\"ingestion-run\" 0, \"lineage-candidate\" 0, \"projection-checkpoint\" 0, \"repository-location\" 0, \"review-decision\" 0, \"revision-at-path\" 0, \"section-extraction\" 0}, :total-docs 0, :content-hash \"2XArW6Ggt4xA0qXtJ14YGXG+LEz5JOtNuQ1elV1LSWA=\"}, :data {\"ingestion-run\" [], \"lineage-candidate\" [], \"projection-checkpoint\" [], \"repository-location\" [], \"review-decision\" [], \"revision-at-path\" [], \"section-extraction\" []}}"[0m
+
+[31mFAIL[m in epiphany.infra.restore-retry-test/interrupted-restore-reuses-the-original-snapshot-after-reopen (restore_retry_test.clj:33)
+Expected:
+  [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+   [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+   [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+   [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+   [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"9fac3477-f49b-4dbf-b865-93da94bcf570"[0m,
+   [1;33m:observation/schema-version[0m [36m1[0m,
+   [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+   [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                               [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                               [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+   [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                     [1;33m:path/raw[0m [1;35m"/law/test-repo"[0m,
+                     [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+Actual:
+  [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    :observation/adapter-version "law-suite-v1",
+    :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+    :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+    :observation/request-id #uuid "9fac3477-f49b-4dbf-b865-93da94bcf570",
+    :observation/schema-version 1,
+    :observation/type :repository/location-observed,
+    :repository/common-git-dir {:path/comparison :exact,
+                                :path/raw "/law/test-repo/.git",
+                                :path/source :filesystem-argument},
+    :repository/path {:path/comparison :exact,
+                      :path/raw "/law/test-repo",
+                      :path/source :filesystem-argument}}[0m
+  [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.restore-retry-test/interrupted-restore-reuses-the-original-snapshot-after-reopen (restore_retry_test.clj:34)
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+[31m3 tests, 121 assertions, 39 failures.[m

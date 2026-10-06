@@ -33,7 +33,7 @@
   (testing "diff-commits preserves Unicode paths"
     (let [result (git/diff-commits "." "HEAD~1" "HEAD")
           unicode-entries (filter #(and (:diff/old-path %)
-                                       (.contains (:diff/old-path %) "\u03b7"))
+                                        (.contains (:diff/old-path %) "\u03b7"))
                                   (:entries result))]
       ;; The epiphany repo has .ημ/ paths, so at least one should appear
       (is (>= (count unicode-entries) 0)))))

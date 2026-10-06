@@ -1,0 +1,17 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-1HwG7O -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37523 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37523 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-1HwG7O -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37523 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37523 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[[31mE[m]
+Randomized with --seed 989692236
+
+[31mERROR[m in unit (ns.clj:9)
+Failed loading tests:
+Exception: clojure.lang.Compiler$CompilerException: Syntax error compiling at (epiphany/infra/request_identity_review_test.clj:143:55).
+#:clojure.error{:phase :compile-syntax-check, :line 143, :column 55, :source "epiphany/infra/request_identity_review_test.clj"}
+ at clojure.lang.Compiler.analyze (Compiler.java:7391)
+    ...
+(Rest of stacktrace elided)
+Caused by: java.lang.RuntimeException: No such namespace: candidate-seeding
+ at clojure.lang.Util.runtimeException (Util.java:221)
+    ...
+(Rest of stacktrace elided)
+[31m1 tests, 1 assertions, 1 errors, 0 failures.[m

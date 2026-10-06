@@ -1,0 +1,25 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.

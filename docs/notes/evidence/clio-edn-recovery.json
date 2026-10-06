@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-09-12T10:24:58.672Z",
+  "baseCommit": "643be698ea0d841dd19385506b272872306e456e",
+  "clioRevision": "fd7cd25645d6acf80c3e5909f3ceecb65b7b1148",
+  "clioPackageTree": "e6bb4d2f0cc2456a31c87a471f3a6d51db0cbf5c",
+  "records": [
+    {
+      "id": "epiphany-recovery-lint-before",
+      "cwd": "/workspace/scratch/3655842e43cf/foresight/epiphany",
+      "argv": [
+        "clojure",
+        "-M:lint"
+      ],
+      "start": "2026-09-12T09:55:46.566Z",
+      "end": "2026-09-12T09:55:59.626Z",
+      "seconds": 13.06,
+      "code": 0,
+      "signal": null,
+      "timeout": false,
+      "log": "/workspace/scratch/3655842e43cf/evidence/logs/epiphany-recovery-lint-before.log"
+    },
+    {
+      "id": "epiphany-clio-recovery-focused",
+      "cwd": "/workspace/scratch/3655842e43cf/foresight/epiphany",
+      "argv": [
+        "clojure",
+        "-M:test",
+        "--focus",
+        "epiphany.infra.adapters.clio-test"
+      ],
+      "start": "2026-09-12T10:00:41.253Z",
+      "end": "2026-09-12T10:00:53.341Z",
+      "seconds": 12.088,
+      "code": 15,
+      "signal": null,
+      "timeout": false,
+      "log": "/workspace/scratch/3655842e43cf/evidence/logs/epiphany-clio-recovery-focused.log"
+    },
+    {
+      "id": "epiphany-current-clio-fetch",
+      "cwd": "/workspace/scratch/3655842e43cf/foresight/epiphany",
+      "argv": [
+        "bash",
+        "bin/fetch-clio-source",
+        "/tmp/epiphany-pinned-proof/eta-mu"
+      ],
+      "start": "2026-09-12T10:11:55.980Z",
+      "end": "2026-09-12T10:12:32.243Z",
+      "seconds": 36.263,
+      "code": 0,
+      "signal": null,
+      "timeout": false,
+      "log": "/workspace/scratch/3655842e43cf/evidence/logs/epiphany-current-clio-fetch.log"
+    },
+    {
+      "id": "epiphany-clio-recovery-integrity-final",
+      "cwd": "/workspace/scratch/3655842e43cf/foresight/epiphany",
+      "argv": [
+        "bash",
+        "-c",
+        "set -e; clojure -M:unit-test; clojure -M:lint; clojure -M:cljfmt; clojure -M:boundary-check; clojure -M:interop-inventory; bash bin/build; bin/ep --help; bash bin/verify-clio-edn; git diff --check"
+      ],
+      "start": "2026-09-12T10:18:20.921Z",
+      "end": "2026-09-12T10:20:31.432Z",
+      "seconds": 130.511,
+      "code": 0,
+      "signal": null,
+      "timeout": false,
+      "log": "/workspace/scratch/3655842e43cf/evidence/logs/epiphany-clio-recovery-integrity-final.log"
+    }
+  ]
+}

@@ -93,7 +93,7 @@
 (deftest make-decision-invalid-type-test
   (testing "throws on invalid decision type"
     (is (thrown? AssertionError
-                (review/make-decision (java.util.UUID/randomUUID) :invalid)))))
+                 (review/make-decision (java.util.UUID/randomUUID) :invalid)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Query helpers
@@ -130,11 +130,11 @@
                     :review-decision/decided-at t-minus-1h)
           d3 (assoc (review/make-decision (java.util.UUID/randomUUID) :accepted)
                     :review-decision/decided-at now)
-          decisions [d1 d2 d3]]
+          decisions [d1 d2 d3]
       ;; Only d2 in range [t-minus-1h, now)
-      (let [result (review/by-time-range decisions t-minus-1h now)]
-        (is (= 1 (count result)))
-        (is (= (:review-decision/id d2) (:review-decision/id (first result))))))))
+          result (review/by-time-range decisions t-minus-1h now)]
+      (is (= 1 (count result)))
+      (is (= (:review-decision/id d2) (:review-decision/id (first result)))))))
 
 (deftest by-request-id-test
   (testing "finds decision by request ID"

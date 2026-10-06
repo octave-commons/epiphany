@@ -4,8 +4,7 @@
   Provides a ranked, filtered view of lineage candidates that haven't
   been reviewed yet, enriched with evidence spans and context for
   efficient triage."
-  (:require [epiphany.domain.review :as review]
-            [epiphany.domain.candidates :as candidates]
+  (:require [epiphany.domain.candidates :as candidates]
             [clojure.string :as str]))
 
 ;; ---------------------------------------------------------------------------
@@ -18,20 +17,20 @@
         spans (:lineage-candidate/evidence-spans candidate)
         rel (:lineage-candidate/relation candidate)
         conf (:lineage-candidate/confidence candidate)
-        parts []]
-    (let [parts (cond-> parts
-                  true (conj (format "%s (confidence: %.2f)" (name rel) conf))
-                  (:text-similarity features)
-                  (conj (format "text-similarity: %.2f" (:text-similarity features)))
-                  (:link-overlap-ratio features)
-                  (conj (format "link-overlap: %.2f" (:link-overlap-ratio features)))
-                  (:name-token-overlap features)
-                  (conj (format "name-overlap: %.2f" (:name-token-overlap features)))
-                  (:frontmatter-changed features)
-                  (conj "frontmatter changed")
-                  (seq spans)
-                  (conj (format "%d evidence span(s)" (count spans))))]
-      (str/join "; " parts))))
+        parts []
+        parts (cond-> parts
+                true (conj (format "%s (confidence: %.2f)" (name rel) conf))
+                (:text-similarity features)
+                (conj (format "text-similarity: %.2f" (:text-similarity features)))
+                (:link-overlap-ratio features)
+                (conj (format "link-overlap: %.2f" (:link-overlap-ratio features)))
+                (:name-token-overlap features)
+                (conj (format "name-overlap: %.2f" (:name-token-overlap features)))
+                (:frontmatter-changed features)
+                (conj "frontmatter changed")
+                (seq spans)
+                (conj (format "%d evidence span(s)" (count spans))))]
+    (str/join "; " parts)))
 
 ;; ---------------------------------------------------------------------------
 ;; Filtering
@@ -142,8 +141,8 @@
   ([candidates decisions filters]
    (build-inbox candidates decisions filters {}))
   ([candidates decisions filters {:keys [limit sort include-suppressed?]
-                                   :or {limit 50 sort :confidence
-                                        include-suppressed? false}}]
+                                  :or {limit 50 sort :confidence
+                                       include-suppressed? false}}]
    (let [queue (remove #(candidates/established? % decisions) candidates)
          queue (if include-suppressed?
                  queue

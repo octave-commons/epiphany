@@ -6,9 +6,7 @@
   signals, content analysis, and temporal ordering.
 
   All output is provisional — promotion to accepted requires explicit
-  human review. LLM-enhanced generation is a separate future card."
-  (:require [epiphany.domain.continuity :as continuity]
-            [epiphany.domain.diff :as diff]))
+  human review. LLM-enhanced generation is a separate future card.")
 
 (def lineage-generator-version
   "Version string for the deterministic lineage generator."
@@ -121,7 +119,7 @@
 (defn- build-evidence-spans
   "Build a list of evidence spans describing what signals contributed
    to this candidate relation."
-  [relation-type features]
+  [_relation-type features]
   (let [spans (atom [])]
     (when (>= (:text-similarity features) 0.3)
       (swap! spans conj {:evidence/signal :text-similarity

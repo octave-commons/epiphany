@@ -173,10 +173,10 @@
   [& {:keys [query mode limit results]
       :or {query "" mode :hybrid limit 20 results []}}]
   (layout "Epiphany — Search"
-   [:div.search-page
-    (search-form query mode limit)
-    (search-results results)
-    [:div#evidence-drawer.evidence-drawer]]))
+          [:div.search-page
+           (search-form query mode limit)
+           (search-results results)
+           [:div#evidence-drawer.evidence-drawer]]))
 
 ;; ---------------------------------------------------------------------------
 ;; Evidence drawer
@@ -360,21 +360,21 @@
   "Render the timeline page."
   [& {:keys [source-path edges nodes] :or {source-path "" edges [] nodes []}}]
   (layout "Epiphany — Timeline"
-   [:div.timeline-page
-    [:h2 "Lineage Timeline"]
-    [:div.timeline-form
-     [:form {:hx-post "/htmx/timeline"
-             :hx-target "#timeline-content"
-             :hx-swap "innerHTML"}
-      [:div.search-input-row
-       [:input {:type "text" :name "path" :placeholder "Section path..." :value source-path}]
-       [:input {:type "text" :name "repo" :placeholder "Repository path (default .)" :value ""}]
-       [:button {:type "submit"} "Trace"]]]]
-    [:div#timeline-content.timeline-content
-     (if (seq nodes)
-       (timeline-graph nodes edges)
-       [:div.results-empty [:p "No timeline data. Enter a section path to trace its lineage."]])]
-    [:div#evidence-drawer.evidence-drawer]]))
+          [:div.timeline-page
+           [:h2 "Lineage Timeline"]
+           [:div.timeline-form
+            [:form {:hx-post "/htmx/timeline"
+                    :hx-target "#timeline-content"
+                    :hx-swap "innerHTML"}
+             [:div.search-input-row
+              [:input {:type "text" :name "path" :placeholder "Section path..." :value source-path}]
+              [:input {:type "text" :name "repo" :placeholder "Repository path (default .)" :value ""}]
+              [:button {:type "submit"} "Trace"]]]]
+           [:div#timeline-content.timeline-content
+            (if (seq nodes)
+              (timeline-graph nodes edges)
+              [:div.results-empty [:p "No timeline data. Enter a section path to trace its lineage."]])]
+           [:div#evidence-drawer.evidence-drawer]]))
 
 (defn timeline-page-handler
   "Handle the timeline page."
@@ -421,8 +421,8 @@
           (let [revisions (path-revisions repo ["HEAD"] path)]
             (if (empty? revisions)
               (fragment-response [:div.results-empty
-                                   [:p (str "No Git history found for "
-                                            (html-escape path) " in " (html-escape repo))]])
+                                  [:p (str "No Git history found for "
+                                           (html-escape path) " in " (html-escape repo))]])
               (let [source (last revisions)
                     history (butlast revisions)
                     trace (lineage-trace/trace-lineage source history [])]
@@ -476,10 +476,10 @@
       (epistemic-badge (:inbox/decision-status item))]
      [:div.inbox-item-paths
       [:span.inbox-source (html-escape (str (:span/path-raw source) " > "
-                                           (str/join " > " (:span/heading-path source))))]
+                                            (str/join " > " (:span/heading-path source))))]
       [:span.inbox-arrow " → "]
       [:span.inbox-target (html-escape (str (:span/path-raw target) " > "
-                                           (str/join " > " (:span/heading-path target))))]]
+                                            (str/join " > " (:span/heading-path target))))]]
      [:div.inbox-item-summary (html-escape summary)]
      [:div.inbox-item-actions
       [:button.inbox-btn.accept-btn
@@ -509,10 +509,10 @@
   "Render the inbox page."
   [& {:keys [items] :or {items []}}]
   (layout "Epiphany — Review Inbox"
-   [:div.inbox-page
-    [:h2 "Review Inbox"]
-    (inbox-filter-form)
-    (inbox-list items)]))
+          [:div.inbox-page
+           [:h2 "Review Inbox"]
+           (inbox-filter-form)
+           (inbox-list items)]))
 
 (defn inbox-page-handler
   "Handle the inbox page."
@@ -540,7 +540,7 @@
           sort-key (if (= "evidence" (:sort body)) :evidence :confidence)]
       (if-not resource-id
         (fragment-response [:div#inbox-list.results-empty
-                             [:p "Enter a registered repository's resource-id to review its candidates."]])
+                            [:p "Enter a registered repository's resource-id to review its candidates."]])
         (let [list-candidates (get-in adapters [:observations :list-lineage-candidates])
               list-decisions (get-in adapters [:observations :list-review-decisions])
               candidates (if list-candidates (list-candidates resource-id) [])
@@ -561,17 +561,17 @@
   (fn [request]
     (let [body (:body-params request)
           candidate-id (try (java.util.UUID/fromString (:candidate-id body))
-                             (catch Exception _ nil))
+                            (catch Exception _ nil))
           decision-str (:decision body)
           decision-type (when decision-str (keyword decision-str))]
       (if (or (nil? candidate-id) (not (contains? review/review-decision-types decision-type)))
         (fragment-response [:div#inbox-list.results-empty
-                             [:p "Invalid candidate id or decision type."]])
+                            [:p "Invalid candidate id or decision type."]])
         (let [find-candidate (get-in adapters [:observations :find-lineage-candidate-by-id])
               candidate (when find-candidate (find-candidate candidate-id))]
           (if-not candidate
             (fragment-response [:div#inbox-list.results-empty
-                                 [:p "No candidate found for that id."]])
+                                [:p "No candidate found for that id."]])
             (let [resource-id (:resource-id candidate)
                   decision (review/make-decision candidate-id decision-type
                                                  :reason (not-empty
@@ -616,7 +616,7 @@
         (for [[k v] counts]
           [:span.stage-count [:strong (name k)] ": " (str v)])])
      (when (some? lag)
-      [:div.stage-lag "Lag: " (str lag)])
+       [:div.stage-lag "Lag: " (str lag)])
      (when (seq failures)
        [:div.stage-failures
         [:h4 "Failures"]
@@ -648,14 +648,14 @@
   "Render the health panel page."
   [& {:keys [resource-id stages summary] :or {stages [] summary {}}}]
   (layout "Epiphany — Corpus Health"
-   [:div.health-page
-    [:h2 "Corpus Health"]
-    (health-form resource-id)
-    [:div.health-summary
-     (for [[k v] summary]
-       [:span.summary-item [:strong (name k)] ": " (str v)])]
-    [:div#health-content
-     (health-stages-view stages)]]))
+          [:div.health-page
+           [:h2 "Corpus Health"]
+           (health-form resource-id)
+           [:div.health-summary
+            (for [[k v] summary]
+              [:span.summary-item [:strong (name k)] ": " (str v)])]
+           [:div#health-content
+            (health-stages-view stages)]]))
 
 (defn- query-health-status
   "Query real cross-stage status for `resource-id` via domain/status --

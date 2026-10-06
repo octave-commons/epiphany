@@ -1,0 +1,233 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-Qy7rXD -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=36327 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36327 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-Qy7rXD -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=36327 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=36327 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[(..............[31mE[m[31mE[m[31mE[m)]
+Randomized with --seed 259885877
+
+[31mERROR[m in epiphany.infra.clio-ingest-outcome-test/overlapping-extraction-projections-count-and-index-only-accepted-records (clio_ingest_outcome_test.clj:16)
+Uncaught exception, not in assertion.
+Exception: clojure.lang.ExceptionInfo: Literal Git fixture command failed
+{:exit 97, :out "", :err "External git fixture invocation refused\n"}
+ at epiphany.infra.clio_ingest_outcome_test$git_BANG_.invokeStatic (clio_ingest_outcome_test.clj:16)
+    epiphany.infra.clio_ingest_outcome_test$git_BANG_.doInvoke (clio_ingest_outcome_test.clj:13)
+    ...
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invokeStatic (clio_ingest_outcome_test.clj:24)
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invoke (clio_ingest_outcome_test.clj:19)
+    epiphany.infra.clio_ingest_outcome_test$fn__26231.invokeStatic (clio_ingest_outcome_test.clj:83)
+    epiphany.infra.clio_ingest_outcome_test/fn (clio_ingest_outcome_test.clj:82)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval31371$fn__31373$wrapped_test__31376.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval31371$fn__31373.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mERROR[m in epiphany.infra.clio-ingest-outcome-test/index-failure-does-not-retract-a-durable-extraction (clio_ingest_outcome_test.clj:16)
+Uncaught exception, not in assertion.
+Exception: clojure.lang.ExceptionInfo: Literal Git fixture command failed
+{:exit 97, :out "", :err "External git fixture invocation refused\n"}
+ at epiphany.infra.clio_ingest_outcome_test$git_BANG_.invokeStatic (clio_ingest_outcome_test.clj:16)
+    epiphany.infra.clio_ingest_outcome_test$git_BANG_.doInvoke (clio_ingest_outcome_test.clj:13)
+    ...
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invokeStatic (clio_ingest_outcome_test.clj:24)
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invoke (clio_ingest_outcome_test.clj:19)
+    epiphany.infra.clio_ingest_outcome_test$fn__26262.invokeStatic (clio_ingest_outcome_test.clj:103)
+    epiphany.infra.clio_ingest_outcome_test/fn (clio_ingest_outcome_test.clj:102)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval31371$fn__31373$wrapped_test__31376.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval31371$fn__31373.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mERROR[m in epiphany.infra.clio-ingest-outcome-test/overlapping-revision-projections-count-only-accepted-writes (clio_ingest_outcome_test.clj:16)
+Uncaught exception, not in assertion.
+Exception: clojure.lang.ExceptionInfo: Literal Git fixture command failed
+{:exit 97, :out "", :err "External git fixture invocation refused\n"}
+ at epiphany.infra.clio_ingest_outcome_test$git_BANG_.invokeStatic (clio_ingest_outcome_test.clj:16)
+    epiphany.infra.clio_ingest_outcome_test$git_BANG_.doInvoke (clio_ingest_outcome_test.clj:13)
+    ...
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invokeStatic (clio_ingest_outcome_test.clj:24)
+    epiphany.infra.clio_ingest_outcome_test$with_repository.invoke (clio_ingest_outcome_test.clj:19)
+    epiphany.infra.clio_ingest_outcome_test$fn__26202.invokeStatic (clio_ingest_outcome_test.clj:70)
+    epiphany.infra.clio_ingest_outcome_test/fn (clio_ingest_outcome_test.clj:69)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval31371$fn__31373$wrapped_test__31376.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval31371$fn__31373.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+[31m4 tests, 17 assertions, 3 errors, 0 failures.[m

@@ -14,7 +14,7 @@
 
 (defn- temporary-directory []
   (.toFile (java.nio.file.Files/createTempDirectory "epiphany-selection-test"
-                                                     (make-array java.nio.file.attribute.FileAttribute 0))))
+                                                    (make-array java.nio.file.attribute.FileAttribute 0))))
 
 (defn- delete-recursive [^java.io.File file]
   (when (.exists file)

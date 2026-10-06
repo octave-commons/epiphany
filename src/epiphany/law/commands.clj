@@ -19,7 +19,7 @@
    [:map {:closed true}
     [:command/name [:= :command/register]]
     [:repository-path [:string {:min 1}]]
-    [:request-id {:optional true} :uuid]]
+    [:request-id :uuid]]
 
    "query/search"
    [:map {:closed true}

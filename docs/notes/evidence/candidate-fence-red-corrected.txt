@@ -1,0 +1,17 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-qNTlbf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=46665 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46665 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-qNTlbf -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=46665 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46665 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[([31mF[m[31mF[m.)]
+Randomized with --seed 2079390581
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-retry-reforces-the-existing-ledger-before-success (request_identity_review_test.clj:144)
+Expected:
+  [1;33m:unavailable[0m
+Actual:
+  [31m-:unavailable[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-retry-reforces-the-existing-ledger-before-success (request_identity_review_test.clj:145)
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+[31m1 tests, 3 assertions, 2 failures.[m

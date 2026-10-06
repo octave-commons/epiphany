@@ -83,11 +83,11 @@
 
    Returns a seq of gap maps."
   [sections continuity-scores & {:keys [threshold]
-                                  :or {threshold 0.2}}]
+                                 :or {threshold 0.2}}]
   (let [scored (map (fn [s]
-                       {:section s
-                        :score (get continuity-scores (:id s) 1.0)})
-                     sections)
+                      {:section s
+                       :score (get continuity-scores (:id s) 1.0)})
+                    sections)
         low-scored (filter #(< (:score %) threshold) scored)]
     (for [{:keys [section score]} low-scored]
       {:gap/type :low-continuity-transition
@@ -141,7 +141,7 @@
 
    Returns a seq of gap maps."
   [sections lineage-links & {:keys [min-position max-connections]
-                              :or {min-position 0.8 max-connections 1}}]
+                             :or {min-position 0.8 max-connections 1}}]
   (let [total (count sections)
         source-counts (frequencies (map :lineage/source lineage-links))
         target-counts (frequencies (map :lineage/target lineage-links))
@@ -160,7 +160,7 @@
                        (:id section) (:path-raw section) (:heading-path section)
                        (:text section)
                        :context (format "Position %d/%d, connections: %d"
-                                       (:position section) total connections))]
+                                        (:position section) total connections))]
        :gap/suggested-action :investigate-isolation
        :gap/generator-version "research-gap-deterministic-v1"
        :gap/status :provisional})))
@@ -225,22 +225,22 @@
            :or {continuity-threshold 0.2 late-position 0.8 max-isolation-connections 1}}]
   (let [sections (get data :sections [])
         gaps (vec
-               (concat
-                 (when (seq sections)
-                   (detect-todo-markers sections))
-                 (when (and (seq sections) (seq (:continuity-scores data)))
-                   (detect-low-continuity-transitions
-                    sections (:continuity-scores data)
-                    :threshold continuity-threshold))
-                 (when (seq (:decisions data))
-                   (detect-contradictions (:decisions data)))
-                 (when (and (seq sections) (seq (:lineage-links data)))
-                   (detect-isolated-claims
-                    sections (:lineage-links data)
-                    :min-position late-position
-                    :max-connections max-isolation-connections))
-                 (when (seq (:redundancy-candidates data))
-                   (detect-near-duplicates (:redundancy-candidates data)))))]
+              (concat
+               (when (seq sections)
+                 (detect-todo-markers sections))
+               (when (and (seq sections) (seq (:continuity-scores data)))
+                 (detect-low-continuity-transitions
+                  sections (:continuity-scores data)
+                  :threshold continuity-threshold))
+               (when (seq (:decisions data))
+                 (detect-contradictions (:decisions data)))
+               (when (and (seq sections) (seq (:lineage-links data)))
+                 (detect-isolated-claims
+                  sections (:lineage-links data)
+                  :min-position late-position
+                  :max-connections max-isolation-connections))
+               (when (seq (:redundancy-candidates data))
+                 (detect-near-duplicates (:redundancy-candidates data)))))]
     (->> gaps
          (sort-by :gap/confidence >)
          vec)))

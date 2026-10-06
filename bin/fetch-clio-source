@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+destination="${1:-../eta-mu}"
+revision=ff48f090965be5c17cca1e3662d7402b383510c1
+while [[ "$destination" != / && "$destination" == */ ]]; do
+  destination=${destination%/}
+done
+if [[ -e "$destination" || -L "$destination" ]]; then
+  echo "Refusing to replace an existing Clio workspace: $destination" >&2
+  exit 1
+fi
+mkdir -p -- "$(dirname -- "$destination")"
+staging=$(mktemp -d -- "$(dirname -- "$destination")/.$(basename -- "$destination").fetch.XXXXXXXX")
+trap 'rm -rf -- "$staging"' EXIT
+git init -q "$staging"
+git -C "$staging" remote add origin https://github.com/open-hax/eta-mu.git
+git -C "$staging" sparse-checkout init --cone
+git -C "$staging" sparse-checkout set packages/clio
+git -C "$staging" fetch --depth=1 --filter=blob:none origin "$revision"
+git -C "$staging" checkout --detach -q FETCH_HEAD
+test "$(git -C "$staging" rev-parse HEAD)" = "$revision"
+test -f "$staging/packages/clio/deps.edn"
+# Publish atomically without replacing a path another caller created meanwhile.
+mv --no-clobber --no-target-directory -- "$staging" "$destination"
+if [[ -e "$staging" ]]; then
+  echo "Refusing to replace an existing Clio workspace: $destination" >&2
+  exit 1
+fi
+echo "Clio source ready at $revision in $destination"

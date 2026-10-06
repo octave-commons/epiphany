@@ -3,7 +3,7 @@
    Exercises real Git operations and filesystem metadata. No external services."
   (:require [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is]]
             [epiphany.infra.repository-identity :as repo-ident]
             [epiphany.infra.repository-metadata-file :as metadata-file]))
 
@@ -87,7 +87,7 @@
         _ (init-normal-repo repo)
         known-id #uuid "7a6b0d26-1000-4000-8000-000000000001"
         _ (metadata-file/write! (.getCanonicalPath
-                                  (io/file (.getPath repo) ".git"))
+                                 (io/file (.getPath repo) ".git"))
                                 known-id)
         result (repo-ident/resolve-repository (.getPath repo))]
     (is (= known-id (:resource-id result)))

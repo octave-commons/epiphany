@@ -116,12 +116,12 @@
           (make-stage-status :discovery
                              :status :error
                              :failures [(make-failure-record (.getMessage e)
-                                                            :resource-id resource-id)]))))
+                                                             :resource-id resource-id)]))))
     (catch Exception e
       (make-stage-status :discovery
                          :status :error
                          :failures [(make-failure-record (.getMessage e)
-                                                        :resource-id resource-id)]))))
+                                                         :resource-id resource-id)]))))
 
 (defn query-extraction-status
   "Query extraction projection status.
@@ -136,25 +136,25 @@
     (let [checkpoints (checkpoints-for-resource obs-adapter resource-id
                                                 "section-extraction")]
       (if-let [ckpt (latest-observation checkpoints)]
-          (make-stage-status :extraction
-                             :status (case (:checkpoint/status ckpt)
-                                       :completed :ok
-                                       :failed :error
-                                       :in-progress)
-                             :counts {:processed (:checkpoint/processed-count ckpt)}
-                             :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
-                                         :version (:checkpoint/projection-version ckpt)
-                                         :last-processed (:checkpoint/last-processed-oid ckpt)}
-                             :failures (cond-> []
-                                         (:checkpoint/error-message ckpt)
-                                         (conj (make-failure-record
-                                                (:checkpoint/error-message ckpt)
-                                                :resource-id resource-id)))
-                             :lag (when (:observation/observed-at ckpt)
-                                    (long (/ (- (System/currentTimeMillis)
-                                                (observed-at-ms ckpt))
-                                             1000))))
-          (make-stage-status :extraction :status :unknown)))
+        (make-stage-status :extraction
+                           :status (case (:checkpoint/status ckpt)
+                                     :completed :ok
+                                     :failed :error
+                                     :in-progress)
+                           :counts {:processed (:checkpoint/processed-count ckpt)}
+                           :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
+                                        :version (:checkpoint/projection-version ckpt)
+                                        :last-processed (:checkpoint/last-processed-oid ckpt)}
+                           :failures (cond-> []
+                                       (:checkpoint/error-message ckpt)
+                                       (conj (make-failure-record
+                                              (:checkpoint/error-message ckpt)
+                                              :resource-id resource-id)))
+                           :lag (when (:observation/observed-at ckpt)
+                                  (long (/ (- (System/currentTimeMillis)
+                                              (observed-at-ms ckpt))
+                                           1000))))
+        (make-stage-status :extraction :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (if (= :unavailable (:code data))
@@ -162,12 +162,12 @@
           (make-stage-status :extraction
                              :status :error
                              :failures [(make-failure-record (.getMessage e)
-                                                            :resource-id resource-id)]))))
+                                                             :resource-id resource-id)]))))
     (catch Exception e
       (make-stage-status :extraction
                          :status :error
                          :failures [(make-failure-record (.getMessage e)
-                                                        :resource-id resource-id)]))))
+                                                         :resource-id resource-id)]))))
 
 (defn query-indexing-status
   "Query Lucene indexing status.
@@ -191,12 +191,12 @@
           (make-stage-status :indexing
                              :status :error
                              :failures [(make-failure-record (.getMessage e)
-                                                            :resource-id resource-id)]))))
+                                                             :resource-id resource-id)]))))
     (catch Exception e
       (make-stage-status :indexing
                          :status :error
                          :failures [(make-failure-record (.getMessage e)
-                                                        :resource-id resource-id)]))))
+                                                         :resource-id resource-id)]))))
 
 (defn query-embedding-status
   "Query embedding projection status.
@@ -211,25 +211,25 @@
     (let [checkpoints (checkpoints-for-resource obs-adapter resource-id
                                                 "embedding")]
       (if-let [ckpt (latest-observation checkpoints)]
-          (make-stage-status :embedding
-                             :status (case (:checkpoint/status ckpt)
-                                       :completed :ok
-                                       :failed :error
-                                       :in-progress)
-                             :counts {:processed (:checkpoint/processed-count ckpt)}
-                             :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
-                                         :version (:checkpoint/projection-version ckpt)
-                                         :last-processed (:checkpoint/last-processed-oid ckpt)}
-                             :failures (cond-> []
-                                         (:checkpoint/error-message ckpt)
-                                         (conj (make-failure-record
-                                                (:checkpoint/error-message ckpt)
-                                                :resource-id resource-id)))
-                             :lag (when (:observation/observed-at ckpt)
-                                    (long (/ (- (System/currentTimeMillis)
-                                                (observed-at-ms ckpt))
-                                             1000))))
-          (make-stage-status :embedding :status :unknown)))
+        (make-stage-status :embedding
+                           :status (case (:checkpoint/status ckpt)
+                                     :completed :ok
+                                     :failed :error
+                                     :in-progress)
+                           :counts {:processed (:checkpoint/processed-count ckpt)}
+                           :checkpoint {:projection-name (:checkpoint/projection-name ckpt)
+                                        :version (:checkpoint/projection-version ckpt)
+                                        :last-processed (:checkpoint/last-processed-oid ckpt)}
+                           :failures (cond-> []
+                                       (:checkpoint/error-message ckpt)
+                                       (conj (make-failure-record
+                                              (:checkpoint/error-message ckpt)
+                                              :resource-id resource-id)))
+                           :lag (when (:observation/observed-at ckpt)
+                                  (long (/ (- (System/currentTimeMillis)
+                                              (observed-at-ms ckpt))
+                                           1000))))
+        (make-stage-status :embedding :status :unknown)))
     (catch clojure.lang.ExceptionInfo e
       (let [data (ex-data e)]
         (if (= :unavailable (:code data))
@@ -237,12 +237,12 @@
           (make-stage-status :embedding
                              :status :error
                              :failures [(make-failure-record (.getMessage e)
-                                                            :resource-id resource-id)]))))
+                                                             :resource-id resource-id)]))))
     (catch Exception e
       (make-stage-status :embedding
                          :status :error
                          :failures [(make-failure-record (.getMessage e)
-                                                        :resource-id resource-id)]))))
+                                                         :resource-id resource-id)]))))
 
 ;; ---------------------------------------------------------------------------
 ;; Aggregate status
@@ -264,11 +264,11 @@
       :summary {:ok int :error int :unavailable int :unknown int}}"
   [adapters resource-id]
   (let [stages (vec
-                 [(query-registration-status (:repository-metadata adapters))
-                  (query-discovery-status (:observations adapters) resource-id)
-                  (query-extraction-status (:observations adapters) resource-id)
-                  (query-indexing-status (:index adapters) resource-id)
-                  (query-embedding-status (:observations adapters) resource-id)])
+                [(query-registration-status (:repository-metadata adapters))
+                 (query-discovery-status (:observations adapters) resource-id)
+                 (query-extraction-status (:observations adapters) resource-id)
+                 (query-indexing-status (:index adapters) resource-id)
+                 (query-embedding-status (:observations adapters) resource-id)])
         summary (frequencies (map :stage/status stages))]
     {:resource-id resource-id
      :stages stages

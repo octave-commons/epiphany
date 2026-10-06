@@ -1,0 +1,122 @@
+{
+  "source": {
+    "local_head": "d06a08b88e940204ce4575fee8a34837eaf0a2a0",
+    "tree": "0eac2c8d734913ecb973b996478e006638da706b",
+    "clio_revision": "690aad83ff54ef5225a1f1533b4a7bd0eaef3561",
+    "clio_tree": "8799304eb2cba6975d925cbd9dd27e87f1e10fea"
+  },
+  "records": [
+    {
+      "id": "dependency",
+      "command": [
+        "clojure",
+        "-M",
+        "-e",
+        "(require (quote clojure.java.io)) (println (clojure.java.io/resource \"clio/infra/ledger.cljc\"))"
+      ],
+      "started": "2026-09-12T13:24:35.445Z",
+      "finished": "2026-09-12T13:24:36.447Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 1.002
+    },
+    {
+      "id": "unit",
+      "command": [
+        "clojure",
+        "-M:unit-test"
+      ],
+      "started": "2026-09-12T13:24:36.448Z",
+      "finished": "2026-09-12T13:25:42.097Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 65.649
+    },
+    {
+      "id": "lint",
+      "command": [
+        "clojure",
+        "-M:lint"
+      ],
+      "started": "2026-09-12T13:25:42.098Z",
+      "finished": "2026-09-12T13:26:07.337Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 25.239
+    },
+    {
+      "id": "format",
+      "command": [
+        "clojure",
+        "-M:cljfmt"
+      ],
+      "started": "2026-09-12T13:26:07.338Z",
+      "finished": "2026-09-12T13:26:23.884Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 16.546
+    },
+    {
+      "id": "boundary",
+      "command": [
+        "clojure",
+        "-M:boundary-check"
+      ],
+      "started": "2026-09-12T13:26:23.885Z",
+      "finished": "2026-09-12T13:26:27.055Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 3.17
+    },
+    {
+      "id": "interop",
+      "command": [
+        "clojure",
+        "-M:interop-inventory"
+      ],
+      "started": "2026-09-12T13:26:27.056Z",
+      "finished": "2026-09-12T13:26:32.296Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 5.24
+    },
+    {
+      "id": "build",
+      "command": [
+        "bash",
+        "bin/build"
+      ],
+      "started": "2026-09-12T13:26:32.297Z",
+      "finished": "2026-09-12T13:26:49.953Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 17.656
+    },
+    {
+      "id": "process",
+      "command": [
+        "bash",
+        "bin/verify-clio-edn"
+      ],
+      "started": "2026-09-12T13:26:49.953Z",
+      "finished": "2026-09-12T13:29:04.840Z",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 134.887
+    },
+    {
+      "id": "launcher",
+      "command": [
+        "bin/ep",
+        "--help"
+      ],
+      "started": "2026-09-12T13:29:04.939Z",
+      "finished": "2026-09-12T13:29:37.918Z",
+      "exit_code": 0,
+      "seconds": 32.979,
+      "actual_entrypoint": true,
+      "independent_caller": true
+    }
+  ],
+  "source_unchanged": true
+}

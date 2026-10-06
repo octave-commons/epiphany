@@ -20,7 +20,7 @@ bin/ep --help                # the shipped epiphany executable
 ### CLI subcommands
 
 ```bash
-ep register <path>           # register a local Git repository
+ep register --request-id <uuid> <path> # register; reuse the UUID for retries
 ep ingest <path>             # observe revisions, extract sections, index into durable Lucene
   --profile local|services       # observation store (default: services)
   --refs <a,b>                   # refs to ingest (default: HEAD)

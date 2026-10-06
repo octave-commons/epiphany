@@ -26,7 +26,7 @@
 (deftest find-violations-law-requiring-domain-test
   (testing "law.* requiring domain.* is a violation — law must be usable without infrastructure"
     (let [violations (bc/find-violations
-                       {'epiphany.law.tainted #{'epiphany.domain.status}})]
+                      {'epiphany.law.tainted #{'epiphany.domain.status}})]
       (is (= 1 (count violations)))
       (is (= 'epiphany.law.tainted (:ns (first violations))))
       (is (= :domain (:offending-quadrant (first violations)))))))
@@ -34,21 +34,21 @@
 (deftest find-violations-domain-requiring-infra-test
   (testing "domain.* requiring infra.* is a violation — domain must stay adapter-free"
     (let [violations (bc/find-violations
-                       {'epiphany.domain.tainted #{'epiphany.infra.adapters.mongo}})]
+                      {'epiphany.domain.tainted #{'epiphany.infra.adapters.mongo}})]
       (is (= 1 (count violations)))
       (is (= :infra (:offending-quadrant (first violations)))))))
 
 (deftest find-violations-application-requiring-infra-test
   (testing "application.* requiring infra.* is a violation — it must not become a transport adapter"
     (let [violations (bc/find-violations
-                       {'epiphany.application.tainted #{'epiphany.infra.git}})]
+                      {'epiphany.application.tainted #{'epiphany.infra.git}})]
       (is (= 1 (count violations)))
       (is (= :infra (:offending-quadrant (first violations)))))))
 
 (deftest find-violations-shape-requiring-domain-test
   (testing "shape.* requiring domain.* is a violation — shape must not decide domain meaning"
     (let [violations (bc/find-violations
-                       {'epiphany.shape.tainted #{'epiphany.domain.status}})]
+                      {'epiphany.shape.tainted #{'epiphany.domain.status}})]
       (is (= 1 (count violations)))
       (is (= :domain (:offending-quadrant (first violations)))))))
 

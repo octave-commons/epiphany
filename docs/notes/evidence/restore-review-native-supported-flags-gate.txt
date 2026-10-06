@@ -1,0 +1,9 @@
+org.apache.lucene.util.VectorUtil
+PASS: actual MMap integer roundtrip 42
+PASS: actual SIMD dot product 64.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-OKuRYX -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=43707 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=43707 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0 -XX:+PerfDisableSharedMem
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-OKuRYX -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=43707 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=43707 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0 -XX:+PerfDisableSharedMem
+WARNING: Using incubator modules: jdk.incubator.vector
+Sep 13, 2026 4:05:45 AM org.apache.lucene.internal.vectorization.PanamaVectorizationProvider <init>
+INFO: Java vector incubator API enabled; uses preferredBitSize=512; FMA enabled
+Zero-warning gate failed: command emitted a warning; original output is preserved above.

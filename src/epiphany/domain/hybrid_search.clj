@@ -111,17 +111,9 @@
 ;; ---------------------------------------------------------------------------
 ;; Query dispatch
 
-(defn- dedupe-results
-  "Deduplicate results by path+heading-path, keeping the highest-scored version."
-  [results]
-  (let [grouped (group-by (juxt :result/path-raw :result/heading-path) results)]
-    (mapv (fn [results-for-key]
-            (first (sort-by :result/score > results-for-key)))
-          (vals grouped))))
-
 (defn- fetch-lexical
   "Fetch lexical search results from the index port."
-  [ports query-string limit]
+  [ports query-string _limit]
   (let [search-fn (:search (:index ports))]
     (search-fn query-string)))
 
@@ -165,8 +157,7 @@
      :result/mode          — :lexical, :semantic, or :hybrid
      :result/scores        — {:lexical double :semantic double} score breakdown"
   [ports {:keys [query mode limit filters embedding-version ranking]
-          :or {mode :hybrid limit 20}
-          :as request}]
+          :or {mode :hybrid limit 20}}]
   (when-not (valid-mode? mode)
     (throw (ex-info (str "Invalid search mode: " (pr-str mode)
                          ". Valid modes: " (pr-str valid-modes))
@@ -199,34 +190,34 @@
             lex-normalized (normalize-scores (map :result/score lexical-raw))
             sem-normalized (normalize-scores (map :result/score semantic-raw))
             ;; Index lexical results by key
-            lex-index (into {} (map (fn [r s] [((juxt :result/path-raw :result/heading-path) r)
+            lex-index (into {} (map (fn [r s] [((juxt :resource-id :result/commit-oid :result/path-raw :result/heading-path) r)
                                                {:result r :lexical-score s :semantic-score nil}])
                                     lexical-raw lex-normalized))
             ;; Merge semantic results into index (prefer semantic as base)
             merged (reduce-kv
-                     (fn [acc k {:keys [result semantic-score]}]
-                       (let [existing (get acc k)]
-                         (if existing
+                    (fn [acc k {:keys [result semantic-score]}]
+                      (let [existing (get acc k)]
+                        (if existing
                            ;; Merge: add semantic score, prefer semantic result as base
-                           (assoc acc k {:result (:result existing)
-                                         :lexical-score (:lexical-score existing)
-                                         :semantic-score semantic-score})
+                          (assoc acc k {:result (:result existing)
+                                        :lexical-score (:lexical-score existing)
+                                        :semantic-score semantic-score})
                            ;; New entry
-                           (assoc acc k {:result result
-                                         :lexical-score nil
-                                         :semantic-score semantic-score}))))
-                     lex-index
-                     (into {} (map (fn [r s] [((juxt :result/path-raw :result/heading-path) r)
-                                              {:result r :semantic-score s}])
-                                   semantic-raw sem-normalized)))
+                          (assoc acc k {:result result
+                                        :lexical-score nil
+                                        :semantic-score semantic-score}))))
+                    lex-index
+                    (into {} (map (fn [r s] [((juxt :resource-id :result/commit-oid :result/path-raw :result/heading-path) r)
+                                             {:result r :semantic-score s}])
+                                  semantic-raw sem-normalized)))
             ;; Build combined results
-            combined (mapv (fn [[k {:keys [result lexical-score semantic-score]}]]
+            combined (mapv (fn [[_k {:keys [result lexical-score semantic-score]}]]
                              (let [combined-score (combine-hybrid-scores
-                                                    lexical-w semantic-w
-                                                    lexical-score semantic-score)]
+                                                   lexical-w semantic-w
+                                                   lexical-score semantic-score)]
                                (enrich-result result :hybrid
-                                               lexical-score semantic-score
-                                               combined-score)))
+                                              lexical-score semantic-score
+                                              combined-score)))
                            merged)
             filtered (apply-filters combined filters)
             sorted (sort-by :result/score > filtered)]

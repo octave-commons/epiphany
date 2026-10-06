@@ -1,0 +1,47 @@
+Registered: /tmp/epiphany-clio-live.UDjjTr/repo
+  Resource ID:     137d544d-7e4f-424d-a76a-2d79e5e7d103
+  Common Git dir:  /tmp/epiphany-clio-live.UDjjTr/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+Ingested: /tmp/epiphany-clio-live.UDjjTr/repo
+  Request ID:          778f3af9-6d19-417a-bb42-bfda6aa92acf
+  Resource ID:         137d544d-7e4f-424d-a76a-2d79e5e7d103
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.UDjjTr/index
+Ingested: /tmp/epiphany-clio-live.UDjjTr/repo
+  Request ID:          7250cae7-372b-45e1-8440-947c154a3bca
+  Resource ID:         137d544d-7e4f-424d-a76a-2d79e5e7d103
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.UDjjTr/index
+#:observation{:write-status :accepted}
+#:observation{:write-status :accepted}
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 13, 2026 5:06:06 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 13, 2026 5:06:19 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-VNN4EF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=38563 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38563 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Zero-warning gate failed: command emitted a warning; original output is preserved above.

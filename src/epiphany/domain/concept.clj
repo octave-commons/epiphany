@@ -7,7 +7,8 @@
   evidence — they are not objective claims.
 
   Both serve as search and trace entry points. Removing evidence from
-  a concept deletes nothing at the source or review layer.")
+  a concept deletes nothing at the source or review layer."
+  (:require [clojure.string]))
 
 ;; ---------------------------------------------------------------------------
 ;; Concepts
@@ -48,10 +49,10 @@
   (update concept :concept/evidence-links
           (fn [links]
             (vec (remove (fn [link]
-                       (and (= path-raw (:path-raw link))
-                            (= heading-path (:heading-path link))
-                            (= commit-oid (:commit-oid link))))
-                      links)))))
+                           (and (= path-raw (:path-raw link))
+                                (= heading-path (:heading-path link))
+                                (= commit-oid (:commit-oid link))))
+                         links)))))
 
 (defn add-tag
   "Add a tag to a concept. Returns updated concept."
@@ -61,7 +62,7 @@
 (defn remove-tag
   "Remove a tag from a concept. Returns updated concept."
   [concept tag]
-   (update concept :concept/tags (fn [tags] (vec (remove #(= % tag) tags)))))
+  (update concept :concept/tags (fn [tags] (vec (remove #(= % tag) tags)))))
 
 (defn search-entry-point
   "Return a map suitable for use as a search entry point.
@@ -133,10 +134,10 @@
   (update rq :research-question/evidence-links
           (fn [links]
             (vec (remove (fn [link]
-                       (and (= path-raw (:path-raw link))
-                            (= heading-path (:heading-path link))
-                            (= commit-oid (:commit-oid link))))
-                      links)))))
+                           (and (= path-raw (:path-raw link))
+                                (= heading-path (:heading-path link))
+                                (= commit-oid (:commit-oid link))))
+                         links)))))
 
 (defn rq-search-entry-point
   "Return a map suitable for use as a search entry point."
@@ -158,8 +159,8 @@
   (cond->> concepts
     tag (filter #(contains? (set (:concept/tags %)) tag))
     name-substring (filter #(clojure.string/includes?
-                            (clojure.string/lower-case (:concept/name %))
-                            (clojure.string/lower-case name-substring)))))
+                             (clojure.string/lower-case (:concept/name %))
+                             (clojure.string/lower-case name-substring)))))
 
 (defn list-research-questions
   "Filter a collection of research questions by optional criteria."

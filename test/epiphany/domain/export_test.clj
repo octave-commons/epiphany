@@ -454,7 +454,7 @@
                                         :path-raw "doc.md"
                                         :heading-path ["H1"]
                                         :text "content"}
-                                        :context "test context"))))
+                                       :context "test context"))))
           md (export/packet->markdown pkt)]
       (is (.contains md "doc.md"))
       (is (.contains md "test context")))))

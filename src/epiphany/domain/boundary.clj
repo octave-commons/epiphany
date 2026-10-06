@@ -8,8 +8,7 @@
   Design rules:
   - A long time gap alone never creates a boundary (drift, not boundary).
   - Low continuity alone without corroborating signals is drift.
-  - A boundary requires multiple signals to agree."
-  (:require [epiphany.domain.continuity :as continuity]))
+  - A boundary requires multiple signals to agree.")
 
 (def boundary-policy-version
   "Version string for the boundary proposal policy."
@@ -34,26 +33,6 @@
       (< (:text-similarity features) 0.7)
       (< (:link-overlap-ratio features) 0.5)
       (< (:name-token-overlap features) 0.5)))
-
-(defn- time-gap-dominated?
-  "Returns true if the time gap is the dominant contributor to a low score.
-   Recomputes the score with a neutral time contribution and checks whether
-   the score would still be below threshold."
-  [features threshold]
-  (let [neutral-time-score 0.5
-        original-time-score (if (:time-gap-seconds features)
-                              (max 0.0 (- 1.0 (/ (:time-gap-seconds features)
-                                                 (* 365 24 3600))))
-                              0.5)
-        ;; Recompute with neutral time
-        adjusted-score (+ (* 0.4 (:text-similarity features))
-                          (* 0.2 (:link-overlap-ratio features))
-                          (* 0.2 (:name-token-overlap features))
-                          (* 0.1 (if (:frontmatter-changed features) 0.0 1.0))
-                          (* 0.1 neutral-time-score))]
-    ;; If removing the time gap effect brings us above threshold,
-    ;; then time gap was the dominant factor
-    (>= adjusted-score threshold)))
 
 ;; ---------------------------------------------------------------------------
 ;; Boundary proposal

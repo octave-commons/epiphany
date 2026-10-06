@@ -1,0 +1,222 @@
+{
+  "recordedAt": "2026-09-12T17:15:50.304Z",
+  "baseCommit": "7c157fb3a824cf6ff23205486ccf8e285ea78fba",
+  "clioCommit": "ff48f090965be5c17cca1e3662d7402b383510c1",
+  "source": {
+    "scope": "src, test and bin; UTF8 paths and file bytes delimited by NUL",
+    "files": 136,
+    "sha256": "ddf8ea1450520342116787c207e89c13b9b96dbb92bf4ddaf043e100f13887e9"
+  },
+  "red": {
+    "tests": 3,
+    "assertions": 13,
+    "failures": 5
+  },
+  "finalUnit": {
+    "tests": 796,
+    "assertions": 2316,
+    "failures": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "format": true,
+  "boundary": true,
+  "aot": true,
+  "nativeTwoJvm": true,
+  "nativeProofScope": "Completed before the final error-accessor replacement with core ex-message. Admission and persistence code unchanged; final AOT and full unit receipt cover the replacement.",
+  "serviceIntegration": {
+    "started": "2026-09-12T17:21:16.046Z",
+    "finished": "2026-09-12T17:21:37.083Z",
+    "source": {
+      "head": "0e3950bf2d54043203885f12ccbbd2836a5710fe",
+      "tree": "20664b20df0f91afa22b8668556d8560e94078e9",
+      "dirty": false,
+      "files": 477,
+      "sha256": "797540ebe651a7e2d48d00eee7514b3dea9ae95a6740e9187488473187caf3c8"
+    },
+    "clio": "ff48f090965be5c17cca1e3662d7402b383510c1",
+    "embedding": {
+      "model": "Xenova/all-MiniLM-L6-v2",
+      "dimensions": 384,
+      "revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+      "artifact": "sha256:afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1"
+    },
+    "mongoPing": true,
+    "s3ObjectRoundtrip": true,
+    "integration": {
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}}}",
+        "-M:verified-clio:integration-test"
+      ],
+      "code": 0,
+      "signal": null,
+      "summary": "22 tests, 108 assertions, 0 failures."
+    },
+    "skipped": false
+  },
+  "records": [
+    {
+      "name": "ingest-outcome-red",
+      "file": "docs/notes/evidence/ingest-outcomes-ingest-outcome-red.txt",
+      "sha256": "fb777ce1c135baf26018708a59ea706d1940ba56bd0099cf7b9547e9f2ac4a5a",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:unit-test",
+        "--focus",
+        "epiphany.infra.clio-ingest-outcome-test"
+      ],
+      "exitCode": 5
+    },
+    {
+      "name": "ingest-outcome-green",
+      "file": "docs/notes/evidence/ingest-outcomes-ingest-outcome-green.txt",
+      "sha256": "9f80effd099907c8c77dc4924c7bcccfaa46627204b94106c5e4839319ca2b86",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:unit-test",
+        "--focus",
+        "epiphany.infra.clio-ingest-outcome-test",
+        "--focus",
+        "epiphany.domain.extraction-projection-test"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "unit-final",
+      "file": "docs/notes/evidence/ingest-outcomes-unit-final.txt",
+      "sha256": "fd499efc4841263027d392f41b6aa1681010bc9254f9adbbf8699a07c7aed72d",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:unit-test"
+      ],
+      "exitCode": 1
+    },
+    {
+      "name": "unit-final-02",
+      "file": "docs/notes/evidence/ingest-outcomes-unit-final-02.txt",
+      "sha256": "9a77bc9196b2b0b212b05b37b9ed8731d57133f1a1f4fa5a9b5b0c6ee98e7fb7",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:unit-test"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "lint-final-02",
+      "file": "docs/notes/evidence/ingest-outcomes-lint-final-02.txt",
+      "sha256": "cc1f1af75b49178668c955ec2846d42e6632794d9205249362b026252698b503",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:lint"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "format-final-02",
+      "file": "docs/notes/evidence/ingest-outcomes-format-final-02.txt",
+      "sha256": "b5e0c19f984c647a5594f1295ea349a81717604fcc8e7aa6de9da05fdc01fea0",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:cljfmt"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "boundary-final-02",
+      "file": "docs/notes/evidence/ingest-outcomes-boundary-final-02.txt",
+      "sha256": "f298cbffa78b09ad55ca6e7621f94e3074fc11e7cde2e1811678e3d73dc5b7fe",
+      "command": [
+        "clojure",
+        "-Sdeps",
+        "{:deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}",
+        "-M:boundary-check"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "aot-final-02",
+      "file": "docs/notes/evidence/ingest-outcomes-aot-final-02.txt",
+      "sha256": "92e954748c7c922026463cc23ca411b3d95e7f81b150a6a14476fae3516477ef",
+      "command": [
+        "bash",
+        "bin/build"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "native-two-process",
+      "file": "docs/notes/evidence/ingest-outcomes-native-two-process.txt",
+      "sha256": "f57eb0fa259046de609be66185685adc35f5a9047b3fc2ccaf0025c239c0a991",
+      "command": [
+        "bash",
+        "bin/verify-clio-edn"
+      ],
+      "exitCode": 0
+    },
+    {
+      "name": "clio-fetch-final",
+      "file": "docs/notes/evidence/ingest-outcomes-clio-fetch-final.txt",
+      "sha256": "63b8c38926a5cb8178e2192ae8d9a31b3891994cb38ebcba6d1e48a282d34da1",
+      "command": [
+        "bash",
+        "bin/fetch-clio-source",
+        "target/verified-clio-fetch"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "followupRecordedAt": "2026-09-12T17:27:47.549Z",
+  "followupRecords": [
+    {
+      "source": "target/recovery-service-integration-02/result.json",
+      "path": "docs/notes/evidence/ingest-outcomes-service-integration-02.json",
+      "sha256": "05be8ec79e381c567e7fa01763292ad71fc41b53396ec05517e399e5b1955904"
+    },
+    {
+      "source": "target/recovery-service-integration-02/integration.log",
+      "path": "docs/notes/evidence/ingest-outcomes-service-integration-02.txt",
+      "sha256": "257230e086dcb981d7388a557aabbc2ecbb4eaeab9c6924aba288727be6272d3"
+    },
+    {
+      "source": "target/recovery-logs/service-integration.log",
+      "path": "docs/notes/evidence/ingest-outcomes-service-integration-failed.txt",
+      "sha256": "02890c355f714eb16fb028dff3330243b8f622656cfea8f29be1d355e048c9eb"
+    },
+    {
+      "source": "target/recovery-logs/service-mongo-binary.log",
+      "path": "docs/notes/evidence/ingest-outcomes-service-mongo-binary.txt",
+      "sha256": "da526f9778f570227893c52a0a20626709742ca737643e0966e2b3e1727be32d"
+    },
+    {
+      "source": "target/recovery-logs/board-labels-red.json",
+      "path": "docs/notes/evidence/ingest-outcomes-board-labels-red.json",
+      "sha256": "d66067ab33005e9b1467ac7b9b71344b7cc4df46b936e9521732e4c601cd8966"
+    },
+    {
+      "source": "target/recovery-logs/board-labels-green.json",
+      "path": "docs/notes/evidence/ingest-outcomes-board-labels-green.json",
+      "sha256": "d12fec67a5ab2a447617af983e0bd8f7e5e064e42a021845b8eb08d9aba2dc0f"
+    },
+    {
+      "source": "target/recovery-logs/board-input-hashes.json",
+      "path": "docs/notes/evidence/ingest-outcomes-board-input-hashes.json",
+      "sha256": "393c1530cdb06be975a59536a1229c13e8c17e1317ab178a0a6227fa5cd09106"
+    }
+  ]
+}

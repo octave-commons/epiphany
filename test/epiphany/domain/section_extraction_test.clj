@@ -166,6 +166,6 @@
           s1 (se/extract-sections doc1)
           s2 (se/extract-sections doc2)]
       (is (not= (:extraction/content-sha256
-                  (se/make-extraction-record s1 #uuid "00000000-0000-0000-0000-000000000001" "a" "f.md" "b" "# X\n\nAlpha." "v1"))
+                 (se/make-extraction-record s1 #uuid "00000000-0000-0000-0000-000000000001" "a" "f.md" "b" "# X\n\nAlpha." "v1"))
                 (:extraction/content-sha256
-                  (se/make-extraction-record s2 #uuid "00000000-0000-0000-0000-000000000002" "a" "f.md" "b" "# X\n\nBeta." "v1")))))))
+                 (se/make-extraction-record s2 #uuid "00000000-0000-0000-0000-000000000002" "a" "f.md" "b" "# X\n\nBeta." "v1")))))))

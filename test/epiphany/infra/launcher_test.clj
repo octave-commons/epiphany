@@ -7,8 +7,7 @@
   produced no output. This is a cheap static guard: it does not boot the JVM,
   it asserts the launcher script is structurally sane."
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.java.io :as io]))
 
 (def ^:private launcher-file (io/file "bin/epiphany"))
 

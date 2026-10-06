@@ -51,7 +51,7 @@
 
 (deftest all-registry-write-ops-are-wrapped
   (testing "every port-write-operation is wrapped by validating-observations-port"
-    (let [[spy calls] (spy-adapter)
+    (let [[spy _calls] (spy-adapter)
           wrapped (validation/validating-observations-port spy)]
       (doseq [op operations/port-write-operations]
         (is (fn? (get wrapped op))
@@ -84,7 +84,7 @@
 
 (deftest read-ops-pass-through-unwrapped
   (testing "read operations are not wrapped"
-    (let [[spy calls] (spy-adapter)
+    (let [[spy _calls] (spy-adapter)
           wrapped (validation/validating-observations-port spy)]
       ;; :find-by-request-id is a read, not in port-write-operations,
       ;; so it should pass through unchanged.
@@ -110,8 +110,8 @@
           wrapped (validation/validating-observations-port port)]
       ;; Call with an invalid record (missing required fields)
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-repository-location! wrapped)
-                   {:not-a-valid-observation true})))
+                   ((:record-repository-location! wrapped)
+                    {:not-a-valid-observation true})))
       ;; The spy should not have been called
       (is (empty? @calls)
           "Adapter should not receive invalid records"))))

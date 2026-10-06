@@ -1,6 +1,5 @@
 (ns epiphany.infra.adapters.lucene-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
-            [clojure.java.io :as io]
+  (:require [clojure.test :refer [deftest is testing]]
             [epiphany.infra.adapters.lucene :as lucene]
             [epiphany.domain.section-extraction :as se]
             [epiphany.shape.markdown :as md])
@@ -43,6 +42,7 @@
         (is (seq results))
         (is (= "docs/test.md" (:result/path-raw (first results))))
         (is (= "abc123" (:result/commit-oid (first results))))
+        (is (= (str test-resource-id) (:resource-id (first results))))
         (is (pos? (:result/score (first results))))))))
 
 (deftest search-by-path-test
@@ -148,7 +148,10 @@
       ((:index-embeddings! adapter) [embedding])
       (is (= 1
              (count ((:knn-search adapter)
-                     {:vector [1.0 0.0] :k 10 :embedding-version 1})))))))
+                     {:vector [1.0 0.0] :k 10 :embedding-version 1}))))
+      (is (= (str test-resource-id)
+             (:resource-id (first ((:knn-search adapter)
+                                   {:vector [1.0 0.0] :k 10 :embedding-version 1}))))))))
 
 (deftest multiple-files-test
   (testing "sections from different files are indexed separately"

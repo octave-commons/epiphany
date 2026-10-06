@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-09-12T17:25:40.566Z",
+  "baseCommit": "7c157fb3a824cf6ff23205486ccf8e285ea78fba",
+  "brokenSnapshotCommit": "0e3950bf2d54043203885f12ccbbd2836a5710fe",
+  "card": "docs/kanban/epics/epic-10-program-relationship-graph.md",
+  "cardSha256": "b15484ac464c23c0da6f57433c81f0ce6681f45e0d4bca2fe5c1cb41f7a8c5cd",
+  "cardUnchangedFromBase": true,
+  "frontmatter": "\nid: 01900d7c-7f3a-7e8b-9c4d-000000000011\ntitle: \"Epic 10: Program Relationship Graph\"\nstatus: icebox\ntype: epic\npriority: high\nphase: 2\ndesign: docs/notes/design/phase-2-code-comprehension.md\nsize: 8\nlabels: [graph, relationships, code, provenance]\n",
+  "cardIdentity": {
+    "frontmatterId": "01900d7c-7f3a-7e8b-9c4d-000000000011",
+    "snapshotUuid": "epic-10-program-relationship-graph"
+  },
+  "expectedLabels": [
+    "graph",
+    "relationships",
+    "code",
+    "provenance"
+  ],
+  "brokenLabels": []
+}

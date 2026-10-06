@@ -10,7 +10,7 @@
   (:require [clojure.string :as str]
             [clojure.data.json :as json]
             [epiphany.shape.markdown :as md])
-  (:import [java.net.http HttpClient HttpRequest HttpRequest$BodyPublishers HttpResponse HttpResponse$BodyHandlers]
+  (:import [java.net.http HttpClient HttpRequest HttpRequest$BodyPublishers HttpResponse$BodyHandlers]
            [java.net URI]
            [java.time Duration]))
 
@@ -23,9 +23,9 @@
   [^HttpClient client base-url model input-texts opts]
   (let [body (json/write-str (cond-> {:model model
                                       :input input-texts}
-                                 (:truncate opts) (assoc :truncate (:truncate opts))
-                                 (:dimensions opts) (assoc :dimensions (:dimensions opts))
-                                 (:keep-alive opts) (assoc :keep_alive (:keep-alive opts))))
+                               (:truncate opts) (assoc :truncate (:truncate opts))
+                               (:dimensions opts) (assoc :dimensions (:dimensions opts))
+                               (:keep-alive opts) (assoc :keep_alive (:keep-alive opts))))
         request (-> (HttpRequest/newBuilder)
                     (.uri (URI. (str base-url "/api/embed")))
                     (.POST (HttpRequest$BodyPublishers/ofString body))

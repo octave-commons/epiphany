@@ -79,20 +79,20 @@
                 [:git/observed [:ref "git/ref"]]]))
 
     ;; A Git person identity: name, email, and timestamp as observed.
-    "git/person" [:map {:closed true}
-                  [:person/name [:string {:min 1}]]
-                  [:person/email [:string {:min 1}]]
-                  [:person/timestamp 'inst?]]
+   "git/person" [:map {:closed true}
+                 [:person/name [:string {:min 1}]]
+                 [:person/email [:string {:min 1}]]
+                 [:person/timestamp 'inst?]]
 
     ;; One Git commit object observed from the object database.
-    "git/commit" [:map {:closed true}
-                  [:commit/oid [:ref "git/oid"]]
-                  [:commit/parent-oids [:vector [:ref "git/oid"]]]
-                  [:commit/tree-oid [:ref "git/oid"]]
-                  [:commit/author [:ref "git/person"]]
-                  [:commit/committer [:ref "git/person"]]
-                  [:commit/message-bytes :any]
-                  [:commit/message-text [:string {:min 1}]]]
+   "git/commit" [:map {:closed true}
+                 [:commit/oid [:ref "git/oid"]]
+                 [:commit/parent-oids [:vector [:ref "git/oid"]]]
+                 [:commit/tree-oid [:ref "git/oid"]]
+                 [:commit/author [:ref "git/person"]]
+                 [:commit/committer [:ref "git/person"]]
+                 [:commit/message-bytes :any]
+                 [:commit/message-text [:string {:min 1}]]]
 
     ;; A commit observation: one immutable commit object seen during
    ;; ingestion, wrapped in the observation envelope. The same commit
@@ -114,106 +114,106 @@
     ;; the parent commit, with exact path, blob OID, mode, and
     ;; repository context (family/instance). Root commits carry
     ;; :revision/evidence :initial and omit parent fields.
-    "observation/revision-at-path-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :revision/at-path-observed]]
-           [:observation/request-id {:optional true} :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:revision-at-path/id :uuid]
-                 [:revision/commit-oid [:ref "git/oid"]]
-                 [:revision/tree-oid [:ref "git/oid"]]
-                 [:revision/path-raw [:ref "path/raw"]]
-                 [:revision/blob-oid [:ref "git/oid"]]
-                 [:revision/mode :int]
-                 [:revision/evidence [:enum :initial :add :modify :delete :continuity]]
-                 [:revision/parent-commit-oid {:optional true} [:ref "git/oid"]]
-                 [:revision/parent-blob-oid {:optional true} [:ref "git/oid"]]]))
+   "observation/revision-at-path-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :revision/at-path-observed]]
+          [:observation/request-id {:optional true} :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:revision-at-path/id :uuid]
+                [:revision/commit-oid [:ref "git/oid"]]
+                [:revision/tree-oid [:ref "git/oid"]]
+                [:revision/path-raw [:ref "path/raw"]]
+                [:revision/blob-oid [:ref "git/oid"]]
+                [:revision/mode :int]
+                [:revision/evidence [:enum :initial :add :modify :delete :continuity]]
+                [:revision/parent-commit-oid {:optional true} [:ref "git/oid"]]
+                [:revision/parent-blob-oid {:optional true} [:ref "git/oid"]]]))
 
     ;; An ingestion-run record: one durable event per traversal pass.
    ;; Records which commits were encountered and which objects failed.
    ;; Reruns produce a new ingestion-run rather than rewriting prior
    ;; commit observations.
-    "observation/ingestion-run-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :ingestion/run-completed]]
-           [:observation/request-id {:optional true} :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:ingestion/repo-path [:ref "path/observed"]]
-                 [:ingestion/selected-refs [:vector [:ref "git/ref-name"]]]
-                 [:ingestion/commit-count :int]
-                 [:ingestion/failure-count :int]
-                 [:ingestion/failures [:vector [:map {:closed true}
-                                                [:failure/oid {:optional true} [:ref "git/oid"]]
-                                                [:failure/ref {:optional true} [:ref "git/ref-name"]]
-                                                [:failure/reason :string]
-                                                [:failure/message {:optional true} :string]]]]]))
+   "observation/ingestion-run-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :ingestion/run-completed]]
+          [:observation/request-id {:optional true} :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:ingestion/repo-path [:ref "path/observed"]]
+                [:ingestion/selected-refs [:vector [:ref "git/ref-name"]]]
+                [:ingestion/commit-count :int]
+                [:ingestion/failure-count :int]
+                [:ingestion/failures [:vector [:map {:closed true}
+                                               [:failure/oid {:optional true} [:ref "git/oid"]]
+                                               [:failure/ref {:optional true} [:ref "git/ref-name"]]
+                                               [:failure/reason :string]
+                                               [:failure/message {:optional true} :string]]]]]))
 
      ;; A projection checkpoint: durable progress state for a named
     ;; projection within an ingestion run. Checkpoints are
     ;; versioned independently — a projection logic upgrade bumps
     ;; the checkpoint version and forces reprocessing from the last
     ;; known-good checkpoint.
-    "observation/projection-checkpoint-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :projection/checkpoint-recorded]]
-           [:observation/request-id {:optional true} :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:checkpoint/projection-name [:string {:min 1}]]
-                 [:checkpoint/projection-version [:int {:min 1}]]
-                 [:checkpoint/ingestion-run-id :uuid]
-                 [:checkpoint/status [:enum :running :completed :failed]]
-                 [:checkpoint/last-processed-oid {:optional true} [:ref "git/oid"]]
-                 [:checkpoint/processed-count :int]
-                 [:checkpoint/error-message {:optional true} :string]]))
+   "observation/projection-checkpoint-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :projection/checkpoint-recorded]]
+          [:observation/request-id {:optional true} :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:checkpoint/projection-name [:string {:min 1}]]
+                [:checkpoint/projection-version [:int {:min 1}]]
+                [:checkpoint/ingestion-run-id :uuid]
+                [:checkpoint/status [:enum :running :completed :failed]]
+                [:checkpoint/last-processed-oid {:optional true} [:ref "git/oid"]]
+                [:checkpoint/processed-count :int]
+                [:checkpoint/error-message {:optional true} :string]]))
 
     ;; A history-replacement observation: evidence that a previously
     ;; observed ref target is no longer reachable. This records the
     ;; old and new OID values as observed facts — it does NOT conclude
     ;; that history was rewritten, only that the ref now points to a
     ;; different commit than previously recorded.
-    "observation/history-replacement-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :git/history-replacement-observed]]
-           [:observation/request-id {:optional true} :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:replacement/ref-name [:ref "git/ref-name"]]
-                 [:replacement/old-oid [:ref "git/oid"]]
-                 [:replacement/new-oid [:ref "git/oid"]]
-                 [:replacement/old-observed-at 'inst?]
-                 [:replacement/new-observed-at 'inst?]]))
+   "observation/history-replacement-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :git/history-replacement-observed]]
+          [:observation/request-id {:optional true} :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:replacement/ref-name [:ref "git/ref-name"]]
+                [:replacement/old-oid [:ref "git/oid"]]
+                [:replacement/new-oid [:ref "git/oid"]]
+                [:replacement/old-observed-at 'inst?]
+                [:replacement/new-observed-at 'inst?]]))
 
     ;; A section-extraction observation: one Markdown file parsed into
     ;; heading-delimited sections, linked to the revision-at-path that
     ;; produced the blob. Re-extracting the same blob with the same
     ;; extractor version is idempotent (same sections, different
     ;; observation IDs). A new extractor version creates new records.
-    "observation/section-extraction-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :section/extraction-completed]]
-           [:observation/request-id {:optional true} :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:extraction/revision-at-path-id :uuid]
-                 [:extraction/commit-oid [:ref "git/oid"]]
-                 [:extraction/path-raw [:ref "path/raw"]]
-                 [:extraction/blob-oid [:ref "git/oid"]]
-                 [:extraction/extractor-version [:string {:min 1}]]
-                 [:extraction/section-count :int]
-                 [:extraction/content-sha256 [:string {:min 1}]]
-                 [:extraction/sections [:vector [:map {:closed true}
-                                                 [:section/heading-path [:vector :string]]
-                                                 [:section/level :int]
-                                                 [:section/ordinal :int]
-                                                 [:section/heading-span-start-byte :int]
-                                                 [:section/heading-span-end-byte :int]
-                                                 [:section/body-span-start-byte :int]
-                                                 [:section/body-span-end-byte :int]
-                                                 [:section/body-span-start-line :int]
-                                                 [:section/body-span-end-line :int]]]]]))
+   "observation/section-extraction-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :section/extraction-completed]]
+          [:observation/request-id {:optional true} :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:extraction/revision-at-path-id :uuid]
+                [:extraction/commit-oid [:ref "git/oid"]]
+                [:extraction/path-raw [:ref "path/raw"]]
+                [:extraction/blob-oid [:ref "git/oid"]]
+                [:extraction/extractor-version [:string {:min 1}]]
+                [:extraction/section-count :int]
+                [:extraction/content-sha256 [:string {:min 1}]]
+                [:extraction/sections [:vector [:map {:closed true}
+                                                [:section/heading-path [:vector :string]]
+                                                [:section/level :int]
+                                                [:section/ordinal :int]
+                                                [:section/heading-span-start-byte :int]
+                                                [:section/heading-span-end-byte :int]
+                                                [:section/body-span-start-byte :int]
+                                                [:section/body-span-end-byte :int]
+                                                [:section/body-span-start-line :int]
+                                                [:section/body-span-end-line :int]]]]]))
 
     ;; A review-decision observation: one durable, append-only review action
     ;; on a lineage candidate (accept/reject/relabel/defer/annotate/
@@ -221,38 +221,38 @@
     ;; :observation/request-id is the idempotency key — a retry carrying the
     ;; same request-id never appends a second decision. Query-by-candidate,
     ;; -relation-type, and -time are served from the :review-decision/* payload.
-    "observation/review-decision-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :review/decision-recorded]]
-           [:observation/request-id :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:review-decision/id :uuid]
-                 [:review-decision/candidate-id :uuid]
-                 [:review-decision/decision
-                  [:enum :accepted :rejected :relabel :deferred :annotated :do-not-suggest]]
-                 [:review-decision/decided-at 'inst?]
-                 [:review-decision/reason {:optional true} [:string {:min 1}]]
-                 [:review-decision/relabel-to {:optional true} :keyword]
-                 [:review-decision/annotation {:optional true} [:string {:min 1}]]
-                 [:review-decision/suppressed {:optional true} :boolean]]))
+   "observation/review-decision-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :review/decision-recorded]]
+          [:observation/request-id :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:review-decision/id :uuid]
+                [:review-decision/candidate-id :uuid]
+                [:review-decision/decision
+                 [:enum :accepted :rejected :relabel :deferred :annotated :do-not-suggest]]
+                [:review-decision/decided-at 'inst?]
+                [:review-decision/reason {:optional true} [:string {:min 1}]]
+                [:review-decision/relabel-to {:optional true} :keyword]
+                [:review-decision/annotation {:optional true} [:string {:min 1}]]
+                [:review-decision/suppressed {:optional true} :boolean]]))
 
     ;; The relation vocabulary a lineage candidate may carry. This is the
     ;; SAME set of keywords `epiphany.domain.lineage/relation-types`
     ;; produces — the vocabulary is reused by value, not forked. law is the
     ;; lower layer so the enum is declared here; domain must stay in sync.
-    "lineage-candidate/relation"
-    [:enum :near-duplicate :continues :refines :references
-     :possibly-derived-from :possibly-supersedes :possible-contradiction]
+   "lineage-candidate/relation"
+   [:enum :near-duplicate :continues :refines :references
+    :possibly-derived-from :possibly-supersedes :possible-contradiction]
 
     ;; One of the two evidence endpoints a candidate relates: an exact
     ;; observed path, its heading path within the document, and the Git
     ;; commit the section was observed at. Paths preserved byte-for-byte.
-    "lineage-candidate/span"
-    [:map {:closed true}
-     [:span/path-raw [:ref "path/raw"]]
-     [:span/heading-path [:vector :string]]
-     [:span/commit-oid [:ref "git/oid"]]]
+   "lineage-candidate/span"
+   [:map {:closed true}
+    [:span/path-raw [:ref "path/raw"]]
+    [:span/heading-path [:vector :string]]
+    [:span/commit-oid [:ref "git/oid"]]]
 
     ;; A lineage-candidate observation: one durable, append-only record of
     ;; a generated candidate relation between two evidence spans, at the
@@ -264,20 +264,20 @@
     ;; the same request-id never appends a second candidate. The record is
     ;; queryable by candidate id, relation, generator version, confidence
     ;; band, and generation time from the :lineage-candidate/* payload.
-    "observation/lineage-candidate-v1"
-    (into [:map {:closed true}
-           [:observation/type [:= :lineage/candidate-generated]]
-           [:observation/request-id :uuid]]
-          (into observation-envelope-entries
-                [[:resource-id :uuid]
-                 [:lineage-candidate/id :uuid]
-                 [:lineage-candidate/relation [:ref "lineage-candidate/relation"]]
-                 [:lineage-candidate/generator-version [:string {:min 1}]]
-                 [:lineage-candidate/confidence [:double {:min 0.0 :max 1.0}]]
-                 [:lineage-candidate/source [:ref "lineage-candidate/span"]]
-                 [:lineage-candidate/target [:ref "lineage-candidate/span"]]
-                 [:lineage-candidate/tier [:= :provisional]]
-                 [:lineage-candidate/generated-at 'inst?]]))})
+   "observation/lineage-candidate-v1"
+   (into [:map {:closed true}
+          [:observation/type [:= :lineage/candidate-generated]]
+          [:observation/request-id :uuid]]
+         (into observation-envelope-entries
+               [[:resource-id :uuid]
+                [:lineage-candidate/id :uuid]
+                [:lineage-candidate/relation [:ref "lineage-candidate/relation"]]
+                [:lineage-candidate/generator-version [:string {:min 1}]]
+                [:lineage-candidate/confidence [:double {:min 0.0 :max 1.0}]]
+                [:lineage-candidate/source [:ref "lineage-candidate/span"]]
+                [:lineage-candidate/target [:ref "lineage-candidate/span"]]
+                [:lineage-candidate/tier [:= :provisional]]
+                [:lineage-candidate/generated-at 'inst?]]))})
 
 (defn exact-path?
   "The `:path/comparison :exact` contract: a candidate string counts as

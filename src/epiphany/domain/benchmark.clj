@@ -129,8 +129,8 @@
    Returns map with scores and latency."
   [search-fn {:keys [query mode expected filters id]}]
   (let [search-opts (cond-> {:query query
-                              :mode mode
-                              :limit 20}
+                             :mode mode
+                             :limit 20}
                       filters (assoc :filters filters))
         {:keys [result latency-ms]} (measure-latency #(search-fn query search-opts))
         results (vec result)]
@@ -157,10 +157,10 @@
 
    Returns {:version int, :queries [result-map], :summary {}} "
   [ports query-set & [{:keys [search-fn query-ids]
-                        :or {search-fn nil}}]]
+                       :or {search-fn nil}}]]
   (require 'epiphany.domain.hybrid-search)
   (let [hs-search (or search-fn
-                      (fn [query opts]
+                      (fn [_query opts]
                         ((resolve 'epiphany.domain.hybrid-search/search) ports opts)))
         all-queries (concat (:benchmark/queries query-set)
                             (:benchmark/semantic-queries query-set)
@@ -186,17 +186,17 @@
                                         sorted-lat (sort latencies)]
                                     [mode {:count (count mode-results)
                                            :recall-1-mean (double (/ (reduce + (map :recall-1 mode-results))
-                                                                      (count mode-results)))
+                                                                     (count mode-results)))
                                            :recall-3-mean (double (/ (reduce + (map :recall-3 mode-results))
-                                                                      (count mode-results)))
+                                                                     (count mode-results)))
                                            :recall-5-mean (double (/ (reduce + (map :recall-5 mode-results))
-                                                                      (count mode-results)))
+                                                                     (count mode-results)))
                                            :recall-10-mean (double (/ (reduce + (map :recall-10 mode-results))
-                                                                       (count mode-results)))
-                                           :ndcg-5-mean (double (/ (reduce + (map :ndcg-5 mode-results))
-                                                                    (count mode-results)))
-                                           :ndcg-10-mean (double (/ (reduce + (map :ndcg-10 mode-results))
                                                                       (count mode-results)))
+                                           :ndcg-5-mean (double (/ (reduce + (map :ndcg-5 mode-results))
+                                                                   (count mode-results)))
+                                           :ndcg-10-mean (double (/ (reduce + (map :ndcg-10 mode-results))
+                                                                    (count mode-results)))
                                            :latency-median (nth sorted-lat (/ (count sorted-lat) 2) 0)
                                            :latency-mean (double (/ (reduce + latencies) (count latencies)))
                                            :latency-p95 (percentile sorted-lat 95)}]))
@@ -210,11 +210,11 @@
      :results results
      :summary {:by-mode mode-summary
                :overall {:recall-1-mean (double (/ (reduce + (map :recall-1 results))
-                                                    (count results)))
+                                                   (count results)))
                          :recall-5-mean (double (/ (reduce + (map :recall-5 results))
-                                                    (count results)))
+                                                   (count results)))
                          :ndcg-5-mean (double (/ (reduce + (map :ndcg-5 results))
-                                                  (count results)))
+                                                 (count results)))
                          :latency-median (nth sorted-all (/ (count sorted-all) 2) 0)
                          :latency-mean (double (/ (reduce + all-latencies) (count all-latencies)))
                          :latency-p95 (percentile sorted-all 95)}}}))

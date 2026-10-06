@@ -1,7 +1,6 @@
 (ns epiphany.infra.http-test
   (:require [clojure.test :refer [deftest is testing]]
             [clojure.data.json :as json]
-            [clojure.edn :as edn]
             [epiphany.infra.http :as http]))
 
 ;; ---------------------------------------------------------------------------
@@ -35,14 +34,38 @@
                     :list-checkpoints (constantly [])
                     :list-ingestion-runs (constantly [])
                     :find-lineage-candidate-by-id (fn [id]
-                                                     (when (= id mock-candidate-id)
-                                                       {:lineage-candidate/id mock-candidate-id
-                                                        :resource-id mock-candidate-resource-id}))
+                                                    (when (= id mock-candidate-id)
+                                                      {:lineage-candidate/id mock-candidate-id
+                                                       :resource-id mock-candidate-resource-id}))
                     :record-review-decision! (fn [obs] (swap! recorded-decisions conj obs) nil)
                     :recorded-decisions recorded-decisions}
      :index {:search (constantly [])
              :index-stats (constantly {:document-count 0})}
      :embeddings {:embed (constantly [0.1 0.2 0.3])}}))
+
+(deftest configured-request-profile-selects-the-actual-observation-port
+  (let [writes (atom [])
+        marked (fn [profile]
+                 (update-in (mock-adapters) [:observations :record-repository-location!]
+                            (fn [write]
+                              (fn [record] (swap! writes conj profile) (write record)))))
+        app (http/create-handler (marked :local)
+                                 {:default-profile :local
+                                  :profile-adapters {:edn (marked :edn)}})
+        request {:request-method :post :uri "/api/v1/register"
+                 :body-params {:path "/tmp/profile-repo" :request-id (random-uuid)} :headers {}}]
+    (is (= 201 (:status (app (assoc request :query-string "profile=edn")))))
+    (is (= 201 (:status (app (assoc request :headers {"x-profile" "local"})))))
+    (is (= [:edn :local] @writes))
+    (is (= 503 (:status (app (assoc request :query-string "profile=services")))))
+    (is (= [:edn :local] @writes))))
+
+(deftest server-default-profile-does-not-silently-select-local
+  (let [app (http/create-handler (mock-adapters) {:default-profile :edn})
+        request {:request-method :get :uri "/api/v1/unknown" :headers {}}]
+    (is (= 404 (:status (app request))))
+    (is (= 404 (:status (app (assoc request :uri "/api/v1/unknown?profile=edn")))))
+    (is (= 503 (:status (app (assoc request :headers {"x-profile" "local"})))))))
 
 ;; ---------------------------------------------------------------------------
 ;; problem-response tests
@@ -59,9 +82,9 @@
 
 (deftest problem-response-with-errors
   (testing "problem-response includes errors"
-    (let [resp (http/problem-response 422 "Unprocessable" "invalid" :errors ["err1" "err2"])]
-      (let [body (json/read-str (:body resp) :key-fn keyword)]
-        (is (= ["err1" "err2"] (:errors body)))))))
+    (let [resp (http/problem-response 422 "Unprocessable" "invalid" :errors ["err1" "err2"])
+          body (json/read-str (:body resp) :key-fn keyword)]
+      (is (= ["err1" "err2"] (:errors body))))))
 
 (deftest unavailable-problem-returns-503
   (testing "unavailable-problem returns 503"
@@ -125,7 +148,7 @@
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test-repo"}
+                     :body-params {:path "/tmp/test-repo" :request-id (random-uuid)}
                      :headers {}})]
       (is (= 201 (:status resp)))
       (is (.contains (get-in resp [:headers "Content-Type"]) "application/json")))))
@@ -135,7 +158,7 @@
     (let [app (http/make-router (mock-adapters))
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path ""}
+                     :body-params {:path "" :request-id (random-uuid)}
                      :headers {}})]
       (is (= 400 (:status resp))))))
 
@@ -285,7 +308,7 @@
           app (http/make-router error-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})]
       (is (or (= 404 (:status resp))
               (= 400 (:status resp))))
@@ -345,7 +368,7 @@
           resp (app {:request-method :post
                      :uri "/api/v1/register"
                      :body (java.io.ByteArrayInputStream.
-                            (.getBytes "{:path \"/tmp/test-repo\"}"))
+                            (.getBytes (pr-str {:path "/tmp/test-repo" :request-id (random-uuid)})))
                      :headers {"content-type" "application/edn"}})]
       (is (= 201 (:status resp))))))
 
@@ -416,7 +439,7 @@
           app (http/make-router leaky-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 500 (:status resp)))
@@ -447,7 +470,7 @@
           app (http/make-router leaky-adapters)
           resp (app {:request-method :post
                      :uri "/api/v1/register"
-                     :body-params {:path "/tmp/test"}
+                     :body-params {:path "/tmp/test" :request-id (random-uuid)}
                      :headers {}})
           body (json/read-str (:body resp) :key-fn keyword)]
       (is (= 400 (:status resp)))

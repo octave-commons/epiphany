@@ -120,6 +120,26 @@
       (validate-record collection-key record))
     payload))
 
+(defn validate-restore-backup
+  "An identified restore may only reuse the snapshot bound to its command."
+  [payload command-id]
+  (validate-backup-payload payload)
+  (when-not (= command-id (:restore/command-id payload))
+    (throw (ex-info "Restore directory belongs to a different or unidentified command"
+                    {:code :restore/command-conflict
+                     :command-id command-id
+                     :backup-command-id (:restore/command-id payload)})))
+  payload)
+
+(defn validate-legacy-restore-backup
+  "Legacy drills cannot replace an identified command's retained snapshot."
+  [payload]
+  (validate-backup-payload payload)
+  (when (:restore/command-id payload)
+    (throw (ex-info "An unidentified drill cannot replace an identified backup"
+                    {:code :restore/command-conflict})))
+  payload)
+
 (defn- read-backup-file
   "Read and EDN-parse a backup file. A missing or unreadable file is
    :source/unavailable; an unparseable one is :integrity/corrupt.
@@ -149,11 +169,10 @@
                          :parse-error (.getMessage e)}
                         e))))))
 
-(defn export-to-file
-  "Export all observations from the observations port to an EDN file.
-   Returns a manifest map with :file, :manifest, :collection-counts, :total-docs."
-  [observations-adapter file-path]
-  (let [data (into (sorted-map) ((:export-all observations-adapter)))
+(defn export-payload
+  "Construct the existing backup manifest and data from an observation snapshot."
+  [snapshot]
+  (let [data (into (sorted-map) snapshot)
         collection-counts (into {} (map (fn [[k v]] [k (count v)]) data))
         total-docs (apply + (vals collection-counts))
         content (pr-str data)
@@ -162,13 +181,21 @@
                   :collections  collection-counts
                   :total-docs   total-docs
                   :content-hash (sha256-base64 content)}
-        payload  {:manifest manifest :data data}]
+        payload {:manifest manifest :data data}]
+    payload))
+
+(defn export-to-file
+  "Export all observations from the observations port to an EDN file.
+   Returns a manifest map with :file, :manifest, :collection-counts, :total-docs."
+  [observations-adapter file-path]
+  (let [{:keys [manifest] :as payload}
+        (export-payload ((:export-all observations-adapter)))]
     (io/make-parents (io/file file-path))
     (spit file-path (pr-str payload))
     {:file          file-path
      :manifest      manifest
-     :collection-counts collection-counts
-     :total-docs    total-docs}))
+     :collection-counts (:collections manifest)
+     :total-docs    (:total-docs manifest)}))
 
 (defn import-from-file
   "Import observations from an EDN backup file into the observations port.
@@ -212,42 +239,3 @@
                         :reason "repository-not-found"})))))
      []
      repo-locations)))
-
-(defn restore-drill
-  "Execute a full backup/restore drill against a live observations port --
-   verified by actually running every stage, not asserted:
-
-     1. Export the current store to file.
-     2. Drop all observation data via the port's :clear-all! op, simulating
-        cache/index/store loss.
-     3. Import from the exported file back into the (now-empty) port.
-     4. Re-export and compare against the original export's content-hash --
-        confirms the restore round-trips byte-identically, not merely
-        'some data landed'.
-     5. Check the restored repository-location observations for
-        inaccessible Git sources -- recorded explicitly in the report,
-        never papered over as a clean restore.
-
-   Returns a drill report map:
-     {:export {...}, :import {...}, :re-export {...}
-      :round-trip-identical? bool
-      :inaccessible-sources [...]
-      :drill-status :complete | :round-trip-mismatch}"
-  [observations-adapter git-adapter backup-dir]
-  (let [backup-file (str backup-dir "/backup.edn")
-        re-export-file (str backup-dir "/backup-re-export.edn")
-
-        export-result (export-to-file observations-adapter backup-file)
-        _ ((:clear-all! observations-adapter))
-        import-result (import-from-file observations-adapter backup-file)
-        re-export-result (export-to-file observations-adapter re-export-file)
-        round-trip-identical? (= (:content-hash (:manifest export-result))
-                                  (:content-hash (:manifest re-export-result)))
-        restored-data (:data (edn/read-string (slurp backup-file)))
-        inaccessible (inaccessible-sources git-adapter restored-data)]
-    {:export export-result
-     :import import-result
-     :re-export re-export-result
-     :round-trip-identical? round-trip-identical?
-     :inaccessible-sources inaccessible
-     :drill-status (if round-trip-identical? :complete :round-trip-mismatch)}))

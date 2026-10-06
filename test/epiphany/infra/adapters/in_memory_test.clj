@@ -84,7 +84,7 @@
 
 (deftest in-memory-require-common-git-dir-fn
   (is (thrown? clojure.lang.ExceptionInfo
-              (in-memory/make {}))))
+               (in-memory/make {}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Rebuildable index behavior
@@ -162,7 +162,7 @@
           obs      (:observations adapters)
           snapshot-before ((:export-all obs))]
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-repository-location! obs) (invalid-record)))
+                   ((:record-repository-location! obs) (invalid-record)))
           "Invalid record must throw")
       (testing "state is byte-identical after rejected write"
         (is (= snapshot-before ((:export-all obs)))
@@ -173,16 +173,16 @@
     (let [adapters (in-memory/make {:common-git-dir-fn fake-common-git-dir})
           obs      (:observations adapters)]
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-ingestion-run! obs) (invalid-record)))
+                   ((:record-ingestion-run! obs) (invalid-record)))
           "record-ingestion-run! must reject invalid records")
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-checkpoint! obs) (invalid-record)))
+                   ((:record-checkpoint! obs) (invalid-record)))
           "record-checkpoint! must reject invalid records")
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-section-extraction! obs) (invalid-record)))
+                   ((:record-section-extraction! obs) (invalid-record)))
           "record-section-extraction! must reject invalid records")
       (is (thrown? clojure.lang.ExceptionInfo
-                  ((:record-revision-at-path! obs) (invalid-record)))
+                   ((:record-revision-at-path! obs) (invalid-record)))
           "record-revision-at-path! must reject invalid records"))))
 
 (deftest idempotent-replay-stable

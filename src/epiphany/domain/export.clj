@@ -95,7 +95,7 @@
 
    Returns a claim map."
   [claim-type statement source & {:keys [confidence rationale identifiers]
-                                   :or {confidence 0.0 rationale "" identifiers {}}}]
+                                  :or {confidence 0.0 rationale "" identifiers {}}}]
   {:claim/type claim-type
    :claim/statement statement
    :claim/source source
@@ -524,7 +524,7 @@
   (cond
     (:source/type source)
     (str "_[" (:source/type source) ": " (:source/reason source
-                                                       (:source/interpretation source)) "]_")
+                                                         (:source/interpretation source)) "]_")
 
     (:evidence/path-raw source)
     (str "`" (:evidence/path-raw source) "`"

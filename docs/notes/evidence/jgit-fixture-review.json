@@ -1,0 +1,48 @@
+{
+  "source_base": "e8513f80053636fe6c95ff55775431680b0dcb90",
+  "published_base": "7973f47f7961a3d5e03a0bc5696c955ed7d76992",
+  "fixture_path": "test/epiphany/infra/clio_ingest_outcome_test.clj",
+  "fixture_sha256": "cd9e72f3a3f8134622eff0c682875b379e6fccda202308f9d9fbdc01388ed0a9",
+  "clio_source": "2b7bfbefa580d512262ca18f9163ecba43e54cc5",
+  "clio_override": "eta-mu/clio :local/root /workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio",
+  "test_command": "clojure -Sdeps '{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-combined-restored/packages/clio\"}}}}}' -M:unit-test:verified-clio --focus epiphany.infra.clio-ingest-outcome-test",
+  "git_guard": "A task-owned PATH-first git executable writes External git fixture invocation refused to stderr and exits 97; identical guard used for RED and GREEN. No installed tool or global PATH modified.",
+  "static_commands": [
+    "clojure -M:lint",
+    "clojure -M:cljfmt",
+    "clojure -M:boundary-check"
+  ],
+  "receipts": [
+    {
+      "gate": "red",
+      "exit_code": 3,
+      "path": "docs/notes/evidence/jgit-fixture-red.txt",
+      "sha256": "b9921052b470a8500b9d515d2e7b5bf27a91339538de3f54decd6264341c463f"
+    },
+    {
+      "gate": "green",
+      "exit_code": 0,
+      "path": "docs/notes/evidence/jgit-fixture-green.txt",
+      "sha256": "c35cf1a24fabc41d53b24bd62b1b39dcda96d39c9ac277157875ac1e8facd90b"
+    },
+    {
+      "gate": "lint",
+      "exit_code": 0,
+      "path": "docs/notes/evidence/jgit-fixture-lint.txt",
+      "sha256": "abbd18f7dd092e9b36bcc4939b62c54ce90183f993d2efcdfa22c240309c3575"
+    },
+    {
+      "gate": "format",
+      "exit_code": 0,
+      "path": "docs/notes/evidence/jgit-fixture-format.txt",
+      "sha256": "8060406d29efc9e09beefef161042ce8de53b41b9354eef618472e2ed4a67323"
+    },
+    {
+      "gate": "boundary",
+      "exit_code": 0,
+      "path": "docs/notes/evidence/jgit-fixture-boundary.txt",
+      "sha256": "071c6d8752b2cef30676260be58123da32feee015e1eeb88d827ca9b978e3201"
+    }
+  ],
+  "scope": "Fixture only; no production source change or new whole-suite/integration coverage claimed."
+}

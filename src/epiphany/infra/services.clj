@@ -62,7 +62,7 @@
      :s3      {:host :port :timeout-ms}"
   ([] (check-all {}))
   ([{:keys [mongodb s3]
-    :or   {mongodb {} s3 {}}}]
+     :or   {mongodb {} s3 {}}}]
    [(mongo-available? mongodb)
     (s3-available? s3)]))
 

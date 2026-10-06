@@ -30,8 +30,8 @@
 
    Returns a decision map."
   [candidate-id decision-type & {:keys [request-id reason relabel-to
-                                         annotation suppressed]
-                                  :or {request-id (java.util.UUID/randomUUID)}}]
+                                        annotation suppressed]
+                                 :or {request-id (java.util.UUID/randomUUID)}}]
   (assert (contains? review-decision-types decision-type)
           (str "Invalid decision type: " decision-type))
   (cond-> {:review-decision/id (java.util.UUID/randomUUID)

@@ -27,7 +27,7 @@
   [blob-a blob-b]
   (if (and (seq blob-a) (seq blob-b))
     (let [bigrams (fn [s] (set (map #(subs s % (+ % 2))
-                                     (range (dec (count s))))))
+                                    (range (dec (count s))))))
           a (bigrams blob-a)
           b (bigrams blob-b)
           intersection (count (set/intersection a b))
@@ -65,7 +65,7 @@
             vals-b (parse-frontmatter-keys fm-b)
             keys-a (set (keys vals-a))
             keys-b (set (keys vals-b))]
-      {:changed (not= fm-a fm-b)
+        {:changed (not= fm-a fm-b)
          :keys-added (vec (set/difference keys-b keys-a))
          :keys-removed (vec (set/difference keys-a keys-b))
          :keys-modified (vec (filter #(and (contains? keys-a %)
@@ -82,7 +82,7 @@
    Returns {:common [string], :added [string], :removed [string], :overlap-ratio double}."
   [blob-a blob-b]
   (let [extract-links (fn [blob]
-                                                 (set (map first (re-seq #"\[([^\]]+)\]\(([^)]+)\)" blob))))
+                        (set (map first (re-seq #"\[([^\]]+)\]\(([^)]+)\)" blob))))
         links-a (extract-links blob-a)
         links-b (extract-links blob-b)
         common (set/intersection links-a links-b)

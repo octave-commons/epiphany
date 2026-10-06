@@ -1,0 +1,23 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-uZPOme -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39209 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39209 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-uZPOme -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39209 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39209 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[([31mF[m[31mF[m[31mF[m..)]
+Randomized with --seed 1055154196
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/registration-retries-refuse-changed-path-and-reforce-durability (request_identity_review_test.clj:163)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/registration-retries-refuse-changed-path-and-reforce-durability (request_identity_review_test.clj:170)
+Expected:
+  [1;33m:unavailable[0m
+Actual:
+  [31m-:unavailable[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/registration-retries-refuse-changed-path-and-reforce-durability (request_identity_review_test.clj:171)
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+[31m1 tests, 5 assertions, 3 failures.[m

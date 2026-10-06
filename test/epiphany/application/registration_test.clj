@@ -18,13 +18,15 @@
 
 (deftest registers-a-new-repository-with-a-new-resource-id
   (let [{:keys [ports writes observations]} (fake-ports {})
-        result (registration/register! ports "/repos/notes")]
+        result (registration/register! ports {:repository-path "/repos/notes" :request-id (random-uuid)})]
     (is (= "/repos/notes" (:repository-path result)))
     (is (= "/repos/notes/.git" (:common-git-dir result)))
     (is (uuid? (:resource-id result)))
     (is (= [(:resource-id result)] @writes))
     (is (= 1 (count @observations)))
     (let [obs (first @observations)]
+      (is (uuid? (:request-id result)))
+      (is (= (:request-id result) (:observation/request-id obs)))
       (is (= (:resource-id result) (:resource-id obs)))
       (is (= :repository/location-observed (:observation/type obs)))
       (is (= "/repos/notes" (get-in obs [:repository/path :path/raw])))
@@ -32,7 +34,7 @@
 
 (deftest registration-reuses-an-existing-git-local-resource-id
   (let [{:keys [ports writes observations]} (fake-ports {:existing-resource-id resource-id})
-        result (registration/register! ports "/repos/notes")]
+        result (registration/register! ports {:repository-path "/repos/notes" :request-id (random-uuid)})]
     (is (= resource-id (:resource-id result)))
     (is (empty? @writes))
     (is (= 1 (count @observations)))
@@ -54,7 +56,7 @@
                               :record-repository-location! (fn [observation]
                                                              (swap! observations conj observation))}}]
     (is (thrown? clojure.lang.ExceptionInfo
-                 (registration/register! ports "/not-a-repository")))
+                 (registration/register! ports {:repository-path "/not-a-repository" :request-id (random-uuid)})))
     (is (empty? @writes))
     (is (empty? @observations))))
 
@@ -65,13 +67,13 @@
                :repository-metadata {:read (fn [_] nil)
                                      :write (fn [_ id] (swap! writes conj id))}
                :observations {:find-by-request-id (fn [request-id] (get @observations request-id))
-                               :record-repository-location! (fn [observation]
-                                                              (swap! observations assoc (:observation/request-id observation) observation))}}
-         command {:request-id #uuid "9a6b0d26-1000-4000-8000-000000000009"
-                  :repository-path "/repos/notes"}
-         first-result (registration/register! ports command)
-         second-result (registration/register! ports command)]
-     (is (= first-result second-result))
-     (is (= 1 (count @writes)))
-     (is (= 1 (count @observations)))
-     (is (= (:request-id command) (:observation/request-id (first (vals @observations)))))))
+                              :record-repository-location! (fn [observation]
+                                                             (swap! observations assoc (:observation/request-id observation) observation))}}
+        command {:request-id #uuid "9a6b0d26-1000-4000-8000-000000000009"
+                 :repository-path "/repos/notes"}
+        first-result (registration/register! ports command)
+        second-result (registration/register! ports command)]
+    (is (= first-result second-result))
+    (is (= 1 (count @writes)))
+    (is (= 1 (count @observations)))
+    (is (= (:request-id command) (:observation/request-id (first (vals @observations)))))))

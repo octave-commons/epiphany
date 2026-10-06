@@ -14,6 +14,7 @@
   to force reprocessing from the last checkpoint."
   (:require [epiphany.shape.markdown :as md]
             [epiphany.domain.section-extraction :as se]
+            [epiphany.domain.observation-admission :as admission]
             [epiphany.domain.ingestion :as ingestion]))
 
 ;; ---------------------------------------------------------------------------
@@ -58,11 +59,17 @@
 ;; ---------------------------------------------------------------------------
 ;; Single-revision extraction
 
+(defn- failure [reason error revision-id]
+  {:failure/reason reason
+   :failure/message (ex-message error)
+   :failure/revision-id revision-id})
+
 (defn extract-revision
   "Extract sections from a single revision-at-path record.
 
    Returns a map:
-     {:extraction/record     — the extraction observation (or nil on error)
+     {:extraction/record     — newly accepted record; nil on duplicate or pre-admission failure
+      :extraction/stored?     — acknowledged new write; legacy nil retains its old acknowledgement
       :extraction/error      — error map if extraction failed
       :extraction/revision-id — the revision-at-path ID (for logging)}"
   ([ports revision]
@@ -78,16 +85,16 @@
                    (str "section-extraction:" id ":" extractor-version))]
      (try
        (let [blob-result (git-fn nil blob-oid)
-            _          (when (:blob/failure blob-result)
-                         (throw (ex-info "Blob not readable"
-                                         {:code :blob-unreadable
-                                          :blob-oid blob-oid
-                                          :failure (:blob/failure blob-result)})))
-            blob       (:blob/content blob-result)
-            parsed     (md/parse blob)
-            sections   (se/extract-sections parsed)
-            record     (se/make-extraction-record
-                        sections id commit-oid path-raw blob-oid blob extractor-version)
+             _          (when (:blob/failure blob-result)
+                          (throw (ex-info "Blob not readable"
+                                          {:code :blob-unreadable
+                                           :blob-oid blob-oid
+                                           :failure (:blob/failure blob-result)})))
+             blob       (:blob/content blob-result)
+             parsed     (md/parse blob)
+             sections   (se/extract-sections parsed)
+             record     (se/make-extraction-record
+                         sections id commit-oid path-raw blob-oid blob extractor-version)
              observation (cond-> (assoc record
                                         :observation/type :section/extraction-completed
                                         :observation/id (or write-id
@@ -97,18 +104,22 @@
                                         :observation/schema-version 1
                                         :resource-id resource-id)
                            write-id
-                           (assoc :observation/request-id write-id))]
-        (obs-fn observation)
-        (when idx-fn
-          (idx-fn (assoc observation :extraction/content blob)))
-        {:extraction/record     observation
-         :extraction/error      nil
-         :extraction/revision-id id})
+                           (assoc :observation/request-id write-id))
+             stored? (admission/newly-stored? (obs-fn observation))
+             index-error (when (and stored? idx-fn)
+                           (try
+                             (idx-fn (assoc observation :extraction/content blob))
+                             nil
+                             (catch Exception error
+                               (failure "index-failed" error id))))]
+         {:extraction/record     (when stored? observation)
+          :extraction/stored?    stored?
+          :extraction/error      index-error
+          :extraction/revision-id id})
        (catch Exception e
          {:extraction/record     nil
-          :extraction/error      {:failure/reason "extraction-failed"
-                                  :failure/message (.getMessage e)
-                                  :failure/revision-id id}
+          :extraction/stored?    false
+          :extraction/error      (failure "extraction-failed" e id)
           :extraction/revision-id id})))))
 
 ;; ---------------------------------------------------------------------------
@@ -162,9 +173,9 @@
       (if (empty? remaining)
         (let [;; Record final checkpoint
               _ (when (pos? processed)
-                   (let [processed-count (+ (or (:last-processed-count resume-point) 0)
-                                            processed)
-                         checkpoint (ingestion/make-checkpoint-record
+                  (let [processed-count (+ (or (:last-processed-count resume-point) 0)
+                                           processed)
+                        checkpoint (ingestion/make-checkpoint-record
                                     {:resource-id         resource-id
                                      :projection-name     projection-name
                                      :projection-version  projection-version
@@ -187,7 +198,7 @@
               result (extract-revision ports request-id revision)
               error (:extraction/error result)
               new-failures (if error (conj failures error) failures)
-              new-extracted (if (:extraction/record result) (inc extracted) extracted)
+              new-extracted (if (:extraction/stored? result) (inc extracted) extracted)
               new-processed (inc processed)
               ;; Checkpoint periodically
               should-checkpoint? (and (pos? new-processed)

@@ -6,8 +6,7 @@
 
   Every edge carries a visible status: :observed, :accepted, :provisional,
   or :rejected. The user can filter to observed facts only, or include
-  provisional candidates. Every node resolves to the evidence reader."
-  (:require [clojure.string :as str]))
+  provisional candidates. Every node resolves to the evidence reader.")
 
 ;; ---------------------------------------------------------------------------
 ;; Node and edge construction
@@ -58,11 +57,11 @@
   [candidates]
   (reduce (fn [acc candidate]
             (let [src-key (vector (get-in candidate [:lineage-candidate/source :section/path-raw])
-                                (get-in candidate [:lineage-candidate/source :section/heading-path])
-                                (get-in candidate [:lineage-candidate/source :section/commit-oid]))
+                                  (get-in candidate [:lineage-candidate/source :section/heading-path])
+                                  (get-in candidate [:lineage-candidate/source :section/commit-oid]))
                   tgt-key (vector (get-in candidate [:lineage-candidate/target :section/path-raw])
-                                (get-in candidate [:lineage-candidate/target :section/heading-path])
-                                (get-in candidate [:lineage-candidate/target :section/commit-oid]))]
+                                  (get-in candidate [:lineage-candidate/target :section/heading-path])
+                                  (get-in candidate [:lineage-candidate/target :section/commit-oid]))]
               (-> acc
                   (update-in [:by-source src-key] (fnil conj []) candidate)
                   (update-in [:by-target tgt-key] (fnil conj []) candidate))))

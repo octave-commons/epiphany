@@ -1,0 +1,273 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-8AacaV -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=46527 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46527 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Downloading: org/mongodb/mongodb-driver-sync/5.2.0/mongodb-driver-sync-5.2.0.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-ast/0.64.8/flexmark-util-ast-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark/0.64.8/flexmark-0.64.8.pom from central
+Downloading: org/apache/lucene/lucene-analysis-common/10.5.0/lucene-analysis-common-10.5.0.pom from central
+Downloading: org/clojure/data.json/2.5.1/data.json-2.5.1.pom from central
+Downloading: org/clojure/clojure/1.12.2/clojure-1.12.2.pom from central
+Downloading: org/eclipse/jgit/org.eclipse.jgit/7.3.0.202506031305-r/org.eclipse.jgit-7.3.0.202506031305-r.pom from central
+Downloading: com/vladsch/flexmark/flexmark-java/0.64.8/flexmark-java-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-ext-yaml-front-matter/0.64.8/flexmark-ext-yaml-front-matter-0.64.8.pom from central
+Downloading: org/eclipse/jgit/org.eclipse.jgit-parent/7.3.0.202506031305-r/org.eclipse.jgit-parent-7.3.0.202506031305-r.pom from central
+Downloading: org/apache/lucene/lucene-core/10.5.0/lucene-core-10.5.0.pom from central
+Downloading: org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.pom from central
+Downloading: org/apache/lucene/lucene-queryparser/10.5.0/lucene-queryparser-10.5.0.pom from central
+Downloading: com/vladsch/flexmark/flexmark-ext-tables/0.64.8/flexmark-ext-tables-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-sequence/0.64.8/flexmark-util-sequence-0.64.8.pom from central
+Downloading: org/slf4j/slf4j-parent/2.0.9/slf4j-parent-2.0.9.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-misc/0.64.8/flexmark-util-misc-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-builder/0.64.8/flexmark-util-builder-0.64.8.pom from central
+Downloading: org/slf4j/slf4j-bom/2.0.9/slf4j-bom-2.0.9.pom from central
+Downloading: metosin/reitit-core/0.7.0/reitit-core-0.7.0.pom from clojars
+Downloading: ring/ring-core/1.13.0/ring-core-1.13.0.pom from clojars
+Downloading: metosin/reitit-ring/0.7.0/reitit-ring-0.7.0.pom from clojars
+Downloading: ring/ring-jetty-adapter/1.13.0/ring-jetty-adapter-1.13.0.pom from clojars
+Downloading: metosin/jsonista/0.3.13/jsonista-0.3.13.pom from clojars
+Downloading: lambdaisland/kaocha/1.91.1392/kaocha-1.91.1392.pom from clojars
+Downloading: hiccup/hiccup/2.0.0-RC3/hiccup-2.0.0-RC3.pom from clojars
+Downloading: org/tcrawley/dynapath/1.1.0/dynapath-1.1.0.pom from central
+Downloading: com/nextjournal/beholder/1.0.2/beholder-1.0.2.pom from clojars
+Downloading: lambdaisland/tools.namespace/0.3.256/tools.namespace-0.3.256.pom from clojars
+Downloading: aero/aero/1.1.6/aero-1.1.6.pom from clojars
+Downloading: slingshot/slingshot/0.12.2/slingshot-0.12.2.pom from clojars
+Downloading: progrock/progrock/0.1.2/progrock-0.1.2.pom from clojars
+Downloading: hawk/hawk/0.2.11/hawk-0.2.11.pom from clojars
+Downloading: meta-merge/meta-merge/1.0.0/meta-merge-1.0.0.pom from clojars
+Downloading: com/vladsch/flexmark/flexmark-util-dependency/0.64.8/flexmark-util-dependency-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-collection/0.64.8/flexmark-util-collection-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-format/0.64.8/flexmark-util-format-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-data/0.64.8/flexmark-util-data-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-html/0.64.8/flexmark-util-html-0.64.8.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-visitor/0.64.8/flexmark-util-visitor-0.64.8.pom from central
+Downloading: org/mongodb/bson/5.2.0/bson-5.2.0.pom from central
+Downloading: org/mongodb/mongodb-driver-core/5.2.0/mongodb-driver-core-5.2.0.pom from central
+Downloading: org/jetbrains/annotations/24.0.1/annotations-24.0.1.pom from central
+Downloading: org/eclipse/jetty/jetty-server/11.0.24/jetty-server-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-unixdomain-server/11.0.24/jetty-unixdomain-server-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-server/11.0.24/websocket-jetty-server-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-project/11.0.24/jetty-project-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-parent/11.0.24/websocket-parent-11.0.24.pom from central
+Downloading: org/ring-clojure/ring-jakarta-servlet/1.13.0/ring-jakarta-servlet-1.13.0.pom from clojars
+Downloading: com/googlecode/javaewah/JavaEWAH/1.2.3/JavaEWAH-1.2.3.pom from central
+Downloading: org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom from central
+Downloading: io/netty/netty-bom/4.1.87.Final/netty-bom-4.1.87.Final.pom from central
+Downloading: com/fasterxml/jackson/jackson-bom/2.17.2/jackson-bom-2.17.2.pom from central
+Downloading: commons-codec/commons-codec/1.18.0/commons-codec-1.18.0.pom from central
+Downloading: org/slf4j/slf4j-parent/1.7.36/slf4j-parent-1.7.36.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util/0.64.8/flexmark-util-0.64.8.pom from central
+Downloading: org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.pom from central
+Downloading: com/fasterxml/jackson/jackson-parent/2.17/jackson-parent-2.17.pom from central
+Downloading: org/apache/lucene/lucene-queries/10.5.0/lucene-queries-10.5.0.pom from central
+Downloading: org/apache/lucene/lucene-sandbox/10.5.0/lucene-sandbox-10.5.0.pom from central
+Downloading: org/apache/commons/commons-parent/79/commons-parent-79.pom from central
+Downloading: com/fasterxml/jackson/core/jackson-core/2.18.2/jackson-core-2.18.2.pom from central
+Downloading: com/fasterxml/oss-parent/58/oss-parent-58.pom from central
+Downloading: com/fasterxml/jackson/core/jackson-databind/2.18.2/jackson-databind-2.18.2.pom from central
+Downloading: com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.18.2/jackson-datatype-jsr310-2.18.2.pom from central
+Downloading: org/infinispan/infinispan-bom/11.0.19.Final/infinispan-bom-11.0.19.Final.pom from central
+Downloading: com/fasterxml/jackson/jackson-base/2.18.2/jackson-base-2.18.2.pom from central
+Downloading: org/infinispan/infinispan-build-configuration-parent/11.0.19.Final/infinispan-build-configuration-parent-11.0.19.Final.pom from central
+Downloading: com/fasterxml/jackson/module/jackson-modules-java8/2.18.2/jackson-modules-java8-2.18.2.pom from central
+Downloading: com/fasterxml/jackson/jackson-bom/2.18.2/jackson-bom-2.18.2.pom from central
+Downloading: org/ring-clojure/ring-core-protocols/1.13.0/ring-core-protocols-1.13.0.pom from clojars
+Downloading: org/jboss/jboss-parent/36/jboss-parent-36.pom from central
+Downloading: com/fasterxml/jackson/jackson-parent/2.18.1/jackson-parent-2.18.1.pom from central
+Downloading: org/junit/junit-bom/5.10.3/junit-bom-5.10.3.pom from central
+Downloading: com/fasterxml/oss-parent/61/oss-parent-61.pom from central
+Downloading: org/ring-clojure/ring-websocket-protocols/1.13.0/ring-websocket-protocols-1.13.0.pom from clojars
+Downloading: org/ow2/asm/asm-bom/9.7/asm-bom-9.7.pom from central
+Downloading: org/ow2/ow2/1.5.1/ow2-1.5.1.pom from central
+Downloading: org/junit/junit-bom/5.10.2/junit-bom-5.10.2.pom from central
+Downloading: org/testcontainers/testcontainers-bom/1.20.1/testcontainers-bom-1.20.1.pom from central
+Downloading: commons-io/commons-io/2.17.0/commons-io-2.17.0.pom from central
+Downloading: org/apache/commons/commons-fileupload2-core/2.0.0-M1/commons-fileupload2-core-2.0.0-M1.pom from central
+Downloading: ring/ring-codec/1.2.0/ring-codec-1.2.0.pom from clojars
+Downloading: org/apache/commons/commons-parent/74/commons-parent-74.pom from central
+Downloading: org/apache/commons/commons-fileupload2/2.0.0-M1/commons-fileupload2-2.0.0-M1.pom from central
+Downloading: org/junit/junit-bom/5.11.0/junit-bom-5.11.0.pom from central
+Downloading: org/apache/commons/commons-parent/58/commons-parent-58.pom from central
+Downloading: org/apache/apache/29/apache-29.pom from central
+Downloading: org/junit/junit-bom/5.9.3/junit-bom-5.9.3.pom from central
+Downloading: lambdaisland/deep-diff2/2.11.216/deep-diff2-2.11.216.pom from clojars
+Downloading: net/incongru/watchservice/barbary-watchservice/1.0/barbary-watchservice-1.0.pom from central
+Downloading: org/clojure/java.classpath/1.0.0/java.classpath-1.0.0.pom from central
+Downloading: org/mongodb/bson-record-codec/5.2.0/bson-record-codec-5.2.0.pom from central
+Downloading: io/methvin/directory-watcher/0.17.3/directory-watcher-0.17.3.pom from central
+Downloading: org/eclipse/jetty/jetty-io/11.0.24/jetty-io-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-servlet/11.0.24/jetty-servlet-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-webapp/11.0.24/jetty-webapp-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-api/11.0.24/websocket-jetty-api-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-common/11.0.24/websocket-jetty-common-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-http/11.0.24/jetty-http-11.0.24.pom from central
+Downloading: org/eclipse/jetty/toolchain/jetty-jakarta-servlet-api/5.0.2/jetty-jakarta-servlet-api-5.0.2.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-servlet/11.0.24/websocket-servlet-11.0.24.pom from central
+Downloading: com/vladsch/flexmark/flexmark-util-options/0.64.8/flexmark-util-options-0.64.8.pom from central
+Downloading: org/apache/lucene/lucene-facet/10.5.0/lucene-facet-10.5.0.pom from central
+Downloading: org/eclipse/jetty/toolchain/jetty-toolchain/1.6/jetty-toolchain-1.6.pom from central
+Downloading: lambdaisland/clj-diff/1.4.78/clj-diff-1.4.78.pom from clojars
+Downloading: com/fasterxml/jackson/core/jackson-annotations/2.18.2/jackson-annotations-2.18.2.pom from central
+Downloading: net/java/dev/jna/jna/5.12.1/jna-5.12.1.pom from central
+Downloading: org/eclipse/jetty/jetty-util/11.0.24/jetty-util-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-security/11.0.24/jetty-security-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-core-common/11.0.24/websocket-core-common-11.0.24.pom from central
+Downloading: org/eclipse/jetty/websocket/websocket-core-server/11.0.24/websocket-core-server-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-xml/11.0.24/jetty-xml-11.0.24.pom from central
+Downloading: org/eclipse/jetty/jetty-servlet/11.0.24/jetty-servlet-11.0.24.jar from central
+Downloading: org/clojure/data.json/2.5.1/data.json-2.5.1.jar from central
+Downloading: org/eclipse/jetty/jetty-xml/11.0.24/jetty-xml-11.0.24.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-api/11.0.24/websocket-jetty-api-11.0.24.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-common/11.0.24/websocket-jetty-common-11.0.24.jar from central
+Downloading: commons-codec/commons-codec/1.18.0/commons-codec-1.18.0.jar from central
+Downloading: org/clojure/clojure/1.12.2/clojure-1.12.2.jar from central
+Downloading: lambdaisland/deep-diff2/2.11.216/deep-diff2-2.11.216.jar from clojars
+Downloading: com/fasterxml/jackson/core/jackson-databind/2.18.2/jackson-databind-2.18.2.jar from central
+Downloading: org/eclipse/jetty/toolchain/jetty-jakarta-servlet-api/5.0.2/jetty-jakarta-servlet-api-5.0.2.jar from central
+Downloading: lambdaisland/kaocha/1.91.1392/kaocha-1.91.1392.jar from clojars
+Downloading: org/eclipse/jetty/jetty-http/11.0.24/jetty-http-11.0.24.jar from central
+Downloading: org/eclipse/jetty/jetty-util/11.0.24/jetty-util-11.0.24.jar from central
+Downloading: com/vladsch/flexmark/flexmark/0.64.8/flexmark-0.64.8.jar from central
+Downloading: lambdaisland/clj-diff/1.4.78/clj-diff-1.4.78.jar from clojars
+Downloading: net/incongru/watchservice/barbary-watchservice/1.0/barbary-watchservice-1.0.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-collection/0.64.8/flexmark-util-collection-0.64.8.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-visitor/0.64.8/flexmark-util-visitor-0.64.8.jar from central
+Downloading: org/apache/lucene/lucene-analysis-common/10.5.0/lucene-analysis-common-10.5.0.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-data/0.64.8/flexmark-util-data-0.64.8.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-ast/0.64.8/flexmark-util-ast-0.64.8.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-core-common/11.0.24/websocket-core-common-11.0.24.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-options/0.64.8/flexmark-util-options-0.64.8.jar from central
+Downloading: com/googlecode/javaewah/JavaEWAH/1.2.3/JavaEWAH-1.2.3.jar from central
+Downloading: org/mongodb/mongodb-driver-sync/5.2.0/mongodb-driver-sync-5.2.0.jar from central
+Downloading: org/jetbrains/annotations/24.0.1/annotations-24.0.1.jar from central
+Downloading: ring/ring-jetty-adapter/1.13.0/ring-jetty-adapter-1.13.0.jar from clojars
+Downloading: org/mongodb/bson-record-codec/5.2.0/bson-record-codec-5.2.0.jar from central
+Downloading: commons-io/commons-io/2.17.0/commons-io-2.17.0.jar from central
+Downloading: slingshot/slingshot/0.12.2/slingshot-0.12.2.jar from clojars
+Downloading: com/vladsch/flexmark/flexmark-util-format/0.64.8/flexmark-util-format-0.64.8.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-core-server/11.0.24/websocket-core-server-11.0.24.jar from central
+Downloading: org/eclipse/jgit/org.eclipse.jgit/7.3.0.202506031305-r/org.eclipse.jgit-7.3.0.202506031305-r.jar from central
+Downloading: com/fasterxml/jackson/core/jackson-core/2.18.2/jackson-core-2.18.2.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-servlet/11.0.24/websocket-servlet-11.0.24.jar from central
+Downloading: org/apache/commons/commons-fileupload2-core/2.0.0-M1/commons-fileupload2-core-2.0.0-M1.jar from central
+Downloading: com/nextjournal/beholder/1.0.2/beholder-1.0.2.jar from clojars
+Downloading: com/vladsch/flexmark/flexmark-ext-yaml-front-matter/0.64.8/flexmark-ext-yaml-front-matter-0.64.8.jar from central
+Downloading: org/eclipse/jetty/websocket/websocket-jetty-server/11.0.24/websocket-jetty-server-11.0.24.jar from central
+Downloading: aero/aero/1.1.6/aero-1.1.6.jar from clojars
+Downloading: org/ring-clojure/ring-jakarta-servlet/1.13.0/ring-jakarta-servlet-1.13.0.jar from clojars
+Downloading: org/eclipse/jetty/jetty-unixdomain-server/11.0.24/jetty-unixdomain-server-11.0.24.jar from central
+Downloading: org/apache/lucene/lucene-facet/10.5.0/lucene-facet-10.5.0.jar from central
+Downloading: lambdaisland/tools.namespace/0.3.256/tools.namespace-0.3.256.jar from clojars
+Downloading: org/eclipse/jetty/jetty-security/11.0.24/jetty-security-11.0.24.jar from central
+Downloading: org/apache/lucene/lucene-core/10.5.0/lucene-core-10.5.0.jar from central
+Downloading: org/mongodb/bson/5.2.0/bson-5.2.0.jar from central
+Downloading: io/methvin/directory-watcher/0.17.3/directory-watcher-0.17.3.jar from central
+Downloading: metosin/reitit-ring/0.7.0/reitit-ring-0.7.0.jar from clojars
+Downloading: org/apache/lucene/lucene-queryparser/10.5.0/lucene-queryparser-10.5.0.jar from central
+Downloading: org/slf4j/slf4j-simple/2.0.9/slf4j-simple-2.0.9.jar from central
+Downloading: com/fasterxml/jackson/core/jackson-annotations/2.18.2/jackson-annotations-2.18.2.jar from central
+Downloading: com/vladsch/flexmark/flexmark-ext-tables/0.64.8/flexmark-ext-tables-0.64.8.jar from central
+Downloading: metosin/reitit-core/0.7.0/reitit-core-0.7.0.jar from clojars
+Downloading: org/eclipse/jetty/jetty-webapp/11.0.24/jetty-webapp-11.0.24.jar from central
+Downloading: hiccup/hiccup/2.0.0-RC3/hiccup-2.0.0-RC3.jar from clojars
+Downloading: org/apache/lucene/lucene-queries/10.5.0/lucene-queries-10.5.0.jar from central
+Downloading: org/clojure/java.classpath/1.0.0/java.classpath-1.0.0.jar from central
+Downloading: progrock/progrock/0.1.2/progrock-0.1.2.jar from clojars
+Downloading: com/vladsch/flexmark/flexmark-util/0.64.8/flexmark-util-0.64.8.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-sequence/0.64.8/flexmark-util-sequence-0.64.8.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-html/0.64.8/flexmark-util-html-0.64.8.jar from central
+Downloading: com/vladsch/flexmark/flexmark-util-misc/0.64.8/flexmark-util-misc-0.64.8.jar from central
+Downloading: org/apache/lucene/lucene-sandbox/10.5.0/lucene-sandbox-10.5.0.jar from central
+Downloading: ring/ring-codec/1.2.0/ring-codec-1.2.0.jar from clojars
+Downloading: com/vladsch/flexmark/flexmark-util-builder/0.64.8/flexmark-util-builder-0.64.8.jar from central
+Downloading: net/java/dev/jna/jna/5.12.1/jna-5.12.1.jar from central
+Downloading: org/eclipse/jetty/jetty-io/11.0.24/jetty-io-11.0.24.jar from central
+Downloading: org/tcrawley/dynapath/1.1.0/dynapath-1.1.0.jar from central
+Downloading: org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar from central
+Downloading: org/ring-clojure/ring-core-protocols/1.13.0/ring-core-protocols-1.13.0.jar from clojars
+Downloading: org/eclipse/jetty/jetty-server/11.0.24/jetty-server-11.0.24.jar from central
+Downloading: hawk/hawk/0.2.11/hawk-0.2.11.jar from clojars
+Downloading: com/vladsch/flexmark/flexmark-util-dependency/0.64.8/flexmark-util-dependency-0.64.8.jar from central
+Downloading: metosin/jsonista/0.3.13/jsonista-0.3.13.jar from clojars
+Downloading: com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.18.2/jackson-datatype-jsr310-2.18.2.jar from central
+Downloading: org/mongodb/mongodb-driver-core/5.2.0/mongodb-driver-core-5.2.0.jar from central
+Downloading: meta-merge/meta-merge/1.0.0/meta-merge-1.0.0.jar from clojars
+Downloading: ring/ring-core/1.13.0/ring-core-1.13.0.jar from clojars
+Downloading: org/ring-clojure/ring-websocket-protocols/1.13.0/ring-websocket-protocols-1.13.0.jar from clojars
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-8AacaV -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=46527 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46527 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[(..[31mF[m[31mF[m[31mF[m....[31mF[m[31mF[m[31mF[m...[31mF[m[31mF[m.)]
+Randomized with --seed 431322174
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:81)
+inode
+Expected:
+  [1;33m:force-refused[0m
+Actual:
+  [31m-:force-refused[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:81)
+inode
+Expected:
+  [1;33m:force-refused[0m
+Actual:
+  [31m-:force-refused[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:91)
+inode
+A successful reopen forces the existing ledger inode
+expected: (pos? (clojure.core/deref forced))
+  actual: (not (pos? 0))
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:81)
+parent
+Expected:
+  [1;33m:force-refused[0m
+Actual:
+  [31m-:force-refused[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:81)
+parent
+Expected:
+  [1;33m:force-refused[0m
+Actual:
+  [31m-:force-refused[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/reopen-must-not-acknowledge-an-unflushed-visible-append (clio_runtime_ordering_test.clj:91)
+parent
+A successful reopen forces the existing ledger inode
+expected: (pos? (clojure.core/deref forced))
+  actual: (not (pos? 0))
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/a-published-schema-is-loaded-after-the-ledger-snapshot (clio_runtime_ordering_test.clj:42)
+{:error {:schema/root "2e82a10f837f6d1bc8a95e0a482cd8098dc2b497239c3d3de43cd968c361c99e", :schema/id :epiphany.observations/operation-accepted, :schema/hash "7edd96be509716bec44c4da3f89d8e3620f05dbdd783bc5821430fad0f010f42", :clio/error :clio.schema/unknown-revision}}
+expected: (nil? (:error outcome))
+  actual: (not (nil? {:schema/root "2e82a10f837f6d1bc8a95e0a482cd8098dc2b497239c3d3de43cd968c361c99e", :schema/id :epiphany.observations/operation-accepted, :schema/hash "7edd96be509716bec44c4da3f89d8e3620f05dbdd783bc5821430fad0f010f42", :clio/error :clio.schema/unknown-revision}))
+
+[31mFAIL[m in epiphany.infra.adapters.clio-runtime-ordering-test/a-published-schema-is-loaded-after-the-ledger-snapshot (clio_runtime_ordering_test.clj:43)
+Expected:
+  [1;31m[[0m[1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+    [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+    [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+    [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+    [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"a5f0f845-ff3c-4347-8982-11f4294cf6a7"[0m,
+    [1;33m:observation/schema-version[0m [36m1[0m,
+    [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+    [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                                [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                                [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+    [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                      [1;33m:path/raw[0m [1;35m"/law/test-repo"[0m,
+                      [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m[1;31m][0m
+Actual:
+  [1;31m[[0m[31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+     :observation/adapter-version "law-suite-v1",
+     :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+     :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+     :observation/request-id #uuid "a5f0f845-ff3c-4347-8982-11f4294cf6a7",
+     :observation/schema-version 1,
+     :observation/type :repository/location-observed,
+     :repository/common-git-dir {:path/comparison :exact,
+                                 :path/raw "/law/test-repo/.git",
+                                 :path/source :filesystem-argument},
+     :repository/path {:path/comparison :exact,
+                       :path/raw "/law/test-repo",
+                       :path/source :filesystem-argument}}[0m[1;31m][0m
+[31m2 tests, 18 assertions, 8 failures.[m

@@ -22,15 +22,15 @@
 (deftest removed-validation-mutant-dies
   (testing "mutant: validate-write! is a no-op — the law suite MUST notice"
     (with-redefs-fn {#'in-memory/validate-write! (fn [_op _record] nil)}
-        (fn []
-          (let [outcomes (laws/observations-laws
-                          {:make-port (fn [] (:observations (in-memory/make {:common-git-dir-fn (fn [p] (str p "/.git"))})))
-                           :capabilities #{:schema-validation :idempotency :export-import}})
-                failed (laws/failed-laws outcomes)]
-            (is (contains? failed [:record-repository-location! :invalid-write-rejected])
-                "with validation removed, the invalid-write law must FAIL (mutant dies)")
-            (is (contains? failed [:record-repository-location! :rejection-leaves-state-unchanged])
-                "with validation removed, the state-unchanged law must FAIL (mutant dies)"))))
+      (fn []
+        (let [outcomes (laws/observations-laws
+                        {:make-port (fn [] (:observations (in-memory/make {:common-git-dir-fn (fn [p] (str p "/.git"))})))
+                         :capabilities #{:schema-validation :idempotency :export-import}})
+              failed (laws/failed-laws outcomes)]
+          (is (contains? failed [:record-repository-location! :invalid-write-rejected])
+              "with validation removed, the invalid-write law must FAIL (mutant dies)")
+          (is (contains? failed [:record-repository-location! :rejection-leaves-state-unchanged])
+              "with validation removed, the state-unchanged law must FAIL (mutant dies)"))))
     (testing "sanity: the unmutated adapter passes (the mutant, not the harness, caused the failure)"
       (let [outcomes (laws/observations-laws
                       {:make-port (fn [] (:observations (in-memory/make {:common-git-dir-fn (fn [p] (str p "/.git"))})))

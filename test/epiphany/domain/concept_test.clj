@@ -129,10 +129,10 @@
 (deftest make-research-question-with-options-test
   (testing "creates with options"
     (let [rq (concept/make-research-question "What about consistency?"
-                                              :interpretation "Need to understand eventual consistency"
-                                              :evidence-links [sample-link]
-                                              :priority :high
-                                              :status :investigating)]
+                                             :interpretation "Need to understand eventual consistency"
+                                             :evidence-links [sample-link]
+                                             :priority :high
+                                             :status :investigating)]
       (is (= "Need to understand eventual consistency"
              (:research-question/interpretation rq)))
       (is (= 1 (count (:research-question/evidence-links rq))))
@@ -204,7 +204,7 @@
 (deftest list-concepts-by-name-test
   (testing "filters concepts by name substring"
     (let [c1 (concept/make-concept "Event Sourcing")
-          c2 (concept/make-research-question "Command Query")  ;; not a concept
+          _c2 (concept/make-research-question "Command Query")  ;; not a concept
           result (concept/list-concepts [c1] :name-substring "event")]
       (is (= 1 (count result))))))
 

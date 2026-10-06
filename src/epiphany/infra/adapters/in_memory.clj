@@ -59,7 +59,7 @@
                          :operation op
                          :schema/name schema-name
                          :explanation (mapv #(select-keys % [:path :schema :message])
-                                           (:errors explain))}))))))
+                                            (:errors explain))}))))))
 
 (defn- idempotent-record-repository-location!
   "Enforce idempotency for repository-location writes.
@@ -105,7 +105,7 @@
     (swap! records
            (fn [current]
              (if (some #(= (:observation/id observation)
-                            (:observation/id %))
+                           (:observation/id %))
                        current)
                current
                (conj current observation))))
@@ -139,17 +139,17 @@
                                     (idempotent-record-repository-location!
                                      by-request-id observation))
      :record-revision-at-path! (validated-record-fn
-                                 :record-revision-at-path!
-                                 (fn [observation]
-                                   (swap! revision-at-paths conj observation)
-                                   nil))
+                                :record-revision-at-path!
+                                (fn [observation]
+                                  (swap! revision-at-paths conj observation)
+                                  nil))
      :record-ingestion-run! (idempotent-record-fn
                              :record-ingestion-run! ingestion-runs)
      :record-checkpoint! (idempotent-record-fn
                           :record-checkpoint! checkpoints)
      :record-section-extraction! (idempotent-record-fn
-                                   :record-section-extraction!
-                                   section-extractions)
+                                  :record-section-extraction!
+                                  section-extractions)
      ;; Append-only, idempotent by request-id: a retry carrying a
      ;; request-id already recorded returns nil without appending a
      ;; second decision (ENG-005A AC: "retries do not duplicate").
@@ -185,10 +185,10 @@
                                                          (= :revision/at-path-observed (:observation/type %)))
                                                    @revision-at-paths))
      :list-section-extractions-by-revision (fn [revision-at-path-id]
-                                              (filterv #(and (= revision-at-path-id
+                                             (filterv #(and (= revision-at-path-id
                                                                (:extraction/revision-at-path-id %))
                                                             (= :section/extraction-completed (:observation/type %)))
-                                                       @section-extractions))
+                                                      @section-extractions))
      :list-review-decisions (fn [resource-id]
                               (filterv #(= resource-id (:resource-id %))
                                        @review-decisions))
@@ -204,70 +204,70 @@
                                       (filterv #(= candidate-id
                                                    (:lineage-candidate/id %))
                                                @lineage-candidates)))
-      :export-all (fn []
-                    {"repository-location" (vec (vals @by-request-id))
-                     "ingestion-run"       (vec @ingestion-runs)
-                     "projection-checkpoint" (vec @checkpoints)
-                     "section-extraction"  (vec @section-extractions)
-                     "revision-at-path"    (vec @revision-at-paths)
-                     "review-decision"     (vec @review-decisions)
-                     "lineage-candidate"   (vec @lineage-candidates)})
-      :import-all (fn [data]
+     :export-all (fn []
+                   {"repository-location" (vec (vals @by-request-id))
+                    "ingestion-run"       (vec @ingestion-runs)
+                    "projection-checkpoint" (vec @checkpoints)
+                    "section-extraction"  (vec @section-extractions)
+                    "revision-at-path"    (vec @revision-at-paths)
+                    "review-decision"     (vec @review-decisions)
+                    "lineage-candidate"   (vec @lineage-candidates)})
+     :import-all (fn [data]
                     ;; Validate the entire payload BEFORE any mutation
                     ;; (ENG-017F): a malformed import mutates nothing.
-                    (doseq [[coll-name docs] data
-                            doc docs]
-                      (backup/validate-record coll-name doc))
-                    (doseq [[coll-name docs] data]
-                      (case coll-name
-                        "repository-location"
-                        (doseq [doc docs]
-                          (let [rid (:observation/request-id doc)]
-                            (when (and rid (not (get @by-request-id rid)))
-                              (validate-write! :record-repository-location! doc)
-                              (swap! by-request-id assoc rid doc))))
-                        "ingestion-run"
-                        (doseq [doc docs]
-                          (validate-write! :record-ingestion-run! doc)
-                          (swap! ingestion-runs conj doc))
-                        "projection-checkpoint"
-                        (doseq [doc docs]
-                          (validate-write! :record-checkpoint! doc)
-                          (swap! checkpoints conj doc))
-                        "section-extraction"
-                        (doseq [doc docs]
-                          (validate-write! :record-section-extraction! doc)
-                          (swap! section-extractions conj doc))
-                        "revision-at-path"
-                        (doseq [doc docs]
-                          (validate-write! :record-revision-at-path! doc)
-                          (swap! revision-at-paths conj doc))
-                        "review-decision"
-                        (doseq [doc docs]
-                          (let [rid (:observation/request-id doc)]
-                            (when (and rid (not (contains? @review-decision-index rid)))
-                              (validate-write! :record-review-decision! doc)
-                              (swap! review-decision-index assoc rid doc)
-                              (swap! review-decisions conj doc))))
-                        "lineage-candidate"
-                        (doseq [doc docs]
-                          (let [rid (:observation/request-id doc)]
-                            (when (and rid (not (contains? @lineage-candidate-index rid)))
-                              (validate-write! :record-lineage-candidate! doc)
-                              (swap! lineage-candidate-index assoc rid doc)
-                              (swap! lineage-candidates conj doc))))
-                        nil)))
-      :clear-all! (fn []
-                    (reset! by-request-id {})
-                    (reset! ingestion-runs [])
-                    (reset! checkpoints [])
-                    (reset! section-extractions [])
-                    (reset! revision-at-paths [])
-                    (reset! review-decisions [])
-                    (reset! review-decision-index {})
-                    (reset! lineage-candidates [])
-                    (reset! lineage-candidate-index {})
-                    nil)}))
+                   (doseq [[coll-name docs] data
+                           doc docs]
+                     (backup/validate-record coll-name doc))
+                   (doseq [[coll-name docs] data]
+                     (case coll-name
+                       "repository-location"
+                       (doseq [doc docs]
+                         (let [rid (:observation/request-id doc)]
+                           (when (and rid (not (get @by-request-id rid)))
+                             (validate-write! :record-repository-location! doc)
+                             (swap! by-request-id assoc rid doc))))
+                       "ingestion-run"
+                       (doseq [doc docs]
+                         (validate-write! :record-ingestion-run! doc)
+                         (swap! ingestion-runs conj doc))
+                       "projection-checkpoint"
+                       (doseq [doc docs]
+                         (validate-write! :record-checkpoint! doc)
+                         (swap! checkpoints conj doc))
+                       "section-extraction"
+                       (doseq [doc docs]
+                         (validate-write! :record-section-extraction! doc)
+                         (swap! section-extractions conj doc))
+                       "revision-at-path"
+                       (doseq [doc docs]
+                         (validate-write! :record-revision-at-path! doc)
+                         (swap! revision-at-paths conj doc))
+                       "review-decision"
+                       (doseq [doc docs]
+                         (let [rid (:observation/request-id doc)]
+                           (when (and rid (not (contains? @review-decision-index rid)))
+                             (validate-write! :record-review-decision! doc)
+                             (swap! review-decision-index assoc rid doc)
+                             (swap! review-decisions conj doc))))
+                       "lineage-candidate"
+                       (doseq [doc docs]
+                         (let [rid (:observation/request-id doc)]
+                           (when (and rid (not (contains? @lineage-candidate-index rid)))
+                             (validate-write! :record-lineage-candidate! doc)
+                             (swap! lineage-candidate-index assoc rid doc)
+                             (swap! lineage-candidates conj doc))))
+                       nil)))
+     :clear-all! (fn []
+                   (reset! by-request-id {})
+                   (reset! ingestion-runs [])
+                   (reset! checkpoints [])
+                   (reset! section-extractions [])
+                   (reset! revision-at-paths [])
+                   (reset! review-decisions [])
+                   (reset! review-decision-index {})
+                   (reset! lineage-candidates [])
+                   (reset! lineage-candidate-index {})
+                   nil)}))
 
 ;; ---------------------------------------------------------------------------
 ;; Index adapter
@@ -313,7 +313,7 @@
                           (swap! docs
                                  (fn [records]
                                    (conj (filterv #(not= (identity %)
-                                                        (identity extraction-record))
+                                                         (identity extraction-record))
                                                   records)
                                          extraction-record))))
                         nil)
@@ -359,7 +359,7 @@
                               :result/heading-path (:embedding/heading-path emb)
                               :result/score (:result/score emb)
                               :result/model (:embedding/model emb)
-                             :result/embedding-version (str (:embedding-version emb))})
+                              :result/embedding-version (str (:embedding-version emb))})
                            scored)))
      :index-stats (fn [resource-id]
                     {:document-count

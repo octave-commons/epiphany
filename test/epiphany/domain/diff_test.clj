@@ -1,7 +1,6 @@
 (ns epiphany.domain.diff-test
   (:require [clojure.test :refer [deftest testing is]]
-            [epiphany.domain.diff :as diff]
-            [epiphany.domain.evidence :as evidence]))
+            [epiphany.domain.diff :as diff]))
 
 ;; ---------------------------------------------------------------------------
 ;; Mock port

@@ -16,7 +16,7 @@
 
 (defn- temporary-directory []
   (.toFile (java.nio.file.Files/createTempDirectory "epiphany-ratp-test"
-                                                     (make-array java.nio.file.attribute.FileAttribute 0))))
+                                                    (make-array java.nio.file.attribute.FileAttribute 0))))
 
 (defn- delete-recursive [^java.io.File file]
   (when (.exists file)
@@ -103,12 +103,12 @@
         oid (get commit-oids commit-key)]
     (:commit/tree-oid
      (first (filter #(= oid (:commit/oid %))
-                     (:commits (git/reachable-commits repo-path
-                                                       (case commit-key
-                                                         :c1 #{"refs/heads/main"}
-                                                         :c2 #{"refs/heads/main"}
-                                                         :c3 #{"refs/heads/main"}
-                                                         :c4 #{"refs/heads/main"}))))))))
+                    (:commits (git/reachable-commits repo-path
+                                                     (case commit-key
+                                                       :c1 #{"refs/heads/main"}
+                                                       :c2 #{"refs/heads/main"}
+                                                       :c3 #{"refs/heads/main"}
+                                                       :c4 #{"refs/heads/main"}))))))))
 
 (defn- parent-entries-at [commit-key]
   (let [parent-key (case commit-key
@@ -156,8 +156,8 @@
 (deftest evidence-delete-when-path-in-parent-only
   (testing "path in parent but not in child returns :delete"
     (is (= :delete (ratp/evidence-for-deleted
-                     {:git/path "old.md" :git/blob-oid "aaa"}
-                     [])))))
+                    {:git/path "old.md" :git/blob-oid "aaa"}
+                    [])))))
 
 ;; ---- Observation construction tests ----
 
@@ -168,12 +168,12 @@
                :entry/mode           33188
                :entry/policy-version "markdown-tree-v1"}
         obs   (ratp/revision-at-path entry
-                 {:resource-id      test-uuid
-                  :tree-oid         "tree789"
-                  :parent-commit-oid "parent123"
-                  :parent-blob-oid   "blob456"
-                  :observed-at       #inst "2025-01-01T00:00:00Z"
-                  :parent-entries    [{:git/path "docs/guide.md" :git/blob-oid "old" :git/mode 33188}]})]
+                                     {:resource-id      test-uuid
+                                      :tree-oid         "tree789"
+                                      :parent-commit-oid "parent123"
+                                      :parent-blob-oid   "blob456"
+                                      :observed-at       #inst "2025-01-01T00:00:00Z"
+                                      :parent-entries    [{:git/path "docs/guide.md" :git/blob-oid "old" :git/mode 33188}]})]
     (is (uuid? (:revision-at-path/id obs)))
     (is (= :revision/at-path-observed (:observation/type obs)))
     (is (= test-uuid (:resource-id obs)))
@@ -195,12 +195,12 @@
                :entry/mode           33188
                :entry/policy-version "markdown-tree-v1"}
         obs   (ratp/revision-at-path entry
-                 {:resource-id       test-uuid
-                  :tree-oid          "tree789"
-                  :parent-commit-oid nil
-                  :parent-blob-oid   nil
-                  :observed-at       #inst "2025-01-01T00:00:00Z"
-                  :parent-entries    nil})]
+                                     {:resource-id       test-uuid
+                                      :tree-oid          "tree789"
+                                      :parent-commit-oid nil
+                                      :parent-blob-oid   nil
+                                      :observed-at       #inst "2025-01-01T00:00:00Z"
+                                      :parent-entries    nil})]
     (is (= :initial (:revision/evidence obs)))
     (is (not (contains? obs :revision/parent-commit-oid)))
     (is (not (contains? obs :revision/parent-blob-oid)))))
@@ -212,14 +212,14 @@
                :entry/mode           33188
                :entry/policy-version "markdown-tree-v1"}
         obs   (ratp/revision-at-path entry
-                 {:resource-id       test-uuid
-                  :tree-oid          "abcdef0123456789abcdef0123456789abcdef01"
-                  :parent-commit-oid "1234567890abcdef1234567890abcdef12345678"
-                  :parent-blob-oid   "abcdef0123456789abcdef0123456789abcdef01"
-                  :observed-at       #inst "2025-01-01T00:00:00Z"
-                  :parent-entries    [{:git/path "docs/guide.md"
-                                       :git/blob-oid "old-blob-0000000000000000000"
-                                       :git/mode 33188}]})]
+                                     {:resource-id       test-uuid
+                                      :tree-oid          "abcdef0123456789abcdef0123456789abcdef01"
+                                      :parent-commit-oid "1234567890abcdef1234567890abcdef12345678"
+                                      :parent-blob-oid   "abcdef0123456789abcdef0123456789abcdef01"
+                                      :observed-at       #inst "2025-01-01T00:00:00Z"
+                                      :parent-entries    [{:git/path "docs/guide.md"
+                                                           :git/blob-oid "old-blob-0000000000000000000"
+                                                           :git/mode 33188}]})]
     (is (registry/valid? "observation/revision-at-path-v1" obs)
         (pr-str (registry/explain "observation/revision-at-path-v1" obs)))))
 
@@ -230,12 +230,12 @@
                :entry/mode           33188
                :entry/policy-version "markdown-tree-v1"}
         obs   (ratp/revision-at-path entry
-                 {:resource-id       test-uuid
-                  :tree-oid          "abcdef0123456789abcdef0123456789abcdef01"
-                  :parent-commit-oid nil
-                  :parent-blob-oid   nil
-                  :observed-at       #inst "2025-01-01T00:00:00Z"
-                  :parent-entries    nil})]
+                                     {:resource-id       test-uuid
+                                      :tree-oid          "abcdef0123456789abcdef0123456789abcdef01"
+                                      :parent-commit-oid nil
+                                      :parent-blob-oid   nil
+                                      :observed-at       #inst "2025-01-01T00:00:00Z"
+                                      :parent-entries    nil})]
     (is (registry/valid? "observation/revision-at-path-v1" obs)
         (pr-str (registry/explain "observation/revision-at-path-v1" obs)))))
 
@@ -288,12 +288,12 @@
       (is (pos? (count selected)))
       (doseq [entry selected]
         (let [obs (ratp/revision-at-path entry
-                    {:resource-id       test-uuid
-                     :tree-oid          (tree-oid-for :c1)
-                     :parent-commit-oid nil
-                     :parent-blob-oid   nil
-                     :observed-at       #inst "2025-01-01T00:00:00Z"
-                     :parent-entries    nil})]
+                                         {:resource-id       test-uuid
+                                          :tree-oid          (tree-oid-for :c1)
+                                          :parent-commit-oid nil
+                                          :parent-blob-oid   nil
+                                          :observed-at       #inst "2025-01-01T00:00:00Z"
+                                          :parent-entries    nil})]
           (is (= :initial (:revision/evidence obs))
               (str "path " (:entry/path-raw entry) " should be :initial"))
           (is (not (contains? obs :revision/parent-commit-oid)))
@@ -307,12 +307,12 @@
           parent-oid  (parent-commit-oid-for :c2)
           observations (mapv (fn [entry]
                                (ratp/revision-at-path entry
-                                 {:resource-id       test-uuid
-                                  :tree-oid          (tree-oid-for :c2)
-                                  :parent-commit-oid parent-oid
-                                  :parent-blob-oid   nil
-                                  :observed-at       #inst "2025-01-02T00:00:00Z"
-                                  :parent-entries    parent-ents}))
+                                                      {:resource-id       test-uuid
+                                                       :tree-oid          (tree-oid-for :c2)
+                                                       :parent-commit-oid parent-oid
+                                                       :parent-blob-oid   nil
+                                                       :observed-at       #inst "2025-01-02T00:00:00Z"
+                                                       :parent-entries    parent-ents}))
                              selected)]
       ;; docs/guide.md is new in C2
       (let [guide-obs (first (filter #(= "docs/guide.md" (:revision/path-raw %)) observations))]
@@ -331,12 +331,12 @@
           parent-oid  (parent-commit-oid-for :c3)
           observations (mapv (fn [entry]
                                (ratp/revision-at-path entry
-                                 {:resource-id       test-uuid
-                                  :tree-oid          (tree-oid-for :c3)
-                                  :parent-commit-oid parent-oid
-                                  :parent-blob-oid   nil
-                                  :observed-at       #inst "2025-01-03T00:00:00Z"
-                                  :parent-entries    parent-ents}))
+                                                      {:resource-id       test-uuid
+                                                       :tree-oid          (tree-oid-for :c3)
+                                                       :parent-commit-oid parent-oid
+                                                       :parent-blob-oid   nil
+                                                       :observed-at       #inst "2025-01-03T00:00:00Z"
+                                                       :parent-entries    parent-ents}))
                              selected)]
       ;; .ημ/spec.md is new
       (let [spec-obs (first (filter #(= ".ημ/spec.md" (:revision/path-raw %)) observations))]
@@ -362,27 +362,27 @@
           parent-oid  (parent-commit-oid-for :c4)
           observations (mapv (fn [entry]
                                (ratp/revision-at-path entry
-                                 {:resource-id       test-uuid
-                                  :tree-oid          (tree-oid-for :c4)
-                                  :parent-commit-oid parent-oid
-                                  :parent-blob-oid   nil
-                                  :observed-at       #inst "2025-01-04T00:00:00Z"
-                                  :parent-entries    parent-ents}))
-                             selected)]
+                                                      {:resource-id       test-uuid
+                                                       :tree-oid          (tree-oid-for :c4)
+                                                       :parent-commit-oid parent-oid
+                                                       :parent-blob-oid   nil
+                                                       :observed-at       #inst "2025-01-04T00:00:00Z"
+                                                       :parent-entries    parent-ents}))
+                             selected)
       ;; docs/guide.md modified in C4
-      (let [guide-obs (first (filter #(= "docs/guide.md" (:revision/path-raw %)) observations))]
-        (is (some? guide-obs))
-        (is (= :modify (:revision/evidence guide-obs)))))))
+          guide-obs (first (filter #(= "docs/guide.md" (:revision/path-raw %)) observations))]
+      (is (some? guide-obs))
+      (is (= :modify (:revision/evidence guide-obs))))))
 
 (deftest revisions-for-commit-handles-multiple-entries
   (testing "revisions-for-commit constructs observations for all selected entries"
     (let [entries  (select-at :c2)
           obs      (ratp/revisions-for-commit entries
-                     {:resource-id       test-uuid
-                      :tree-oid          (tree-oid-for :c2)
-                      :parent-commit-oid (parent-commit-oid-for :c2)
-                      :observed-at       #inst "2025-01-02T00:00:00Z"
-                      :parent-entries    (parent-entries-at :c2)})]
+                                              {:resource-id       test-uuid
+                                               :tree-oid          (tree-oid-for :c2)
+                                               :parent-commit-oid (parent-commit-oid-for :c2)
+                                               :observed-at       #inst "2025-01-02T00:00:00Z"
+                                               :parent-entries    (parent-entries-at :c2)})]
       (is (= (count entries) (count obs)))
       (is (every? #(= :revision/at-path-observed (:observation/type %)) obs))
       (is (every? #(= test-uuid (:resource-id %)) obs)))))
@@ -391,7 +391,7 @@
 
 (deftest blob-retrievable-through-recorded-oid
   (testing "source bytes can be retrieved via the recorded blob OID without checkout"
-    (let [{:keys [repo-path commit-oids]} @fixture
+    (let [{:keys [repo-path _commit-oids]} @fixture
           entries (entries-at :c2)
           guide-entry (first (filter #(= "docs/guide.md" (:git/path %)) entries))
           blob-oid (:git/blob-oid guide-entry)
@@ -415,7 +415,7 @@
 
 (deftest unicode-path-blob-retrievable
   (testing "blob for Unicode path .ημ/spec.md is retrievable by OID"
-    (let [{:keys [repo-path commit-oids]} @fixture
+    (let [{:keys [repo-path _commit-oids]} @fixture
           entries (entries-at :c3)
           spec-entry (first (filter #(= ".ημ/spec.md" (:git/path %)) entries))
           blob-oid (:git/blob-oid spec-entry)

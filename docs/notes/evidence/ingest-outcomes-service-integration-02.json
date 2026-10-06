@@ -1,0 +1,32 @@
+{
+  "started": "2026-09-12T17:21:16.046Z",
+  "finished": "2026-09-12T17:21:37.083Z",
+  "source": {
+    "head": "0e3950bf2d54043203885f12ccbbd2836a5710fe",
+    "tree": "20664b20df0f91afa22b8668556d8560e94078e9",
+    "dirty": false,
+    "files": 477,
+    "sha256": "797540ebe651a7e2d48d00eee7514b3dea9ae95a6740e9187488473187caf3c8"
+  },
+  "clio": "ff48f090965be5c17cca1e3662d7402b383510c1",
+  "embedding": {
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "dimensions": 384,
+    "revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+    "artifact": "sha256:afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1"
+  },
+  "mongoPing": true,
+  "s3ObjectRoundtrip": true,
+  "integration": {
+    "command": [
+      "clojure",
+      "-Sdeps",
+      "{:aliases {:verified-clio {:override-deps {eta-mu/clio {:local/root \"/workspace/scratch/3655842e43cf/eta-clio-origin/packages/clio\"}}}}}",
+      "-M:verified-clio:integration-test"
+    ],
+    "code": 0,
+    "signal": null,
+    "summary": "22 tests, 108 assertions, 0 failures."
+  },
+  "skipped": false
+}

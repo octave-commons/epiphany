@@ -16,11 +16,11 @@
   (:require [epiphany.domain.backup :as backup]
             [epiphany.law.operations :as operations]
             [epiphany.law.registry :as registry])
-   (:import [com.mongodb.client MongoClients MongoDatabase MongoCollection]
-            [com.mongodb.client.model IndexOptions Indexes]
-            [com.mongodb MongoException MongoWriteException]
-            [org.bson Document]
-            [java.util Date]))
+  (:import [com.mongodb.client MongoClients MongoDatabase MongoCollection]
+           [com.mongodb.client.model IndexOptions Indexes]
+           [com.mongodb MongoException MongoWriteException]
+           [org.bson Document]
+           [java.util Date]))
 
 ;; ---------------------------------------------------------------------------
 ;; Schema validation (ENG-017E: registry-driven, every write op)
@@ -150,12 +150,12 @@
       ;; Record the version
       (if current-doc
         (.updateOne index-versions
-                     (.filter (Document. "collection_name" "repository-location-v1"))
-                     (Document. "$set" (Document. "version" (long index-version))))
+                    (.filter (Document. "collection_name" "repository-location-v1"))
+                    (Document. "$set" (Document. "version" (long index-version))))
         (.insertOne index-versions
                     (doto (Document.)
                       (.put "collection_name" "repository-location-v1")
-                       (.put "version" (long index-version))
+                      (.put "version" (long index-version))
                       (.put "applied_at" (Date.))))))))
 
 ;; ---------------------------------------------------------------------------
@@ -172,8 +172,8 @@
      :test-mode — when true, uses \"epiphany-test\" database and cleans on connect"
   ([] (connect! {}))
   ([{:keys [uri database test-mode collection-prefix]
-    :or   {uri (or (System/getenv "MONGODB_URI") "mongodb://127.0.0.1:27017")
-           database (or (System/getenv "MONGODB_DATABASE") "epiphany")}}]
+     :or   {uri (or (System/getenv "MONGODB_URI") "mongodb://127.0.0.1:27017")
+            database (or (System/getenv "MONGODB_DATABASE") "epiphany")}}]
    (let [db-name (if test-mode "epiphany-test" database)
          prefix  (or collection-prefix "")
          client  (MongoClients/create ^String uri)
@@ -186,21 +186,21 @@
          rd-coll (.getCollection db (str prefix "review-decision-v1"))
          lc-coll (.getCollection db (str prefix "lineage-candidate-v1"))
          idx-coll (.getCollection db (str prefix "_index-versions"))]
-      (ensure-indexes! {:repository-location-collection loc-coll
-                        :review-decision-collection rd-coll
-                        :lineage-candidate-collection lc-coll
-                        :index-versions-collection idx-coll})
-      {:client client
-       :database db
-       :db-name db-name
-       :repository-location-collection loc-coll
-       :ingestion-run-collection run-coll
-       :projection-checkpoint-collection ckpt-coll
-       :section-extraction-collection sect-coll
-       :revision-at-path-collection rev-coll
-       :review-decision-collection rd-coll
-       :lineage-candidate-collection lc-coll
-       :index-versions-collection idx-coll})))
+     (ensure-indexes! {:repository-location-collection loc-coll
+                       :review-decision-collection rd-coll
+                       :lineage-candidate-collection lc-coll
+                       :index-versions-collection idx-coll})
+     {:client client
+      :database db
+      :db-name db-name
+      :repository-location-collection loc-coll
+      :ingestion-run-collection run-coll
+      :projection-checkpoint-collection ckpt-coll
+      :section-extraction-collection sect-coll
+      :revision-at-path-collection rev-coll
+      :review-decision-collection rd-coll
+      :lineage-candidate-collection lc-coll
+      :index-versions-collection idx-coll})))
 
 (defn disconnect!
   "Close the MongoDB connection."
@@ -272,8 +272,8 @@
    :observation/schema-version (.getLong doc "schema_version")
    :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
    :ingestion/repo-path        {:path/raw       (.getString doc "repo_path")
-                                 :path/source    (keyword (.getString doc "repo_path_source"))
-                                 :path/comparison :exact}
+                                :path/source    (keyword (.getString doc "repo_path_source"))
+                                :path/comparison :exact}
    :ingestion/selected-refs    (vec (.get doc "selected_refs"))
    :ingestion/commit-count     (.getLong doc "commit_count")
    :ingestion/failure-count    (.getLong doc "failure_count")
@@ -574,7 +574,6 @@
   [a b]
   (= a b))
 
-
 (defn- decode-validated
   "Decode a stored document and validate the record against its
    collection schema (ENG-017F): a malformed stored document is a named
@@ -609,7 +608,7 @@
                 (catch MongoWriteException e
                   (if (= 11000 (.getCode e))
                     (let [existing (-> (.find coll)
-                                        (.filter (Document. "request_id" request-id))
+                                       (.filter (Document. "request_id" request-id))
                                        (.first))]
                       (if (and existing
                                (doc->observation-equal? (decode-validated "repository-location" doc->observation existing) observation))
@@ -640,7 +639,7 @@
      (fn [request-id]
        (let [^MongoCollection coll (:repository-location-collection conn)
              doc (-> (.find coll)
-                      (.filter (Document. "request_id" (str request-id)))
+                     (.filter (Document. "request_id" (str request-id)))
                      (.first))]
          (when doc
            (decode-validated "repository-location" doc->observation doc))))
@@ -652,27 +651,27 @@
      (validated-insert! :record-ingestion-run!
                         :ingestion-run-collection ingestion-run->doc)
 
-      :record-checkpoint!
-      (validated-insert! :record-checkpoint!
-                         :projection-checkpoint-collection checkpoint->doc)
+     :record-checkpoint!
+     (validated-insert! :record-checkpoint!
+                        :projection-checkpoint-collection checkpoint->doc)
 
-      :record-section-extraction!
-      (validated-insert! :record-section-extraction!
-                         :section-extraction-collection section-extraction->doc)
+     :record-section-extraction!
+     (validated-insert! :record-section-extraction!
+                        :section-extraction-collection section-extraction->doc)
 
-      :record-revision-at-path!
-      (validated-insert! :record-revision-at-path!
-                         :revision-at-path-collection revision-at-path->doc)
+     :record-revision-at-path!
+     (validated-insert! :record-revision-at-path!
+                        :revision-at-path-collection revision-at-path->doc)
 
-      :record-review-decision!
-      (validated-insert! :record-review-decision!
-                         :review-decision-collection review-decision->doc)
+     :record-review-decision!
+     (validated-insert! :record-review-decision!
+                        :review-decision-collection review-decision->doc)
 
-      :record-lineage-candidate!
-      (validated-insert! :record-lineage-candidate!
-                         :lineage-candidate-collection lineage-candidate->doc)
+     :record-lineage-candidate!
+     (validated-insert! :record-lineage-candidate!
+                        :lineage-candidate-collection lineage-candidate->doc)
 
-      :list-ingestion-runs
+     :list-ingestion-runs
      (fn [resource-id]
        (let [^MongoCollection coll (:ingestion-run-collection conn)
              docs (-> (.find coll)
@@ -680,7 +679,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "ingestion-run" doc->ingestion-run %) docs)))
 
-      :list-checkpoints
+     :list-checkpoints
      (fn [ingestion-run-id]
        (let [^MongoCollection coll (:projection-checkpoint-collection conn)
              docs (-> (.find coll)
@@ -688,7 +687,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "projection-checkpoint" doc->checkpoint %) docs)))
 
-      :list-revision-at-path-by-resource
+     :list-revision-at-path-by-resource
      (fn [resource-id]
        (let [^MongoCollection coll (:revision-at-path-collection conn)
              docs (-> (.find coll)
@@ -696,7 +695,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "revision-at-path" doc->revision-at-path %) docs)))
 
-      :list-section-extractions-by-revision
+     :list-section-extractions-by-revision
      (fn [revision-at-path-id]
        (let [^MongoCollection coll (:section-extraction-collection conn)
              docs (-> (.find coll)
@@ -704,7 +703,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "section-extraction" doc->section-extraction %) docs)))
 
-      :list-review-decisions
+     :list-review-decisions
      (fn [resource-id]
        (let [^MongoCollection coll (:review-decision-collection conn)
              docs (-> (.find coll)
@@ -712,7 +711,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "review-decision" doc->review-decision %) docs)))
 
-      :list-review-decisions-by-candidate
+     :list-review-decisions-by-candidate
      (fn [candidate-id]
        (let [^MongoCollection coll (:review-decision-collection conn)
              docs (-> (.find coll)
@@ -720,7 +719,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "review-decision" doc->review-decision %) docs)))
 
-      :list-lineage-candidates
+     :list-lineage-candidates
      (fn [resource-id]
        (let [^MongoCollection coll (:lineage-candidate-collection conn)
              docs (-> (.find coll)
@@ -728,7 +727,7 @@
                       (.into (java.util.ArrayList.)))]
          (mapv #(decode-validated "lineage-candidate" doc->lineage-candidate %) docs)))
 
-      :find-lineage-candidate-by-id
+     :find-lineage-candidate-by-id
      (fn [candidate-id]
        (let [^MongoCollection coll (:lineage-candidate-collection conn)
              doc (-> (.find coll)
@@ -736,7 +735,7 @@
                      (.first))]
          (when doc (decode-validated "lineage-candidate" doc->lineage-candidate doc))))
 
-      :export-all
+     :export-all
      (fn []
        {"repository-location" (mapv #(decode-validated "repository-location" doc->observation %)
                                     (.into (.find ^MongoCollection (:repository-location-collection conn))
@@ -760,7 +759,7 @@
                                     (.into (.find ^MongoCollection (:lineage-candidate-collection conn))
                                            (java.util.ArrayList.)))})
 
-      :import-all
+     :import-all
      (fn [data]
        ;; Validate every record BEFORE any mutation (ENG-017F): a
        ;; malformed or unknown-version import payload mutates nothing.
@@ -808,7 +807,7 @@
                  (catch MongoException e
                    (storage-error! :import-all e))))))))
 
-      :clear-all!
+     :clear-all!
      (fn []
        (clean-test-db! conn)
        (ensure-indexes! conn))}))

@@ -1,0 +1,156 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-n56Q3d -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=42841 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42841 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-n56Q3d -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=42841 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42841 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[([31mF[m[31mF[m[31mF[m...[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m....[31mF[m.[31mF[m.....[31mF[m.[31mF[m.....[31mF[m.[31mF[m.[31mF[m.[31mF[m...[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m[31mF[m)]
+Randomized with --seed 1436234098
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-retries-return-the-original-durable-identity (request_identity_review_test.clj:109)
+Unknown option: "--request-id"
+
+Usage: ep diff [options] <left-expr> <right-expr>
+
+  -r, --repo PATH                .       Path to the Git repository
+  -f, --format FORMAT            :text   Output format: text or edn
+      --seed-candidate RELATION          Seed a provisional lineage candidate from this comparison (relation type)
+  -p, --profile PROFILE          :local  Profile for candidate seeding: :local (memory), :edn (Clio), or :services (MongoDB)
+  -h, --help                             Show diff help and exit.
+expected: (zero? (:exit first-result))
+  actual: (not (zero? 1))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-retries-return-the-original-durable-identity (request_identity_review_test.clj:110)
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-retries-return-the-original-durable-identity (request_identity_review_test.clj:111)
+Expected:
+  [35m#uuid[0m [1;35m"2bde201b-fdaf-4412-87c1-53ac114d5323"[0m
+Actual:
+  [31m-#uuid "2bde201b-fdaf-4412-87c1-53ac114d5323"[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/candidate-seeding-requires-identity-before-repository-access (request_identity_review_test.clj:121)
+expected: (string/includes? (:out result) "request-id")
+  actual: (not (string/includes? "Error: Could not resolve Git common directory\n  Git error: Not a Git repository" "request-id"))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/cli-and-http-refuse-missing-registration-identity-before-effects (request_identity_review_test.clj:74)
+Expected:
+  [36m1[0m
+Actual:
+  [31m-1[0m [32m+0[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/cli-and-http-refuse-missing-registration-identity-before-effects (request_identity_review_test.clj:75)
+expected: (string/includes? (:out result) "request-id")
+  actual: (not (string/includes? "Registered: /repo\n  Resource ID:     0b8c088c-1053-4d8d-b903-f828a6c68abe\n  Common Git dir:  /repo/.git\n  Profile:         local\n  Request ID:      9b26cd10-c9ec-4762-a505-a059d2d599bc" "request-id"))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/cli-and-http-refuse-missing-registration-identity-before-effects (request_identity_review_test.clj:76)
+Expected:
+  [36m400[0m
+Actual:
+  [31m-400[0m [32m+201[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/cli-and-http-refuse-missing-registration-identity-before-effects (request_identity_review_test.clj:78)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:resolve :lookup :git :read :metadata :record :lookup :git :read :metadata :record]))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:local ":local" :header]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:local ":local" :query]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:edn ":edn" :header]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:edn ":edn" :query]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:services ":services" :header]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:45)
+[:services ":services" :query]
+Expected:
+  [36m201[0m
+Actual:
+  [31m-201[0m [32m+400[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/http-profile-spellings-select-the-configured-observation-provider (request_identity_review_test.clj:47)
+Expected:
+  [36m12[0m
+Actual:
+  [31m-12[0m [32m+6[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/registration-law-requires-a-caller-owned-uuid (request_identity_review_test.clj:55)
+expected: (commands/rejected? (commands/decode candidate))
+  actual: (not (commands/rejected? {:command/name :command/register, :repository-path "/repo"}))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:64)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:66)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:lookup :git :read :metadata :record]))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:64)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:66)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:lookup :git :read :metadata :record]))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:64)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:66)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:lookup :git :read :metadata :record]))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:64)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:66)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:lookup :git :read :metadata :record]))
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:64)
+Expected:
+  [1;33m:bad-request[0m
+Actual:
+  [31m-:bad-request[0m [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.request-identity-review-test/direct-registration-rejects-invalid-identity-before-any-port-call (request_identity_review_test.clj:66)
+expected: (empty? (clojure.core/deref calls))
+  actual: (not (empty? [:lookup :git :read :metadata :record]))
+[31m6 tests, 51 assertions, 26 failures.[m

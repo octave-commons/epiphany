@@ -97,7 +97,7 @@
                   {:git fake-git :observations fake-obs}
                   {:resource-id    #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
                    :repository-path "/repo"
-                    :selected-refs   ["refs/heads/main"]})]
+                   :selected-refs   ["refs/heads/main"]})]
       (is (= :ingestion/run-completed (:observation/type result)))
       (is (= 2 (:ingestion/commit-count result)))
       (is (= 1 (:ingestion/failure-count result)))

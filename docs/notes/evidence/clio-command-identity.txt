@@ -1,0 +1,303 @@
+Owned Epiphany command identity verification. Logs below come only from disposable fixtures and explicitly named commands.
+
+
+Complete c433d63 gate: dependency
+$ clojure -M -e (require (quote clojure.java.io)) (println (clojure.java.io/resource "clio/infra/ledger.cljc"))
+#object[java.net.URL 0x569bf9eb file:<runtime>/epiphany-clio-6c5af6/packages/clio/src/clio/infra/ledger.cljc]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: unit
+$ clojure -M:unit-test
+[(......)(.........................)(......................................)(.............................)(.......................)(.............................)(..........................)(...............................)(..........)(..................................)(...........................................)(.....)(........................)(.......................................................................................)(.....................................................)(....................................)(..)(........................................)(....)(.....................................................)(..........................)(..............................)(....................................................................................................................................................................)(........................................)(..................................................)(...........................)(........................................................)(...................................)(...................)(...................................................................)(.......................)(...................................................................)(.................................)(.......................)(...........................................................................................)(..............................................................................)(..............)(..............................................)(..........................................)(.................................................................)(...................................)(..................)(.........................................................)(................................................................................)(............................................)(......)(............................)(........)(.......................................................)(....................................................................................)(...........................................................)(.......................)(...........)(............)(................................)(.......)(.....................................................)(........................)(...........................................)]
+790 tests, 2273 assertions, 0 failures.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: lint
+$ clojure -M:lint
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:324:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:330:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 5262ms, errors: 0, warnings: 0
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: format
+$ clojure -M:cljfmt
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+All source files formatted correctly
+
+
+Complete c433d63 gate: boundary
+$ clojure -M:boundary-check
+Layer-boundary check: clean.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: interop
+$ clojure -M:interop-inventory
+Interop ratchet: clean (law/domain/application unchanged or reduced).
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: build
+$ bash bin/build
+epiphany.infra.main
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: process
+$ bash bin/verify-clio-edn
+Registered: /tmp/epiphany-clio-live.pNsMDN/repo
+  Resource ID:     fd7ad3ef-5ccc-4f3c-a0c1-1a205b86a7ac
+  Common Git dir:  /tmp/epiphany-clio-live.pNsMDN/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+Ingested: /tmp/epiphany-clio-live.pNsMDN/repo
+  Request ID:          a6225ef5-5f0e-42be-b92e-dc18e7179be5
+  Resource ID:         fd7ad3ef-5ccc-4f3c-a0c1-1a205b86a7ac
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.pNsMDN/index
+Ingested: /tmp/epiphany-clio-live.pNsMDN/repo
+  Request ID:          57655ce1-d758-49e9-a5f3-12754b92df61
+  Resource ID:         fd7ad3ef-5ccc-4f3c-a0c1-1a205b86a7ac
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.pNsMDN/index
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 11:06:26 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 11:06:34 PM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Complete c433d63 gate: launcher
+$ bin/ep --help
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: dependency
+$ clojure -M -e (require (quote clojure.java.io)) (println (clojure.java.io/resource "clio/infra/ledger.cljc"))
+#object[java.net.URL 0x569bf9eb file:<runtime>/epiphany-clio-6c5af6/packages/clio/src/clio/infra/ledger.cljc]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: unit
+$ clojure -M:unit-test --focus epiphany.infra.clio-clear-command-test --focus epiphany.infra.clio-review-regression-test --focus epiphany.infra.adapters.clio-test --focus epiphany.domain.backup-test
+[(...........................)(....................................................................................)(................................)(...........................................)]
+33 tests, 186 assertions, 0 failures.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: lint
+$ clojure -M:lint
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:324:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:330:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 6158ms, errors: 0, warnings: 0
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: format
+$ clojure -M:cljfmt
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+All source files formatted correctly
+
+
+Final4c40cb9 shape wiring gate: boundary
+$ clojure -M:boundary-check
+Layer-boundary check: clean.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: interop
+$ clojure -M:interop-inventory
+Interop ratchet: clean (law/domain/application unchanged or reduced).
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: build
+$ bash bin/build
+epiphany.infra.main
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Final4c40cb9 shape wiring gate: launcher
+$ bin/ep --help
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+
+Behavioral RED: Concurrent extraction identity
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[(..FF.F.F.FF)]
+Randomized with --seed 667805484
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:91)
+Expected:
+  1
+Actual:
+  -1 +2
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:92)
+Expected:
+  1
+Actual:
+  -1 +2
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:98)
+Expected:
+  "#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n"
+Actual:
+  -"#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n"
+  +"#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n#:event{:stream \"epiphany/observations\", :data {:operation :import-all, :arguments [{\"section-extraction\" [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"0349b9fa-ceba-4932-ab8b-5aa9cff67f71\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"2809720c-9b1a-4393-a674-acd2be414785\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}]}], :result nil, :before-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\", :after-hash \"17dc828bae9bb81887a5150eb5bf3d9d1047728c55766093acfd0af9d6a74e05\"}, :at \"2026-09-12T13:51:25.844Z\", :subject \"epiphany/observations\", :causes [\"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"47093375-769f-48f2-896d-525c591db290\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 3}\n"
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:102)
+Expected:
+  "#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n"
+Actual:
+  -"#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n"
+  +"#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"ca168289-9a82-4901-8f59-9707573df4fc\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"f174843e-8914-4bbc-b4c5-8b2bdc42963b\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"7471852f2e8398f5e5e92307faa43541be1ec5fe78ef1251215c945b96e46a8d\", :after-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\"}, :at \"2026-09-12T13:51:25.111Z\", :subject \"epiphany/observations\", :causes [], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"c8dabda8-aec3-437f-bf58-93242801b998\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 1}\n#:event{:stream \"epiphany/observations\", :data {:operation :record-section-extraction!, :arguments [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"00000000-0000-0000-0000-000000000001\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-01-01T00:00:00.000-00:00\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}], :result nil, :before-hash \"8e5f8fa860212f191dacbed0a27bc2443941635d33783b9710bc968683aa4c92\", :after-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\"}, :at \"2026-09-12T13:51:25.345Z\", :subject \"epiphany/observations\", :causes [\"c8dabda8-aec3-437f-bf58-93242801b998\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 2}\n#:event{:stream \"epiphany/observations\", :data {:operation :import-all, :arguments [{\"section-extraction\" [{:extraction/commit-oid \"0123456789abcdef0123456789abcdef01234567\", :extraction/path-raw \"docs/law.md\", :extraction/sections [#:section{:body-span-start-byte 6, :heading-span-end-byte 5, :heading-span-start-byte 0, :body-span-start-line 2, :heading-path [\"Law\"], :level 1, :ordinal 0, :body-span-end-byte 20, :body-span-end-line 3}], :observation/type :section/extraction-completed, :observation/id #uuid \"0349b9fa-ceba-4932-ab8b-5aa9cff67f71\", :resource-id #uuid \"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\", :extraction/blob-oid \"fedcba9876543210fedcba9876543210fedcba98\", :extraction/revision-at-path-id #uuid \"dddddddd-0000-0000-0000-000000000001\", :extraction/extractor-version \"law-extractor-v1\", :extraction/content-sha256 \"abc123\", :extraction/section-count 1, :observation/observed-at #inst \"2026-09-12T13:00:00.000-00:00\", :observation/request-id #uuid \"2809720c-9b1a-4393-a674-acd2be414785\", :observation/adapter-version \"law-suite-v1\", :observation/schema-version 1}]}], :result nil, :before-hash \"de2ce880bd391e129985372203e2a59293702939df2412566f3a6780ee836ebf\", :after-hash \"17dc828bae9bb81887a5150eb5bf3d9d1047728c55766093acfd0af9d6a74e05\"}, :at \"2026-09-12T13:51:25.844Z\", :subject \"epiphany/observations\", :causes [\"51ddb8dd-7b46-4676-9f32-8a1de759c5e5\"], :actor \"epiphany/observations-port\", :type :epiphany.observations/operation-accepted, :id \"47093375-769f-48f2-896d-525c591db290\", :schema #:schema{:root \"21d0960c850b28e295d85e87bff897d2943f85b5fe76a9410a4eac91b4729d05\", :id :epiphany.observations/operation-accepted, :hash \"7192cd7ef8c88652572f298a328f69007d2780a8ab75eec07ebee6dadcc64864\"}, :seq 3}\n"
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:106)
+Expected:
+  2
+Actual:
+  -2 +4
+
+FAIL in epiphany.infra.clio-review-regression-test/concurrent-extractions-share-logical-identity-across-command-ids (clio_review_regression_test.clj:108)
+Expected:
+  2
+Actual:
+  -2 +4
+1 tests, 11 assertions, 6 failures.
+
+
+Behavioral RED: Historical extraction envelope aliases
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[(FF)]
+Randomized with --seed 712360147
+
+FAIL in epiphany.infra.clio-review-regression-test/equivalent-historical-extractions-retain-all-accepted-envelope-identities (clio_review_regression_test.clj:117)
+expected: (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content" (admission/missing-records "section-extraction" [first-record duplicate] [conflicting]))
+  actual: nil
+
+FAIL in epiphany.infra.clio-review-regression-test/equivalent-historical-extractions-retain-all-accepted-envelope-identities (clio_review_regression_test.clj:119)
+expected: (thrown-with-msg? clojure.lang.ExceptionInfo #"different accepted content" (admission/missing-records "section-extraction" [] [first-record duplicate conflicting]))
+  actual: nil
+1 tests, 2 assertions, 2 failures.
+
+
+Behavioral RED: Original unidentified clear after lost acknowledgement
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+
+Testing user
+
+FAIL in (clear-retry-after-lost-acknowledgement-must-preserve-newer-write) (epiphany-clear-legacy-red.clj:18)
+expected: (= later-record ((:find-by-request-id port) (:observation/request-id later-record)))
+  actual: (not (= {:repository/path #:path{:raw "/law/test-repo", :source :filesystem-argument, :comparison :exact}, :observation/type :repository/location-observed, :observation/id #uuid "00000000-0000-0000-0000-000000000001", :resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", :repository/common-git-dir #:path{:raw "/law/test-repo/.git", :source :filesystem-argument, :comparison :exact}, :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00", :observation/request-id #uuid "56070712-f3e0-450c-933e-708cf455a4e0", :observation/adapter-version "law-suite-v1", :observation/schema-version 1} nil))
+
+FAIL in (clear-retry-after-lost-acknowledgement-must-preserve-newer-write) (epiphany-clear-legacy-red.clj:19)
+expected: (= 3 (count (clio/history store)))
+  actual: (not (= 3 4))
+
+Ran 1 tests containing 2 assertions.
+2 failures, 0 errors.
+
+
+Actual pre-extension schema compatibility
+[Local JVM transport configuration omitted; command diagnostics follow unchanged.]
+[(......)]
+1 tests, 6 assertions, 0 failures.
+
+
+Real native Mongo / S3rver / MiniLM integration
+PASS native Mongo answered its command protocol
+PASS S3rver create/put/get preserves actual EDN object bytes
+PASS actual JVM integration with real MiniLM: 22 tests, 108 assertions, 0 failures.

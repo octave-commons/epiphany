@@ -1,0 +1,1554 @@
+Evidence: epiphany-recovery-lint-before
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/06e6449b-5564-4a41-baf3-77b9e591fe70 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44991 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44991 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/06e6449b-5564-4a41-baf3-77b9e591fe70 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=44991 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44991 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+src/epiphany/domain/benchmark.clj:163:28: warning: unused binding query
+src/epiphany/domain/boundary.clj:12:14: warning: namespace epiphany.domain.continuity is required but never used
+src/epiphany/domain/boundary.clj:38:8: warning: Unused private var epiphany.domain.boundary/time-gap-dominated?
+src/epiphany/domain/boundary.clj:44:9: warning: unused binding original-time-score
+src/epiphany/domain/concept.clj:160:30: warning: Unresolved namespace clojure.string. Are you missing a require?
+src/epiphany/domain/diff.clj:16:8: warning: Unused private var epiphany.domain.diff/collect-lines-before-match
+src/epiphany/domain/evidence.clj:142:11: warning: Redundant let expression.
+src/epiphany/domain/file_lineage.clj:4:14: warning: namespace epiphany.domain.lineage is required but never used
+src/epiphany/domain/hybrid_search.clj:114:8: warning: Unused private var epiphany.domain.hybrid-search/dedupe-results
+src/epiphany/domain/hybrid_search.clj:124:23: warning: unused binding limit
+src/epiphany/domain/hybrid_search.clj:169:15: warning: unused binding request
+src/epiphany/domain/hybrid_search.clj:223:34: warning: unused binding k
+src/epiphany/domain/inbox.clj:7:14: warning: namespace epiphany.domain.review is required but never used
+src/epiphany/domain/inbox.clj:22:5: warning: Redundant let expression.
+src/epiphany/domain/lineage.clj:10:14: warning: namespace epiphany.domain.continuity is required but never used
+src/epiphany/domain/lineage.clj:11:14: warning: namespace epiphany.domain.diff is required but never used
+src/epiphany/domain/lineage.clj:109:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:112:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:113:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:124:4: warning: unused binding relation-type
+src/epiphany/domain/lineage_trace.clj:10:14: warning: namespace clojure.string is required but never used
+src/epiphany/domain/redundancy.clj:105:19: warning: unused binding features-a
+src/epiphany/domain/redundancy.clj:105:30: warning: unused binding features-b
+src/epiphany/domain/redundancy.clj:130:16: warning: unused binding total-weight
+src/epiphany/infra/adapters/ollama.clj:13:77: warning: Unused import HttpResponse
+src/epiphany/infra/main.clj:319:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:325:10: info: Redundant nested call: str
+src/epiphany/law/registry.clj:10:14: warning: namespace epiphany.law.markdown is required but never used
+test/epiphany/application/validation_test.clj:54:16: warning: unused binding calls
+test/epiphany/application/validation_test.clj:87:16: warning: unused binding calls
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+test/epiphany/domain/backup_test.clj:2:54: warning: #'clojure.test/use-fixtures is referred but never used
+test/epiphany/domain/backup_test.clj:129:7: warning: Redundant let expression.
+test/epiphany/domain/backup_test.clj:211:11: warning: unused binding git
+test/epiphany/domain/benchmark_test.clj:13:8: warning: unused binding query
+test/epiphany/domain/concept_test.clj:207:11: warning: unused binding c2
+test/epiphany/domain/continuity_test.clj:2:54: warning: #'clojure.test/are is referred but never used
+test/epiphany/domain/diff_test.clj:4:14: warning: namespace epiphany.domain.evidence is required but never used
+test/epiphany/domain/evidence_test.clj:80:7: warning: Redundant let expression.
+test/epiphany/domain/evidence_test.clj:99:7: warning: Redundant let expression.
+test/epiphany/domain/evidence_test.clj:113:7: warning: Redundant let expression.
+test/epiphany/domain/evidence_test.clj:123:7: warning: Redundant let expression.
+test/epiphany/domain/evidence_test.clj:133:7: warning: Redundant let expression.
+test/epiphany/domain/evidence_test.clj:154:7: warning: Redundant let expression.
+test/epiphany/domain/extraction_projection_test.clj:4:14: warning: namespace epiphany.domain.ingestion is required but never used
+test/epiphany/domain/history_replacement_test.clj:2:46: warning: #'clojure.test/testing is referred but never used
+test/epiphany/domain/hybrid_search_test.clj:39:37: warning: unused binding vector
+test/epiphany/domain/hybrid_search_test.clj:46:35: warning: unused binding text
+test/epiphany/domain/inbox_test.clj:2:54: warning: #'clojure.test/are is referred but never used
+test/epiphany/domain/inbox_test.clj:50:12: warning: Unresolved namespace clojure.string. Are you missing a require?
+test/epiphany/domain/lineage_test.clj:2:54: warning: #'clojure.test/are is referred but never used
+test/epiphany/domain/lineage_test.clj:75:7: warning: Redundant let expression.
+test/epiphany/domain/lineage_test.clj:250:7: warning: Redundant let expression.
+test/epiphany/domain/lineage_trace_test.clj:2:54: warning: #'clojure.test/are is referred but never used
+test/epiphany/domain/review_test.clj:135:7: warning: Redundant let expression.
+test/epiphany/domain/revision_at_path_test.clj:373:7: warning: Redundant let expression.
+test/epiphany/domain/revision_at_path_test.clj:394:29: warning: unused binding commit-oids
+test/epiphany/domain/revision_at_path_test.clj:418:29: warning: unused binding commit-oids
+test/epiphany/infra/adapters/lucene_knn_test.clj:2:54: warning: #'clojure.test/use-fixtures is referred but never used
+test/epiphany/infra/adapters/lucene_test.clj:2:54: warning: #'clojure.test/use-fixtures is referred but never used
+test/epiphany/infra/adapters/lucene_test.clj:3:14: warning: namespace clojure.java.io is required but never used
+test/epiphany/infra/http_test.clj:4:14: warning: namespace clojure.edn is required but never used
+test/epiphany/infra/http_test.clj:63:7: warning: Redundant let expression.
+test/epiphany/infra/launcher_test.clj:11:14: warning: namespace clojure.string is required but never used
+test/epiphany/infra/repository_identity_test.clj:6:46: warning: #'clojure.test/testing is referred but never used
+test/epiphany/infra/workbench_test.clj:3:14: warning: namespace epiphany.infra.workbench is required but never used
+test/epiphany/infra/workbench_test.clj:7:14: warning: namespace epiphany.domain.review is required but never used
+test/epiphany/infra/workbench_test.clj:193:19: warning: Unresolved namespace clojure.java.io. Are you missing a require?
+test/epiphany/law/operations_test.clj:13:24: warning: Unresolved namespace clojure.set. Are you missing a require?
+test/epiphany/parity/cli_http_test.clj:21:10: warning: Unresolved namespace clojure.java.shell. Are you missing a require?
+test/epiphany/static/interop_inventory_test.clj:25:7: warning: Redundant let expression.
+test/epiphany/static/interop_inventory_test.clj:61:25: warning: Unresolved namespace clojure.edn. Are you missing a require?
+linting took 4084ms, errors: 0, warnings: 66
+
+Evidence: epiphany-clio-recovery-focused
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/36ad1a06-66a3-4f0f-be80-72d781b92e94 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37207 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37207 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/36ad1a06-66a3-4f0f-be80-72d781b92e94 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37207 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37207 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+SLF4J: No SLF4J providers were found.
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See https://www.slf4j.org/codes.html#noProviders for further details.
+[([31mE[m.[31mF[m.[31mE[m[31mF[m[31mE[m[31mE[m...[31mF[m.[31mF[m[31mF[m[31mE[m[31mE[m[31mE[m[31mE[m[31mF[m.[31mE[m)]
+Randomized with --seed 648237503
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/missing-or-corrupt-history-never-becomes-an-empty-store (core.cljc:157)
+Uncaught exception, not in assertion.
+Exception: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20429$fn__20434.invoke (clio_test.clj:81)
+    epiphany.infra.adapters.clio_test$fn__20429.invokeStatic (clio_test.clj:78)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:75)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/all-observation-laws-run-without-skips (clio_test.clj:30)
+{[:record-repository-location! :changed-content-replay] {:outcome :fail, :detail "changed-content replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-section-extraction! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-lineage-candidate! :changed-content-replay] {:outcome :fail, :detail "changed-content replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-repository-location! :invalid-write-rejected] {:outcome :pass}, [:record-review-decision! :idempotent-replay-stable] {:outcome :fail, :detail "idempotent replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-review-decision! :invalid-write-rejected] {:outcome :pass}, [:record-checkpoint! :invalid-write-rejected] {:outcome :pass}, [:record-lineage-candidate! :invalid-write-rejected] {:outcome :pass}, [:record-review-decision! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-repository-location! :export-import-round-trip] {:outcome :fail, :detail "export/import round-trip threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-repository-location! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-revision-at-path! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-repository-location! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-lineage-candidate! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-repository-location! :idempotent-replay-stable] {:outcome :fail, :detail "idempotent replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-ingestion-run! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-revision-at-path! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-section-extraction! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-ingestion-run! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-checkpoint! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-lineage-candidate! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-checkpoint! :valid-write-accepted] {:outcome :fail, :detail "valid write threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-review-decision! :rejection-leaves-state-unchanged] {:outcome :pass}, [:record-lineage-candidate! :idempotent-replay-stable] {:outcome :fail, :detail "idempotent replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-revision-at-path! :invalid-write-rejected] {:outcome :pass}, [:record-review-decision! :changed-content-replay] {:outcome :fail, :detail "changed-content replay threw clojure.lang.ExceptionInfo: :malli.core/child-error"}, [:record-ingestion-run! :invalid-write-rejected] {:outcome :pass}, [:record-section-extraction! :invalid-write-rejected] {:outcome :pass}}
+Expected:
+  [1;31m#{}[0m
+Actual:
+  [1;31m#{[0m[32m+[:record-checkpoint! :valid-write-accepted][0m
+    [32m+[:record-ingestion-run! :valid-write-accepted][0m
+    [32m+[:record-lineage-candidate! :changed-content-replay][0m
+    [32m+[:record-lineage-candidate! :idempotent-replay-stable][0m
+    [32m+[:record-lineage-candidate! :valid-write-accepted][0m
+    [32m+[:record-repository-location! :changed-content-replay][0m
+    [32m+[:record-repository-location! :export-import-round-trip][0m
+    [32m+[:record-repository-location! :idempotent-replay-stable][0m
+    [32m+[:record-repository-location! :valid-write-accepted][0m
+    [32m+[:record-review-decision! :changed-content-replay][0m
+    [32m+[:record-review-decision! :idempotent-replay-stable][0m
+    [32m+[:record-review-decision! :valid-write-accepted][0m
+    [32m+[:record-revision-at-path! :valid-write-accepted][0m
+    [32m+[:record-section-extraction! :valid-write-accepted][0m[1;31m}[0m
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (core.cljc:157)
+Exception: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20355$fn__20356.invoke (clio_test.clj:41)
+    epiphany.infra.adapters.clio_test$fn__20355.invokeStatic (clio_test.clj:41)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:34)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (clio_test.clj:44)
+Expected:
+  [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+   [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+   [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+   [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+   [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"024dec99-999d-4bee-bb33-5cfa76cfc662"[0m,
+   [1;33m:observation/schema-version[0m [36m1[0m,
+   [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+   [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                               [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                               [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+   [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                     [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                     [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+Actual:
+  [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    :observation/adapter-version "law-suite-v1",
+    :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+    :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+    :observation/request-id #uuid "024dec99-999d-4bee-bb33-5cfa76cfc662",
+    :observation/schema-version 1,
+    :observation/type :repository/location-observed,
+    :repository/common-git-dir {:path/comparison :exact,
+                                :path/raw "/law/test-repo/.git",
+                                :path/source :filesystem-argument},
+    :repository/path {:path/comparison :exact,
+                      :path/raw "/repo/.ημ/notes.md",
+                      :path/source :filesystem-argument}}[0m
+  [32m+nil[0m
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (core.cljc:157)
+Exception: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20355$fn__20364.invoke (clio_test.clj:45)
+    epiphany.infra.adapters.clio_test$fn__20355.invokeStatic (clio_test.clj:45)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:34)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (core.cljc:157)
+Exception: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20355$fn__20368.invoke (clio_test.clj:47)
+    epiphany.infra.adapters.clio_test$fn__20355.invokeStatic (clio_test.clj:46)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:34)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (clio_test.clj:55)
+Expected:
+  [36m2[0m
+Actual:
+  [31m-2[0m [32m+0[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (clio_test.clj:59)
+Expected:
+  [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+   [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+   [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+   [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+   [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"024dec99-999d-4bee-bb33-5cfa76cfc662"[0m,
+   [1;33m:observation/schema-version[0m [36m1[0m,
+   [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+   [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                               [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                               [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+   [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                     [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                     [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+Actual:
+  [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    :observation/adapter-version "law-suite-v1",
+    :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+    :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+    :observation/request-id #uuid "024dec99-999d-4bee-bb33-5cfa76cfc662",
+    :observation/schema-version 1,
+    :observation/type :repository/location-observed,
+    :repository/common-git-dir {:path/comparison :exact,
+                                :path/raw "/law/test-repo/.git",
+                                :path/source :filesystem-argument},
+    :repository/path {:path/comparison :exact,
+                      :path/raw "/repo/.ημ/notes.md",
+                      :path/source :filesystem-argument}}[0m
+  [32m+nil[0m
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/restart-retries-and-clear-preserve-canonical-history (clio_test.clj:61)
+Expected:
+  [36m3[0m
+Actual:
+  [31m-3[0m [32m+0[0m
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/independent-handles-do-not-lose-concurrent-writes (clio_test.clj:71)
+Exception: java.util.concurrent.ExecutionException: clojure.lang.ExceptionInfo: :malli.core/child-error {:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at java.util.concurrent.FutureTask.report (FutureTask.java:122)
+    java.util.concurrent.FutureTask.get (FutureTask.java:205)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20415.invoke (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test$fn__20402.invokeStatic (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:64)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+Caused by: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20407$fn__20408.invoke (clio_test.clj:70)
+    ...
+    java.util.concurrent.FutureTask.run (FutureTask.java:317)
+    java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1144)
+    java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:642)
+    ...
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/independent-handles-do-not-lose-concurrent-writes (clio_test.clj:71)
+Exception: java.util.concurrent.ExecutionException: clojure.lang.ExceptionInfo: :malli.core/child-error {:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at java.util.concurrent.FutureTask.report (FutureTask.java:122)
+    java.util.concurrent.FutureTask.get (FutureTask.java:205)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20415.invoke (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test$fn__20402.invokeStatic (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:64)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+Caused by: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20407$fn__20408.invoke (clio_test.clj:70)
+    ...
+    java.util.concurrent.FutureTask.run (FutureTask.java:317)
+    java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1144)
+    java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:642)
+    ...
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/independent-handles-do-not-lose-concurrent-writes (clio_test.clj:71)
+Exception: java.util.concurrent.ExecutionException: clojure.lang.ExceptionInfo: :malli.core/child-error {:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at java.util.concurrent.FutureTask.report (FutureTask.java:122)
+    java.util.concurrent.FutureTask.get (FutureTask.java:205)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20415.invoke (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test$fn__20402.invokeStatic (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:64)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+Caused by: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20407$fn__20408.invoke (clio_test.clj:70)
+    ...
+    java.util.concurrent.FutureTask.run (FutureTask.java:317)
+    java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1144)
+    java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:642)
+    ...
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/independent-handles-do-not-lose-concurrent-writes (clio_test.clj:71)
+Exception: java.util.concurrent.ExecutionException: clojure.lang.ExceptionInfo: :malli.core/child-error {:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at java.util.concurrent.FutureTask.report (FutureTask.java:122)
+    java.util.concurrent.FutureTask.get (FutureTask.java:205)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20415.invoke (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test$fn__20402.invokeStatic (clio_test.clj:71)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:64)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+Caused by: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20402$fn__20407$fn__20408.invoke (clio_test.clj:70)
+    ...
+    java.util.concurrent.FutureTask.run (FutureTask.java:317)
+    java.util.concurrent.ThreadPoolExecutor.runWorker (ThreadPoolExecutor.java:1144)
+    java.util.concurrent.ThreadPoolExecutor$Worker.run (ThreadPoolExecutor.java:642)
+    ...
+
+[31mFAIL[m in epiphany.infra.adapters.clio-test/independent-handles-do-not-lose-concurrent-writes (clio_test.clj:72)
+Expected:
+  [1;31m#{[0m[1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+     [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+     [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+     [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+     [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"f6134af1-fcd1-4d62-b619-9428ab645b18"[0m,
+     [1;33m:observation/schema-version[0m [36m1[0m,
+     [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+     [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                                 [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                                 [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+     [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                       [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                       [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+    [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+     [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+     [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+     [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+     [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"f6856284-5395-4c64-a323-565ecdc2bf20"[0m,
+     [1;33m:observation/schema-version[0m [36m1[0m,
+     [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+     [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                                 [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                                 [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+     [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                       [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                       [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+    [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+     [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+     [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+     [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+     [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"2922e25f-4852-423e-8f8f-9a764b92a2e0"[0m,
+     [1;33m:observation/schema-version[0m [36m1[0m,
+     [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+     [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                                 [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                                 [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+     [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                       [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                       [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m
+    [1;31m{[0m[1;33m:resource-id[0m [35m#uuid[0m [1;35m"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"[0m,
+     [1;33m:observation/adapter-version[0m [1;35m"law-suite-v1"[0m,
+     [1;33m:observation/id[0m [35m#uuid[0m [1;35m"00000000-0000-0000-0000-000000000001"[0m,
+     [1;33m:observation/observed-at[0m [35m#inst[0m [1;35m"2026-01-01T00:00:00.000-00:00"[0m,
+     [1;33m:observation/request-id[0m [35m#uuid[0m [1;35m"5de2b693-4750-4bff-a72d-cd7ee6b9edf3"[0m,
+     [1;33m:observation/schema-version[0m [36m1[0m,
+     [1;33m:observation/type[0m [1;33m:repository/location-observed[0m,
+     [1;33m:repository/common-git-dir[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                                 [1;33m:path/raw[0m [1;35m"/law/test-repo/.git"[0m,
+                                 [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m,
+     [1;33m:repository/path[0m [1;31m{[0m[1;33m:path/comparison[0m [1;33m:exact[0m,
+                       [1;33m:path/raw[0m [1;35m"/repo/.ημ/notes.md"[0m,
+                       [1;33m:path/source[0m [1;33m:filesystem-argument[0m[1;31m}[0m[1;31m}[0m[1;31m}[0m
+Actual:
+  [1;31m#{[0m[31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      :observation/adapter-version "law-suite-v1",
+      :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+      :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+      :observation/request-id #uuid "f6134af1-fcd1-4d62-b619-9428ab645b18",
+      :observation/schema-version 1,
+      :observation/type :repository/location-observed,
+      :repository/common-git-dir {:path/comparison :exact,
+                                  :path/raw "/law/test-repo/.git",
+                                  :path/source :filesystem-argument},
+      :repository/path {:path/comparison :exact,
+                        :path/raw "/repo/.ημ/notes.md",
+                        :path/source :filesystem-argument}}[0m
+    [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      :observation/adapter-version "law-suite-v1",
+      :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+      :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+      :observation/request-id #uuid "f6856284-5395-4c64-a323-565ecdc2bf20",
+      :observation/schema-version 1,
+      :observation/type :repository/location-observed,
+      :repository/common-git-dir {:path/comparison :exact,
+                                  :path/raw "/law/test-repo/.git",
+                                  :path/source :filesystem-argument},
+      :repository/path {:path/comparison :exact,
+                        :path/raw "/repo/.ημ/notes.md",
+                        :path/source :filesystem-argument}}[0m
+    [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      :observation/adapter-version "law-suite-v1",
+      :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+      :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+      :observation/request-id #uuid "2922e25f-4852-423e-8f8f-9a764b92a2e0",
+      :observation/schema-version 1,
+      :observation/type :repository/location-observed,
+      :repository/common-git-dir {:path/comparison :exact,
+                                  :path/raw "/law/test-repo/.git",
+                                  :path/source :filesystem-argument},
+      :repository/path {:path/comparison :exact,
+                        :path/raw "/repo/.ημ/notes.md",
+                        :path/source :filesystem-argument}}[0m
+    [31m-{:resource-id #uuid "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+      :observation/adapter-version "law-suite-v1",
+      :observation/id #uuid "00000000-0000-0000-0000-000000000001",
+      :observation/observed-at #inst "2026-01-01T00:00:00.000-00:00",
+      :observation/request-id #uuid "5de2b693-4750-4bff-a72d-cd7ee6b9edf3",
+      :observation/schema-version 1,
+      :observation/type :repository/location-observed,
+      :repository/common-git-dir {:path/comparison :exact,
+                                  :path/raw "/law/test-repo/.git",
+                                  :path/source :filesystem-argument},
+      :repository/path {:path/comparison :exact,
+                        :path/raw "/repo/.ημ/notes.md",
+                        :path/source :filesystem-argument}}[0m[1;31m}[0m
+
+[31mERROR[m in epiphany.infra.adapters.clio-test/profile-composes-durable-observations-without-mongo (core.cljc:157)
+Uncaught exception, not in assertion.
+Exception: clojure.lang.ExceptionInfo: :malli.core/child-error
+{:type :malli.core/child-error, :message :malli.core/child-error, :data {:type :=, :properties nil, :children nil, :min 1, :max 1}}
+ at malli.core$_exception.invokeStatic (core.cljc:157)
+    malli.core$_exception.invoke (core.cljc:157)
+    malli.core$_fail_BANG_.invokeStatic (core.cljc:161)
+    malli.core$_fail_BANG_.invoke (core.cljc:159)
+    malli.core$_check_children_BANG_.invokeStatic (core.cljc:187)
+    malli.core$_check_children_BANG_.invoke (core.cljc:179)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:706)
+    malli.core$_simple_schema$reify__9118._into_schema (core.cljc:703)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    malli.core$_parse_entry$_schema__8939.invoke (core.cljc:438)
+    malli.core$_parse_entry$_parse_entry_else2__8949.invoke (core.cljc:452)
+    malli.core$_parse_entry.invokeStatic (core.cljc:474)
+    malli.core$_parse_entry.invoke (core.cljc:430)
+    malli.core$_eager_entry_parser.invokeStatic (core.cljc:504)
+    malli.core$_eager_entry_parser.invoke (core.cljc:481)
+    malli.core$_create_entry_parser.invokeStatic (core.cljc:518)
+    malli.core$_create_entry_parser.invoke (core.cljc:515)
+    malli.core$_map_schema$reify__9278._into_schema (core.cljc:1005)
+    malli.core$into_schema.invokeStatic (core.cljc:2196)
+    malli.core$into_schema.invoke (core.cljc:2187)
+    malli.core$schema.invokeStatic (core.cljc:2256)
+    malli.core$schema.invoke (core.cljc:2238)
+    clio.law.schema$validate_event_form_BANG_.invokeStatic (schema.cljc:79)
+    clio.law.schema$validate_event_form_BANG_.invoke (schema.cljc:72)
+    clio.domain.schema$validate_event_BANG_.invokeStatic (schema.cljc:326)
+    clio.domain.schema$validate_event_BANG_.invoke (schema.cljc:309)
+    clio.infra.event$make_event.invokeStatic (event.cljc:18)
+    clio.infra.event$make_event.invoke (event.cljc:6)
+    clio.infra.runtime$append_BANG_.invokeStatic (runtime.cljc:29)
+    clio.infra.runtime$append_BANG_.invoke (runtime.cljc:26)
+    epiphany.infra.adapters.clio$invoke_write$fn__19695.invoke (clio.clj:78)
+    epiphany.extern.clio_observations$with_lock_BANG_.invokeStatic (clio_observations.clj:24)
+    epiphany.extern.clio_observations$with_lock_BANG_.invoke (clio_observations.clj:16)
+    epiphany.infra.adapters.clio$invoke_write.invokeStatic (clio.clj:65)
+    epiphany.infra.adapters.clio$invoke_write.invoke (clio.clj:62)
+    epiphany.infra.adapters.clio$make_observations_adapter$fn__19698$fn__19699.doInvoke (clio.clj:95)
+    ...
+    epiphany.application.validation$wrap_write$fn__11104.doInvoke (validation.clj:47)
+    ...
+    epiphany.infra.adapters.clio_test$fn__20468.invokeStatic (clio_test.clj:100)
+    epiphany.infra.adapters.clio_test/fn (clio_test.clj:92)
+    kaocha.type.var$test_var.invokeStatic (var.clj:24)
+    kaocha.type.var$test_var.invoke (var.clj:20)
+    kaocha.type.var$eval29841$fn__29843$wrapped_test__29846.invoke (var.clj:36)
+    kaocha.plugin.capture_output$capture_output_pre_test_hook$fn__2257$fn__2258.invoke (capture_output.cljc:97)
+    kaocha.type.var$eval29841$fn__29843.invoke (var.clj:38)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.type.ns$run_tests$fn__4432.invoke (ns.clj:21)
+    ...
+    kaocha.type.ns$run_tests.invokeStatic (ns.clj:21)
+    kaocha.type.ns$run_tests.invoke (ns.clj:16)
+    kaocha.type.ns$eval4450$fn__4451.invoke (ns.clj:61)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.test_suite$run.invokeStatic (test_suite.clj:7)
+    kaocha.test_suite$run.invoke (test_suite.clj:5)
+    kaocha.type.clojure.test$eval5865$fn__5866.invoke (test.clj:18)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249$fn__2250.invoke (capture_output.cljc:88)
+    ...
+    kaocha.plugin.capture_output$capture_output_wrap_run_hook$fn__2249.doInvoke (capture_output.cljc:88)
+    ...
+    kaocha.testable$run.invokeStatic (testable.clj:129)
+    kaocha.testable$run.invoke (testable.clj:120)
+    kaocha.testable$run_testable.invokeStatic (testable.clj:211)
+    kaocha.testable$run_testable.invoke (testable.clj:158)
+    kaocha.testable$run_testables.invokeStatic (testable.clj:224)
+    kaocha.testable$run_testables.invoke (testable.clj:214)
+    kaocha.api$run$fn__4030$fn__4034$fn__4035.invoke (api.clj:159)
+    ...
+    kaocha.api$run$fn__4030$fn__4034.invoke (api.clj:133)
+    ...
+    kaocha.api$run$fn__4030.invoke (api.clj:132)
+    ...
+    kaocha.api$run.invokeStatic (api.clj:110)
+    kaocha.api$run.invoke (api.clj:97)
+    kaocha.runner$run$fn__4093.invoke (runner.clj:131)
+    ...
+    kaocha.runner$run.invokeStatic (runner.clj:129)
+    kaocha.runner$run.invoke (runner.clj:72)
+    kaocha.runner$_main_STAR_.invokeStatic (runner.clj:165)
+    kaocha.runner$_main_STAR_.doInvoke (runner.clj:143)
+    ...
+    kaocha.runner$_main.invokeStatic (runner.clj:176)
+    kaocha.runner$_main.doInvoke (runner.clj:174)
+    ...
+[31m5 tests, 22 assertions, 9 errors, 6 failures.[m
+
+Evidence: epiphany-current-clio-fetch
+From https://github.com/open-hax/eta-mu
+ * branch            fd7cd25645d6acf80c3e5909f3ceecb65b7b1148 -> FETCH_HEAD
+Clio source ready at fd7cd25645d6acf80c3e5909f3ceecb65b7b1148 in /tmp/epiphany-pinned-proof/eta-mu
+
+Evidence: epiphany-clio-recovery-integrity-final
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+[(...................................)(...........................)(....................................)(...........................................)(............................)(..........................)(........................)(..................)(..............)(.......................................................................................)(.....)(...........)(..............................................)(......)(....)(......................................)(...................................................................)(.......)(.....................................................)(.................................)(................................................................................)(...............................)(.............................)(........................................................)(..................................)(..........................)(.........................)(...................................................................)(...................)(..........)(.....................................................)(......................................)(..................................................)(......)(..........................................)(...................................)(...........................................................)(.............................)(.......................................................)(.........................................................)(............................................)(.......................)(........................)(................................)(........................................)(.........................................................)(....................................................................................................................................................................)(........)(.....................................................)(.......................)(..............................)(...........................................................................................)(.......................)(............)(.......................)(..............................................................................)]
+[32m771 tests, 2134 assertions, 0 failures.[m
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:332:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:338:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 2502ms, errors: 0, warnings: 0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+All source files formatted correctly
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Layer-boundary check: clean.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Interop ratchet: clean (law/domain/application unchanged or reduced).
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+epiphany.infra.main
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+epiphany — local-first, Git-backed knowledge archaeology.
+
+Usage: epiphany [global-options] <command> [command-options]
+       ep [global-options] <command> [command-options]
+
+Commands:
+  register    Register a local Git repository
+  ingest      Ingest a repository: observe revisions, extract sections, index into Lucene
+  search      Search sections by query (lexical, semantic, or hybrid)
+  status      Show ingestion run status for a resource
+  show        Open exact historical evidence for a section expression
+  diff        Compare two historical section expressions
+  trace       Trace a section's Git-history lineage chronology
+  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision
+  export      Export an evidence packet (Markdown/EDN/JSON) of candidates and decisions
+  serve       Start the workbench HTTP server
+
+Global Options:
+  -h, --help            Show this help and exit.
+  -v, --version         Show the version and exit.
+  -c, --check-services  Check service readiness and exit.
+
+Run 'ep <command> --help' for command-specific help.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Registered: /tmp/epiphany-clio-live.5aBcEX/repo
+  Resource ID:     e8b848a6-2f98-4902-bb05-b7ec6ed9e94e
+  Common Git dir:  /tmp/epiphany-clio-live.5aBcEX/repo/.git
+  Profile:         edn
+  Request ID:      00000000-0000-4000-8000-000000000123
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 11:20:07 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Ingested: /tmp/epiphany-clio-live.5aBcEX/repo
+  Request ID:          8d63488a-2dbd-47c5-a04a-a5ecf7f7770b
+  Resource ID:         e8b848a6-2f98-4902-bb05-b7ec6ed9e94e
+  Commits traversed:   1
+  Revisions observed:  1
+  Revisions scanned:   1
+  Sections extracted:  1
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.5aBcEX/index
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+WARNING: A restricted method in java.lang.foreign.Linker has been called
+WARNING: java.lang.foreign.Linker::downcallHandle has been called by the unnamed module
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for this module
+
+Sep 12, 2026 11:20:14 AM org.apache.lucene.internal.vectorization.VectorizationProvider lookup
+WARNING: Java vector incubator module is not readable. For optimal vector performance, pass '--add-modules jdk.incubator.vector' to enable Vector API.
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Ingested: /tmp/epiphany-clio-live.5aBcEX/repo
+  Request ID:          37ffcae6-c960-49a2-b829-6c18efa3e950
+  Resource ID:         e8b848a6-2f98-4902-bb05-b7ec6ed9e94e
+  Commits traversed:   1
+  Revisions observed:  0
+  Revisions scanned:   1
+  Sections extracted:  0
+  Extraction failures: 0
+  Index dir:           /tmp/epiphany-clio-live.5aBcEX/index
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe8Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:A5 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=392ctiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+75 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/toolchain/jvm-homes/f610c453-f151-4dbc-b3fe-c14205f5fe85 -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/toolchain/cacerts -Djavax.net.ssl.trustStorePassword=changeit -XX:ActiveProcessorCount=4 -Xmx2g -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=39275 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39275 -Dhttp.nonProxyHosts=localhost|127.*|0.0.0.0|[::1]
+PASS: separate JVM replay, lexical search, incremental ingestion and concurrent durable writes.

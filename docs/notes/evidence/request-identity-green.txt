@@ -1,0 +1,4 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-z3JdMF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37745 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37745 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-z3JdMF -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=37745 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=37745 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+[(....................................................)]
+[32m6 tests, 52 assertions, 0 failures.[m

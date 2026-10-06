@@ -1,7 +1,6 @@
 (ns epiphany.domain.extraction-projection-test
   (:require [clojure.test :refer [deftest testing is]]
-            [epiphany.domain.extraction-projection :as ep]
-            [epiphany.domain.ingestion :as ingestion]))
+            [epiphany.domain.extraction-projection :as ep]))
 
 ;; ---------------------------------------------------------------------------
 ;; Test fixtures
@@ -68,7 +67,7 @@
                  :observations (make-mock-observations)
                  :index (make-mock-index)}
           revision (make-revision #uuid "00000000-0000-0000-0000-000000000001"
-                                   "commit1" "doc.md" "blob1")
+                                  "commit1" "doc.md" "blob1")
           result (ep/extract-revision ports revision)]
       (is (some? (:extraction/record result)))
       (is (nil? (:extraction/error result)))
@@ -85,7 +84,7 @@
                  :observations (make-mock-observations)
                  :index (make-mock-index)}
           revision (make-revision #uuid "00000000-0000-0000-0000-000000000001"
-                                   "commit1" "doc.md" "missing-blob")
+                                  "commit1" "doc.md" "missing-blob")
           result (ep/extract-revision ports revision)]
       (is (nil? (:extraction/record result)))
       (is (some? (:extraction/error result)))
@@ -97,7 +96,7 @@
           run-id #uuid "00000000-0000-0000-0000-000000000002"
           obs (make-mock-observations)
           ports {:git (make-mock-git-port {"blob1" sample-markdown
-                                            "blob2" "# Other\n\nOther content.\n"})
+                                           "blob2" "# Other\n\nOther content.\n"})
                  :observations obs
                  :index (make-mock-index)}
           ;; Record two revisions
@@ -145,8 +144,8 @@
             run-id #uuid "00000000-0000-0000-0000-000000000002"
             obs (make-mock-observations)
             ports {:git (make-mock-git-port {"blob1" sample-markdown
-                                              "blob2" sample-markdown
-                                              "blob3" sample-markdown})
+                                             "blob2" sample-markdown
+                                             "blob3" sample-markdown})
                    :observations obs
                    :index (make-mock-index)}]
         ;; Record 3 revisions

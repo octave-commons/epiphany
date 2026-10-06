@@ -13,18 +13,6 @@
 ;; ---------------------------------------------------------------------------
 ;; Line-level diffing
 
-(defn- collect-lines-before-match
-  "Walk seq-a looking for first element equal to target.
-   Returns [skipped-entries remaining-a]."
-  [seq-a target]
-  (loop [skipped []
-         remaining seq-a]
-    (cond
-      (empty? remaining) [skipped []]
-      (= (first remaining) target) [skipped remaining]
-      :else (recur (conj skipped (first remaining))
-                   (rest remaining)))))
-
 (defn- next-match-indices
   "Find where lines-a[i] appears in lines-b (and vice versa).
    Returns {:find-in-b int-or-nil, :find-in-a int-or-nil}."
@@ -134,13 +122,13 @@
   "Format a diff as human-readable unified text."
   [diff header-a header-b]
   (let [lines (concat
-                [header-a header-b ""]
-                (map (fn [{:keys [type content]}]
-                       (case type
-                         :equal (str "  " content)
-                         :delete (str "- " content)
-                         :insert (str "+ " content)))
-                     diff))]
+               [header-a header-b ""]
+               (map (fn [{:keys [type content]}]
+                      (case type
+                        :equal (str "  " content)
+                        :delete (str "- " content)
+                        :insert (str "+ " content)))
+                    diff))]
     (str/join "\n" lines)))
 
 (defn format-diff-edn

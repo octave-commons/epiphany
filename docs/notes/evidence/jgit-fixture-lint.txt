@@ -1,0 +1,10 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-00ryKm -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=35293 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=35293 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/workspace/scratch/3655842e43cf/runtime-restored/jvm-homes/session-00ryKm -Djavax.net.ssl.trustStore=/workspace/scratch/3655842e43cf/runtime-restored/trust/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=35293 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=35293 -Dhttp.nonProxyHosts=localhost|127.*|[::1]|0.0.0.0
+src/epiphany/domain/lineage.clj:107:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:108:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:110:54: info: Redundant nested call: *
+src/epiphany/domain/lineage.clj:111:54: info: Redundant nested call: *
+src/epiphany/infra/main.clj:331:10: info: Redundant nested call: str
+src/epiphany/infra/main.clj:337:10: info: Redundant nested call: str
+test/epiphany/domain/backup_integrity_test.clj:81:19: info: Single argument to str already is a string
+linting took 10554ms, errors: 0, warnings: 0

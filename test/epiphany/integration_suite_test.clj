@@ -6,22 +6,21 @@
   the test fails with a clear diagnostic — never hangs, never fabricates
   results (US-000C acceptance criteria)."
   (:require [clojure.test :refer [deftest is use-fixtures]]
+            [epiphany.infra.integration-config :as config]
             [epiphany.infra.services :as services]))
 
 (defn- require-services
-  "Fixture that checks service readiness before each test.
-   Skips the test if required services are unavailable — does not throw,
-   so cloverage and other tooling can load the namespace without failure."
+  "Refuse unavailable required services when integration tests actually execute."
   [f]
-  (if (services/all-available?)
+  (if (services/all-available? (config/readiness-options))
     (f)
-    (clojure.test/report {:type :skip
-                          :message "Required services unavailable — skipping integration tests"})))
+    (throw (ex-info "Required integration services unavailable; run the configured local service supervisor"
+                    {:code :integration-service-unavailable}))))
 
 (use-fixtures :each require-services)
 
 (deftest ^:integration services-are-reachable
-  (is (services/all-available?)
+  (is (services/all-available? (config/readiness-options))
       "MongoDB and S3 must be running for integration tests"))
 
 (deftest ^:integration integration-suite-is-wired
