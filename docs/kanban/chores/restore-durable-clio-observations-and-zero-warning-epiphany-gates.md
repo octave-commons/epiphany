@@ -1,8 +1,8 @@
 ---
 category: "chores"
-dependency: []
+dependency: [""]
 type: "chore"
-write-id: "1789240143575-0.vz2ji4t0gs8wyz3ki1b"
+write-id: "1791292530598-0.1rjgmqh7b5685doascf"
 points: "5"
 title: "Restore durable Clio observations and zero-warning Epiphany gates"
 priority: "P0"
@@ -86,4 +86,5 @@ PR 18 review repair evidence: real RED 3 tests, 121 assertions, 39 failures, 0 e
 
 COMMITTED CANDIDATE FOLLOW-UP: clean Epiphany2796d24fa2ca5e5023c0c4e41c653f8f8ad466f8 and clean Clio2b7bfbefa580d512262ca18f9163ecba43e54cc5 passed actual Mongo, S3rver and pinned MiniLM384D integration: 22 tests, 108 assertions, 0 failures, no skips or warnings. Supervisor3555b6d5 observed child-close exit0 and complete cleanup before publishing result; 506-file source SHA1c7b0899d14c7e906fe28f27c9660ffd8a027f097df3fb93b9e7eed4e0b28419 remained unchanged. First service launch failed before tests on missing declared sibling Clio; no stale result survived. Root-authorized missing sibling symlink fixed discovery without source duplication or pin promotion. Native separate-JVM replay/search/incremental/concurrent-write functionality passed, but warning gate correctly exited1. Actual supported-flags MMap42 and SIMD64.0 passed, with mandatory JDK incubator warning still failing the gate. Independent installed-JDK source review found no supported warning-free same-JDK classpath path. This remains an acceptance blocker. Raw outcomes and hashes: docs/notes/evidence/restore-review-process-outcomes.json. No remote approval, acceptance, done, or merge claim.
 
+BLOCKED (2026-10-06 isolated PR18 audit at 21ddc7153213a3e26092f9f4eef6440e7e849c2c): hosted unit-test run 34716677520 passed 811 tests / 2552 assertions and AOT, then bin/verify-clio-edn failed its required zero-warning gate on Lucene10.5/JDK21 restricted native-access and unreadable vector-module advisories. Existing native-process review documents that supported flags retain an incubator startup warning; no warning suppression or runtime migration is authorized by this repair. Current native Codex registration-admission race P1 (3997461698) and cross-resource candidate request lookup P2 (3997461699) are also unsettled. GitHub PR is labeled blocked. Canonical Rheos refused in_progress->blocked with No transition from in_progress to blocked; status remains in_progress, with this append as precise blocker evidence. Upstream blocker-report gap is tracked in open-hax/rheos#4. Put aside for a scoped warning-free runtime decision and actual finding repairs; no acceptance or merge claim.
 ---
