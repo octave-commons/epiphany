@@ -1,13 +1,14 @@
 ---
-uuid: "38cb594a-29d6-5a37-bd45-3b9bf1435365"
+category: "chores"
+labels: ["ci", "review", "antigravity", "hygiene"]
+type: "chore"
+write-id: "1792919319864-0.ciwrv6c5jpif3o3zzby"
+points: "2"
+title: "ENG-038: Adopt the pinned Antigravity reviewer for epiphany"
+priority: "P1"
+status: "incoming"
 id: "38cb594a-29d6-5a37-bd45-3b9bf1435365"
-title: "Adopt the pinned Antigravity reviewer for epiphany"
-status: incoming
-type: chore
-priority: P1
-points: 2
-labels: ci, review, antigravity, hygiene
-category: chores
+uuid: "38cb594a-29d6-5a37-bd45-3b9bf1435365"
 ---
 
 ## Context
@@ -71,3 +72,26 @@ Rheos admission, transition, write-id or engine event asserted. Shared worker
 registration has been observed; this repository's final source adoption,
 exact-head review/CI and hosted qualification remain pending. No merge, deployment, credential copying, branch-policy change,
 new board engine, or application/runtime implementation is authorized here.
+
+
+## Revised proposal and verification (2026-10-25)
+
+The earlier present-tense Outcome is superseded: this repository proposes
+consuming the shared reviewer after its review and qualification criteria pass.
+Use the exact base/head whitespace check and immutable coordinator guide below;
+the preceding live-PR verification reference is superseded.
+
+Run `git diff --check "$PR_BASE_SHA" "$PR_HEAD_SHA"` and the mapped check in
+[the pinned coordinator guide](https://github.com/open-hax/foresight/blob/0762e0d749c6bb6f2e76cf1611e1f63366e14801/docs/notes/antigravity-review-rollout.md).
+
+
+## Caller review acceptance supplement (2026-10-25)
+
+- Verify opened, synchronize, reopened, ready_for_review and base-retarget events
+  share the per-PR review group. Title/body edits use distinct run groups.
+- Verify converted_to_draft cancels that group and skips model execution.
+- Verify fork or missing-repository heads skip before reusable-workflow admission.
+- Before giving an artifact qualification credit, compare its recorded base and
+  head to the live PR. Base advances require a fresh review; this caller does not
+  automatically dispatch on base-branch pushes. Existing merge-candidate and
+  deterministic gates remain required; a green historical check is insufficient.
