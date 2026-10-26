@@ -12,8 +12,11 @@
   The projection name is \"section-extraction\" and the version is
   tracked in `projection-version` — bump when extraction logic changes
   to force reprocessing from the last checkpoint."
-  (:require [epiphany.shape.markdown :as md]
+  (:require [clojure.string :as str]
+            [epiphany.domain.resource-extraction :as resource]
+            [epiphany.shape.markdown :as md]
             [epiphany.domain.section-extraction :as se]
+            [epiphany.domain.resource-selection :as selection]
             [epiphany.domain.observation-admission :as admission]
             [epiphany.domain.ingestion :as ingestion]))
 
@@ -76,13 +79,13 @@
    (extract-revision ports nil revision))
   ([ports request-id
     {:keys [resource-id revision-at-path/id revision/commit-oid
-            revision/path-raw revision/blob-oid] :as _revision}]
+            revision/path-raw revision/blob-oid] :as revision}]
    (let [git-fn   (get-in ports [:git :read-blob])
          obs-fn   (:record-section-extraction! (:observations ports))
          idx-fn   (:index-sections! (:index ports))
          write-id (ingestion/derived-request-id
                    request-id
-                   (str "section-extraction:" id ":" extractor-version))]
+                   (str "section-extraction:" id ":" (if (str/ends-with? (str/lower-case path-raw) ".md") extractor-version "typed-resource-v1")))]
      (try
        (let [blob-result (git-fn nil blob-oid)
              _          (when (:blob/failure blob-result)
@@ -91,10 +94,16 @@
                                            :blob-oid blob-oid
                                            :failure (:blob/failure blob-result)})))
              blob       (:blob/content blob-result)
-             parsed     (md/parse blob)
-             sections   (se/extract-sections parsed)
-             record     (se/make-extraction-record
-                         sections id commit-oid path-raw blob-oid blob extractor-version)
+             markdown? (str/ends-with? (str/lower-case path-raw) ".md")
+             representation (when-not markdown?
+                              (if-let [parse-resource (:parse-resource ports)]
+                                (parse-resource path-raw blob-result)
+                                (throw (ex-info "No structured resource parser configured" {:code :unsupported}))))
+             record (if markdown?
+                      (se/make-extraction-record
+                       (se/extract-sections (md/parse blob))
+                       id commit-oid path-raw blob-oid blob extractor-version)
+                      (resource/make-record representation revision "typed-resource-v1"))
              observation (cond-> (assoc record
                                         :observation/type :section/extraction-completed
                                         :observation/id (or write-id
@@ -106,12 +115,15 @@
                            write-id
                            (assoc :observation/request-id write-id))
              stored? (admission/newly-stored? (obs-fn observation))
-             index-error (when (and stored? idx-fn)
-                           (try
-                             (idx-fn (assoc observation :extraction/content blob))
-                             nil
-                             (catch Exception error
-                               (failure "index-failed" error id))))]
+             index-error (if (and representation (not= :parsed (:resource/status representation)))
+                           {:failure/reason (str "resource-" (name (:resource/status representation)))
+                            :failure/revision-id id}
+                           (when (and stored? idx-fn)
+                             (try
+                               (idx-fn (assoc observation :extraction/content blob))
+                               nil
+                               (catch Exception error
+                                 (failure "index-failed" error id)))))]
          {:extraction/record     (when stored? observation)
           :extraction/stored?    stored?
           :extraction/error      index-error
@@ -147,29 +159,34 @@
       :projection/checkpoints-recorded int
       :projection/failures            [{:failure/reason string, :failure/message string}]
       :projection/completed           boolean}"
-  [ports {:keys [resource-id ingestion-run-id request-id]}]
+  [ports {:keys [resource-id ingestion-run-id request-id selection selected-commit-oids]}]
   (let [observations (:observations ports)
         ;; List all revisions for this resource
-        all-revisions ((:list-revision-at-path-by-resource observations) resource-id)
+        all-revisions (selection/filter-revisions
+                       ((:list-revision-at-path-by-resource observations) resource-id) selection selected-commit-oids)
         ;; List all existing extractions
         all-extractions (mapcat #((:list-section-extractions-by-revision observations) %)
                                 (map :revision-at-path/id all-revisions))
+        prior-failures (into [] (keep (fn [record]
+                                        (when-let [representation (:extraction/resource record)]
+                                          (when (not= :parsed (:resource/status representation))
+                                            {:failure/reason (str "resource-" (name (:resource/status representation)))
+                                             :failure/revision-id (:extraction/revision-at-path-id record)}))))
+                             all-extractions)
         extracted-ids (set (map :extraction/revision-at-path-id all-extractions))
         ;; Filter to un-extracted revisions
-        un-extracted (filterv #(not (extracted-ids (:revision-at-path/id %)))
+        un-extracted (filterv #(and (not= :delete (:revision/evidence %))
+                                    (not (extracted-ids (:revision-at-path/id %))))
                               all-revisions)
         ;; Find resume point
         resume-point (find-resume-point observations ingestion-run-id)
-        ;; Skip already-processed revisions if resuming
-        to-process (if resume-point
-                     (let [last-count (:last-processed-count resume-point)]
-                       (subvec un-extracted (min last-count (count un-extracted))))
-                     un-extracted)]
+        ;; Admission identities, not a count offset, decide what is safe to resume.
+        to-process un-extracted]
     (loop [remaining to-process
            processed 0
            extracted 0
            checkpoints 0
-           failures []]
+           failures prior-failures]
       (if (empty? remaining)
         (let [;; Record final checkpoint
               _ (when (pos? processed)

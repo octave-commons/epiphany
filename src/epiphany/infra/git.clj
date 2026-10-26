@@ -256,31 +256,35 @@
 
    The blob is read directly from the Git object store; no checkout
    or working-tree access is involved."
-  [^String repository-path blob-oid-str]
-  (let [repo (open-repository repository-path)]
-    (try
-      (let [oid     (ObjectId/fromString blob-oid-str)
-            loader  (.open repo oid)
-            bytes   (.getBytes loader)
-            content (String. bytes "UTF-8")]
-        {:blob/oid blob-oid-str
-         :blob/content content
-         :blob/size (alength bytes)
-         :blob/failure nil})
-      (catch MissingObjectException _
-        {:blob/oid blob-oid-str
-         :blob/content nil
-         :blob/size 0
-         :blob/failure {:failure/oid blob-oid-str
-                        :failure/reason "blob-not-found"
-                        :failure/message (str "Blob not found: " blob-oid-str)}})
-      (catch Exception e
-        {:blob/oid blob-oid-str
-         :blob/content nil
-         :blob/size 0
-         :blob/failure {:failure/oid blob-oid-str
-                        :failure/reason "blob-unreadable"
-                        :failure/message (.getMessage e)}}))))
+  ([repository-path blob-oid-str] (read-blob repository-path blob-oid-str nil))
+  ([^String repository-path blob-oid-str max-bytes]
+   (with-open [repo (open-repository repository-path)]
+     (try
+       (let [oid     (ObjectId/fromString blob-oid-str)
+             loader  (.open repo oid)
+             _ (when (and max-bytes (> (.getSize loader) max-bytes))
+                 (throw (ex-info "Selected resource exceeds byte limit" {:code :too-large})))
+             bytes   (.getBytes loader)
+             content (String. bytes "UTF-8")]
+         {:blob/oid blob-oid-str
+          :blob/content content
+          :blob/bytes bytes
+          :blob/size (alength bytes)
+          :blob/failure nil})
+       (catch MissingObjectException _
+         {:blob/oid blob-oid-str
+          :blob/content nil
+          :blob/size 0
+          :blob/failure {:failure/oid blob-oid-str
+                         :failure/reason "blob-not-found"
+                         :failure/message (str "Blob not found: " blob-oid-str)}})
+       (catch Exception e
+         {:blob/oid blob-oid-str
+          :blob/content nil
+          :blob/size 0
+          :blob/failure {:failure/oid blob-oid-str
+                         :failure/reason (if (= :too-large (:code (ex-data e))) "blob-too-large" "blob-unreadable")
+                         :failure/message (.getMessage e)}})))))
 
 (defn- parse-diff-line
   "Parse a single line of `git diff --raw` output.

@@ -215,6 +215,26 @@ These are planned expansion areas, but they must not delay the evidence-preservi
 
 ## Durable local development with Clio
 
+### Selected historical resources
+
+Use `ingest --selection-policy policy.edn` for bounded literal-path ingestion.
+The policy binds the exact repository argument to its allowed Git paths:
+
+```clojure
+{:selection/version 1
+ :selection/repository "/absolute/path/to/isolated-copy"
+ :selection/paths ["notes.md" "design.jsonc" "history.jsonl"]}
+```
+
+With the existing `--profile edn`, selected structured resources and recognized
+conversations persist through Clio. `bin/ep inspect --repo <copy> file.json@HEAD`
+returns typed source data and provenance. JSON, JSONC, JSONL, EDN, TOML and
+YAML/YML are supported with explicit malformed/unsupported statuses; formats
+and chats are not globally excluded. Without a policy, ingest retains its legacy
+Markdown selection. Use a new request UUID when selection or resolved refs change.
+See [the resource design](docs/designs/selected-historical-resources.md) for safe
+parser boundaries, conversation recognition and document/line span limitations.
+
 Initialize Foresight's `eta-mu` sibling checkout, or run
 `bash bin/fetch-clio-source` from a standalone checkout to fetch the pinned Clio
 package. That command refuses to replace an existing sibling directory.

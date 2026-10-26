@@ -288,7 +288,9 @@
            {:list-revision-at-path-by-resource
             (fn [requested-resource-id]
               (is (= resource-id requested-resource-id))
-              [{:revision-at-path/id revision-id}])
+              [{:revision-at-path/id revision-id
+                :revision/path-raw "notes.md"
+                :revision/commit-oid "commit-1"}])
             :list-section-extractions-by-revision
             (fn [requested-revision-id]
               (is (= revision-id requested-revision-id))

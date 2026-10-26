@@ -34,7 +34,7 @@
     :persistence :append-only}
 
    :record-ingestion-run!
-   {:input-schema "observation/ingestion-run-v1"
+   {:input-schema "observation/ingestion-run"
     :version 1
     :persistence :append-only}
 
@@ -44,7 +44,7 @@
     :persistence :append-only}
 
    :record-section-extraction!
-   {:input-schema "observation/section-extraction-v1"
+   {:input-schema "observation/extraction"
     :version 1
     :persistence :append-only}
 
@@ -98,9 +98,9 @@
   "Logical collection key (as returned by :export-all) -> named schema
    every record in that collection must satisfy."
   {"repository-location"   "observation/repository-location-v1"
-   "ingestion-run"         "observation/ingestion-run-v1"
+   "ingestion-run"         "observation/ingestion-run"
    "projection-checkpoint" "observation/projection-checkpoint-v1"
-   "section-extraction"    "observation/section-extraction-v1"
+   "section-extraction"    "observation/extraction"
    "revision-at-path"      "observation/revision-at-path-v1"
    "review-decision"       "observation/review-decision-v1"
    "lineage-candidate"     "observation/lineage-candidate-v1"})

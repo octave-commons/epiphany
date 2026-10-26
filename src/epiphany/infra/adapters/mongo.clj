@@ -13,7 +13,8 @@
   Integration tests use an isolated database (\"epiphany-test\") and clean
   only collections they own."
 
-  (:require [epiphany.domain.backup :as backup]
+  (:require [clojure.edn :as edn]
+            [epiphany.domain.backup :as backup]
             [epiphany.law.operations :as operations]
             [epiphany.law.registry :as registry])
   (:import [com.mongodb.client MongoClients MongoDatabase MongoCollection]
@@ -246,6 +247,10 @@
     (.put "repo_path" (get-in observation [:ingestion/repo-path :path/raw]))
     (.put "repo_path_source" (name (get-in observation [:ingestion/repo-path :path/source])))
     (.put "selected_refs" (mapv str (:ingestion/selected-refs observation)))
+    (cond-> (:ingestion/selection observation)
+      (.put "selection_edn" (pr-str (:ingestion/selection observation))))
+    (cond-> (:ingestion/resolved-commit-oids observation)
+      (.put "resolved_commit_oids" (:ingestion/resolved-commit-oids observation)))
     (.put "commit_count" (long (:ingestion/commit-count observation)))
     (.put "failure_count" (long (:ingestion/failure-count observation)))
     (.put "failures" (mapv (fn [f]
@@ -263,31 +268,35 @@
 (defn doc->ingestion-run
   "Convert a MongoDB Document back to an ingestion-run observation."
   [^Document doc]
-  {:observation/type           (keyword (.getString doc "observation_type"))
-   :observation/request-id     (when-let [s (.getString doc "request_id")]
-                                 (java.util.UUID/fromString s))
-   :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
-   :observation/observed-at    (.getDate doc "observed_at")
-   :observation/adapter-version (.getString doc "adapter_version")
-   :observation/schema-version (.getLong doc "schema_version")
-   :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
-   :ingestion/repo-path        {:path/raw       (.getString doc "repo_path")
-                                :path/source    (keyword (.getString doc "repo_path_source"))
-                                :path/comparison :exact}
-   :ingestion/selected-refs    (vec (.get doc "selected_refs"))
-   :ingestion/commit-count     (.getLong doc "commit_count")
-   :ingestion/failure-count    (.getLong doc "failure_count")
-   :ingestion/failures         (mapv (fn [^Document f]
-                                       (cond-> {}
-                                         (.containsKey f "oid")
-                                         (assoc :failure/oid (java.util.UUID/fromString (.getString f "oid")))
-                                         (.containsKey f "ref")
-                                         (assoc :failure/ref (keyword (.getString f "ref")))
-                                         :always
-                                         (assoc :failure/reason (.getString f "reason"))
-                                         (.containsKey f "message")
-                                         (assoc :failure/message (.getString f "message"))))
-                                     (.get doc "failures"))})
+  (cond-> {:observation/type           (keyword (.getString doc "observation_type"))
+           :observation/request-id     (when-let [s (.getString doc "request_id")]
+                                         (java.util.UUID/fromString s))
+           :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at    (.getDate doc "observed_at")
+           :observation/adapter-version (.getString doc "adapter_version")
+           :observation/schema-version (.getLong doc "schema_version")
+           :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
+           :ingestion/repo-path        {:path/raw       (.getString doc "repo_path")
+                                        :path/source    (keyword (.getString doc "repo_path_source"))
+                                        :path/comparison :exact}
+           :ingestion/selected-refs    (vec (.get doc "selected_refs"))
+           :ingestion/commit-count     (.getLong doc "commit_count")
+           :ingestion/failure-count    (.getLong doc "failure_count")
+           :ingestion/failures         (mapv (fn [^Document f]
+                                               (cond-> {}
+                                                 (.containsKey f "oid")
+                                                 (assoc :failure/oid (java.util.UUID/fromString (.getString f "oid")))
+                                                 (.containsKey f "ref")
+                                                 (assoc :failure/ref (keyword (.getString f "ref")))
+                                                 :always
+                                                 (assoc :failure/reason (.getString f "reason"))
+                                                 (.containsKey f "message")
+                                                 (assoc :failure/message (.getString f "message"))))
+                                             (.get doc "failures"))}
+    (.containsKey doc "selection_edn")
+    (assoc :ingestion/selection (edn/read-string {:readers {}} (.getString doc "selection_edn")))
+    (.containsKey doc "resolved_commit_oids")
+    (assoc :ingestion/resolved-commit-oids (vec (.get doc "resolved_commit_oids")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Projection checkpoint document conversion
@@ -358,6 +367,8 @@
     (.put "path_raw" (:extraction/path-raw observation))
     (.put "blob_oid" (str (:extraction/blob-oid observation)))
     (.put "extractor_version" (:extraction/extractor-version observation))
+    (cond-> (:extraction/resource observation)
+      (.put "resource_edn" (pr-str (:extraction/resource observation))))
     (.put "section_count" (long (:extraction/section-count observation)))
     (.put "content_sha256" (:extraction/content-sha256 observation))
     (.put "sections" (mapv (fn [s]
@@ -376,32 +387,34 @@
 (defn doc->section-extraction
   "Convert a MongoDB Document back to a section-extraction observation."
   [^Document doc]
-  {:observation/type            (keyword (.getString doc "observation_type"))
-   :observation/request-id     (when-let [s (.getString doc "request_id")]
-                                 (java.util.UUID/fromString s))
-   :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
-   :observation/observed-at    (.getDate doc "observed_at")
-   :observation/adapter-version (.getString doc "adapter_version")
-   :observation/schema-version (.getLong doc "schema_version")
-   :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
-   :extraction/revision-at-path-id (java.util.UUID/fromString (.getString doc "revision_at_path_id"))
-   :extraction/commit-oid      (.getString doc "commit_oid")
-   :extraction/path-raw        (.getString doc "path_raw")
-   :extraction/blob-oid        (.getString doc "blob_oid")
-   :extraction/extractor-version (.getString doc "extractor_version")
-   :extraction/section-count   (.getLong doc "section_count")
-   :extraction/content-sha256  (.getString doc "content_sha256")
-   :extraction/sections        (mapv (fn [^Document s]
-                                       {:section/heading-path            (vec (.get s "heading_path"))
-                                        :section/level                   (.getLong s "level")
-                                        :section/ordinal                 (.getLong s "ordinal")
-                                        :section/heading-span-start-byte (.getLong s "heading_span_start_byte")
-                                        :section/heading-span-end-byte   (.getLong s "heading_span_end_byte")
-                                        :section/body-span-start-byte    (.getLong s "body_span_start_byte")
-                                        :section/body-span-end-byte      (.getLong s "body_span_end_byte")
-                                        :section/body-span-start-line    (.getLong s "body_span_start_line")
-                                        :section/body-span-end-line      (.getLong s "body_span_end_line")})
-                                     (.get doc "sections"))})
+  (cond-> {:observation/type            (keyword (.getString doc "observation_type"))
+           :observation/request-id     (when-let [s (.getString doc "request_id")]
+                                         (java.util.UUID/fromString s))
+           :observation/id             (java.util.UUID/fromString (.getString doc "observation_id"))
+           :observation/observed-at    (.getDate doc "observed_at")
+           :observation/adapter-version (.getString doc "adapter_version")
+           :observation/schema-version (.getLong doc "schema_version")
+           :resource-id                (java.util.UUID/fromString (.getString doc "resource_id"))
+           :extraction/revision-at-path-id (java.util.UUID/fromString (.getString doc "revision_at_path_id"))
+           :extraction/commit-oid      (.getString doc "commit_oid")
+           :extraction/path-raw        (.getString doc "path_raw")
+           :extraction/blob-oid        (.getString doc "blob_oid")
+           :extraction/extractor-version (.getString doc "extractor_version")
+           :extraction/section-count   (.getLong doc "section_count")
+           :extraction/content-sha256  (.getString doc "content_sha256")
+           :extraction/sections        (mapv (fn [^Document s]
+                                               {:section/heading-path            (vec (.get s "heading_path"))
+                                                :section/level                   (.getLong s "level")
+                                                :section/ordinal                 (.getLong s "ordinal")
+                                                :section/heading-span-start-byte (.getLong s "heading_span_start_byte")
+                                                :section/heading-span-end-byte   (.getLong s "heading_span_end_byte")
+                                                :section/body-span-start-byte    (.getLong s "body_span_start_byte")
+                                                :section/body-span-end-byte      (.getLong s "body_span_end_byte")
+                                                :section/body-span-start-line    (.getLong s "body_span_start_line")
+                                                :section/body-span-end-line      (.getLong s "body_span_end_line")})
+                                             (.get doc "sections"))}
+    (.containsKey doc "resource_edn")
+    (assoc :extraction/resource (edn/read-string {:readers {}} (.getString doc "resource_edn")))))
 
 ;; ---------------------------------------------------------------------------
 ;; Revision-at-path document conversion

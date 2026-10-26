@@ -19,7 +19,9 @@
 
   Record contracts are versioned in their registry name; instances carry
   the same version in `:observation/schema-version`. Changing a contract
-  means a new versioned name, not an edit.")
+  means a new versioned name, not an edit."
+  (:require [epiphany.law.resource :as resource]
+            [epiphany.law.resource-selection :as resource-selection]))
 
 (def path-raw-pattern
   "Non-empty, no NUL. Deliberately permissive: exact preservation means
@@ -34,7 +36,7 @@
    [:observation/adapter-version [:string {:min 1}]]
    [:observation/schema-version [:int {:min 1}]]])
 
-(def schemas
+(def ^:private v1-schemas
   {"path/raw" [:re path-raw-pattern]
 
    ;; An exact observed path with its provenance.
@@ -286,3 +288,18 @@
   transliterated spellings are different identity values (ADR-001 §5)."
   [observed-raw candidate]
   (= observed-raw candidate))
+
+(def schemas
+  "New resource/scoped-run contracts retain historical v1 schemas unchanged."
+  (merge v1-schemas
+         {"observation/scoped-ingestion-run-v1"
+          (conj (get v1-schemas "observation/ingestion-run-v1")
+                [:ingestion/selection resource-selection/policy-schema]
+                [:ingestion/resolved-commit-oids [:vector [:ref "git/oid"]]])
+          "observation/resource-extraction-v1"
+          (conj (get v1-schemas "observation/section-extraction-v1")
+                [:extraction/resource resource/representation-schema])
+          "observation/ingestion-run"
+          [:or [:ref "observation/ingestion-run-v1"] [:ref "observation/scoped-ingestion-run-v1"]]
+          "observation/extraction"
+          [:or [:ref "observation/section-extraction-v1"] [:ref "observation/resource-extraction-v1"]]}))

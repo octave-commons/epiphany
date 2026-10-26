@@ -69,6 +69,13 @@
   [path globs]
   (some #(glob-match? % path) globs))
 
+(defn includes-path?
+  "Apply the same versioned path policy to tree discovery and persisted revisions."
+  [policy path]
+  (and (string? path)
+       (matches-any? path (:selection/include-globs policy))
+       (not (matches-any? path (:selection/exclude-globs policy)))))
+
 (defn select-entries
   "Apply `policy` to a sequence of raw tree-entry maps and return
   the selected Markdown entries.
@@ -88,12 +95,10 @@
 
   Selection does not check out historical revisions."
   [commit-oid policy tree-entries]
-  (let [{:keys [selection/include-globs selection/exclude-globs
-                selection/policy-version]} policy]
+  (let [{:keys [selection/policy-version]} policy]
     (->> tree-entries
          (filter #(= :file (:git/type %)))
-         (filter #(matches-any? (:git/path %) include-globs))
-         (remove #(matches-any? (:git/path %) exclude-globs))
+         (filter #(includes-path? policy (:git/path %)))
          (mapv (fn [{:keys [git/path git/blob-oid git/mode]}]
                  {:entry/commit-oid     commit-oid
                   :entry/path-raw       path

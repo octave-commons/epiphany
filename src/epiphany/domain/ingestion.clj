@@ -51,7 +51,7 @@
      :request-id        — optional request UUID"
   [{:keys [resource-id repo-path selected-refs commit-count failure-count
            failures observed-at adapter-version schema-version observation-id
-           request-id]}]
+           request-id selection resolved-commit-oids]}]
   (cond-> {:observation/type           :ingestion/run-completed
            :observation/id             (or observation-id (make-run-id))
            :observation/observed-at    (or observed-at (java.util.Date.))
@@ -63,6 +63,8 @@
            :ingestion/commit-count     commit-count
            :ingestion/failure-count    failure-count
            :ingestion/failures         failures}
+    selection
+    (assoc :ingestion/selection selection :ingestion/resolved-commit-oids (vec (sort resolved-commit-oids)))
     request-id
     (assoc :observation/request-id request-id)))
 
@@ -134,7 +136,7 @@
    Note: this function does NOT yet construct revision-at-path
    observations — that is a separate projection step (ENG-001F).
    This run records the traversal metadata only."
-  [{:keys [git observations]} {:keys [resource-id repository-path selected-refs request-id]
+  [{:keys [git observations]} {:keys [resource-id repository-path selected-refs request-id selection]
                                :as _command}]
   (let [run-id (or (derived-request-id request-id "ingestion-run")
                    (make-run-id))
@@ -149,6 +151,8 @@
                                       :path/source    :filesystem-argument
                                       :path/comparison :exact}
                      :selected-refs  selected-refs
+                     :selection selection
+                     :resolved-commit-oids (mapv :commit/oid commits)
                      :commit-count   commit-count
                      :failure-count  failure-count
                      :failures       failures

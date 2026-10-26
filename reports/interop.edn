@@ -1,6 +1,12 @@
 ;; Reviewed interop baseline (ENG-017H). Regenerate with
 ;; `clojure -M:boundary-check --write` only after reviewing the diff.
-{epiphany.application.commands
+{epiphany.application.candidate-seeding
+ {:quadrant :application,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.application.commands
  {:quadrant :application,
   :imports #{},
   :dot-calls 4,
@@ -75,7 +81,7 @@
  epiphany.domain.extraction-projection
  {:quadrant :domain,
   :imports #{},
-  :dot-calls 1,
+  :dot-calls 0,
   :static-calls 0,
   :type-hints 0},
  epiphany.domain.file-lineage
@@ -126,6 +132,12 @@
   :dot-calls 4,
   :static-calls 0,
   :type-hints 4},
+ epiphany.domain.observation-invocation
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
  epiphany.domain.redundancy
  {:quadrant :domain,
   :imports #{},
@@ -139,6 +151,18 @@
   :static-calls 0,
   :type-hints 0},
  epiphany.domain.research-gap
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.resource-extraction
+ {:quadrant :domain,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.domain.resource-selection
  {:quadrant :domain,
   :imports #{},
   :dot-calls 0,
@@ -165,8 +189,65 @@
  epiphany.domain.status
  {:quadrant :domain,
   :imports #{},
-  :dot-calls 12,
+  :dot-calls 11,
   :static-calls 2,
+  :type-hints 0},
+ epiphany.extern.backup-files
+ {:quadrant nil,
+  :imports
+  #{java.nio.file.OpenOption
+    java.nio.file.Paths
+    java.nio.file.FileAlreadyExistsException
+    java.nio.file.NoSuchFileException
+    java.nio.channels.FileChannel
+    java.nio.file.StandardOpenOption},
+  :dot-calls 0,
+  :static-calls 2,
+  :type-hints 0},
+ epiphany.extern.clio-observations
+ {:quadrant nil,
+  :imports
+  #{java.nio.file.Paths java.nio.file.FileAlreadyExistsException},
+  :dot-calls 1,
+  :static-calls 3,
+  :type-hints 0},
+ epiphany.extern.resource
+ {:quadrant nil,
+  :imports
+  #{java.nio.charset.CodingErrorAction
+    com.fasterxml.jackson.core.JsonParser$Feature
+    java.util.Date
+    java.util.Base64
+    java.util.Map
+    java.util.UUID
+    com.fasterxml.jackson.databind.DeserializationFeature
+    org.tomlj.TomlArray
+    java.nio.charset.StandardCharsets
+    org.tomlj.Toml
+    org.tomlj.TomlTable
+    org.yaml.snakeyaml.constructor.SafeConstructor
+    java.nio.ByteBuffer
+    java.util.Set
+    com.fasterxml.jackson.core.JsonFactory
+    java.security.MessageDigest
+    org.yaml.snakeyaml.LoaderOptions
+    java.util.List
+    org.yaml.snakeyaml.Yaml
+    com.fasterxml.jackson.databind.ObjectMapper},
+  :dot-calls 28,
+  :static-calls 5,
+  :type-hints 9},
+ epiphany.extern.resource-selection
+ {:quadrant nil,
+  :imports #{},
+  :dot-calls 1,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.infra.adapters.clio
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
   :type-hints 0},
  epiphany.infra.adapters.in-memory
  {:quadrant :infra,
@@ -198,8 +279,8 @@
     org.apache.lucene.index.IndexWriterConfig$OpenMode
     org.apache.lucene.queryparser.classic.QueryParser
     org.apache.lucene.index.Term},
-  :dot-calls 65,
-  :static-calls 7,
+  :dot-calls 70,
+  :static-calls 13,
   :type-hints 10},
  epiphany.infra.adapters.mongo
  {:quadrant :infra,
@@ -213,22 +294,27 @@
     com.mongodb.client.MongoDatabase
     com.mongodb.client.model.IndexOptions
     com.mongodb.client.MongoCollection},
-  :dot-calls 341,
+  :dot-calls 363,
   :static-calls 6,
-  :type-hints 44},
+  :type-hints 45},
  epiphany.infra.adapters.ollama
  {:quadrant :infra,
   :imports
   #{java.time.Duration
-    java.net.http.HttpResponse
     java.net.URI
     java.net.http.HttpResponse$BodyHandlers
     java.net.http.HttpRequest
     java.net.http.HttpClient
     java.net.http.HttpRequest$BodyPublishers},
-  :dot-calls 11,
-  :static-calls 3,
-  :type-hints 2},
+  :dot-calls 20,
+  :static-calls 5,
+  :type-hints 3},
+ epiphany.infra.backup
+ {:quadrant :infra,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
  epiphany.infra.git
  {:quadrant :infra,
   :imports
@@ -240,19 +326,19 @@
     org.eclipse.jgit.revwalk.RevCommit
     org.eclipse.jgit.lib.FileMode
     org.eclipse.jgit.errors.MissingObjectException},
-  :dot-calls 59,
+  :dot-calls 69,
   :static-calls 4,
-  :type-hints 14},
+  :type-hints 17},
  epiphany.infra.http
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 12,
+  :dot-calls 13,
   :static-calls 1,
   :type-hints 1},
  epiphany.infra.main
  {:quadrant :infra,
   :imports #{},
-  :dot-calls 26,
+  :dot-calls 27,
   :static-calls 11,
   :type-hints 2},
  epiphany.infra.profile
@@ -284,6 +370,18 @@
   :imports #{},
   :dot-calls 3,
   :static-calls 2,
+  :type-hints 0},
+ epiphany.law.assurance
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.clio-observations
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
   :type-hints 0},
  epiphany.law.commands
  {:quadrant :law,
@@ -327,8 +425,26 @@
   :dot-calls 0,
   :static-calls 0,
   :type-hints 0},
+ epiphany.law.resource
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.law.resource-selection
+ {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
  epiphany.law.selection
  {:quadrant :law,
+  :imports #{},
+  :dot-calls 0,
+  :static-calls 0,
+  :type-hints 0},
+ epiphany.shape.conversations
+ {:quadrant :shape,
   :imports #{},
   :dot-calls 0,
   :static-calls 0,

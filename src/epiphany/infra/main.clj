@@ -20,6 +20,9 @@
             [epiphany.domain.extraction-projection :as extraction]
             [epiphany.domain.revision-at-path :as revision-at-path]
             [epiphany.domain.markdown-selection :as markdown-selection]
+            [epiphany.domain.resource-selection :as resource-selection]
+            [epiphany.extern.resource-selection :as selection-file]
+            [epiphany.extern.resource :as resource]
             [epiphany.domain.evidence :as evidence]
             [epiphany.domain.diff :as diff]
             [epiphany.domain.lineage-trace :as lineage-trace]
@@ -439,7 +442,8 @@
 ;; Ingest subcommand
 
 (def ingest-options
-  [["-r" "--request-id UUID" "Idempotency ID for replaying the complete ingest command"
+  [[nil "--selection-policy FILE" "Versioned repository-scoped exact-path EDN policy"]
+   ["-r" "--request-id UUID" "Idempotency ID for replaying the complete ingest command"
     :id :request-id
     :parse-fn #(java.util.UUID/fromString %)]
    ["-p" "--profile PROFILE" "Profile for observations: :local (memory), :edn (Clio), or :services (MongoDB)"
@@ -498,50 +502,57 @@
   "Project revision-at-path observations for every commit reachable from
    `refs`, skipping identities already recorded for `resource-id`.
    Returns the count of newly recorded observations."
-  [observations repository-path resource-id refs]
-  (let [existing (into #{}
-                       (map revision-at-path/observation-id-key)
-                       ((:list-revision-at-path-by-resource observations) resource-id))
-        {:keys [commits]} (git/reachable-commits repository-path refs)
-        new-observations
-        (into []
-              (comp
-               (mapcat
-                (fn [commit]
-                  (let [commit-oid (:commit/oid commit)
-                        tree-entries (:entries (git/commit-tree-entries
-                                                repository-path commit-oid))
-                        entries (markdown-selection/select-markdown
-                                 commit-oid tree-entries)
-                        parent-oid (first (:commit/parent-oids commit))
-                        parent-entries (when parent-oid
-                                         (:entries (git/commit-tree-entries
-                                                    repository-path parent-oid)))
-                        selected-parent-entries
-                        (when parent-oid
-                          (markdown-selection/select-markdown
-                           parent-oid parent-entries))]
-                    (revision-at-path/revisions-for-commit
-                     entries
-                     {:resource-id resource-id
-                      :commit-oid commit-oid
-                      :tree-oid (:commit/tree-oid commit)
-                      :parent-commit-oid parent-oid
-                      :parent-entries parent-entries
-                      :selected-parent-entries selected-parent-entries
-                      :observed-at (java.util.Date.)}))))
-               (remove #(contains? existing (revision-at-path/observation-id-key %))))
-              commits)]
-    (count (filter observation-admission/newly-stored?
-                   (mapv (:record-revision-at-path! observations) new-observations)))))
+  ([observations repository-path resource-id refs] (project-revision-at-path! observations repository-path resource-id refs nil))
+  ([observations repository-path resource-id refs policy]
+   (project-revision-at-path! observations repository-path resource-id refs policy nil))
+  ([observations repository-path resource-id refs policy frozen-commits]
+   (let [select-entries (if policy
+                          #(resource-selection/select-entries %1 policy %2)
+                          markdown-selection/select-markdown)
+         existing (into #{}
+                        (map revision-at-path/observation-id-key)
+                        ((:list-revision-at-path-by-resource observations) resource-id))
+         {:keys [commits]} (if frozen-commits {:commits frozen-commits}
+                               (git/reachable-commits repository-path refs))
+         new-observations
+         (into []
+               (comp
+                (mapcat
+                 (fn [commit]
+                   (let [commit-oid (:commit/oid commit)
+                         tree-entries (:entries (git/commit-tree-entries
+                                                 repository-path commit-oid))
+                         entries (select-entries commit-oid tree-entries)
+                         parent-oid (first (:commit/parent-oids commit))
+                         parent-entries (when parent-oid
+                                          (:entries (git/commit-tree-entries
+                                                     repository-path parent-oid)))
+                         selected-parent-entries
+                         (when parent-oid
+                           (select-entries parent-oid parent-entries))]
+                     (revision-at-path/revisions-for-commit
+                      entries
+                      {:resource-id resource-id
+                       :commit-oid commit-oid
+                       :tree-oid (:commit/tree-oid commit)
+                       :parent-commit-oid parent-oid
+                       :parent-entries parent-entries
+                       :selected-parent-entries selected-parent-entries
+                       :observed-at (java.util.Date.)}))))
+                (remove #(contains? existing (revision-at-path/observation-id-key %))))
+               commits)]
+     (count (filter observation-admission/newly-stored?
+                    (mapv (:record-revision-at-path! observations) new-observations))))))
 
 (defn- hydrate-extraction-content
   "Rehydrate one durable extraction from its canonical Git blob. Extraction
    observations deliberately omit source bodies; embedding must recover the
    exact historical blob before applying the recorded byte spans."
-  [repository-path extraction]
+  [repository-path extraction policy]
   (let [blob-oid (:extraction/blob-oid extraction)
-        blob-result (git/read-blob repository-path blob-oid)]
+        blob-result (if policy
+                      (git/read-blob repository-path blob-oid resource/max-source-bytes)
+                      (git/read-blob repository-path blob-oid))]
     (when-let [failure (:blob/failure blob-result)]
       (throw (ex-info "Cannot rehydrate extraction source for embedding"
                       {:code :blob-unreadable
@@ -554,43 +565,45 @@
    :embeddings port and idempotently index the resulting vectors. Historical
    source bodies are rehydrated from Git before section spans are sliced.
    Returns the count of embedding records indexed."
-  [adapters repository-path resource-id ingestion-run-id request-id]
-  (let [observations (:observations adapters)
-        checkpoint (fn [status processed-count error-message]
-                     (ingestion/make-checkpoint-record
-                      (cond-> {:resource-id resource-id
-                               :projection-name "embedding"
-                               :projection-version 1
-                               :ingestion-run-id ingestion-run-id
-                               :status status
-                               :processed-count processed-count
-                               :request-id
-                               (ingestion/derived-request-id
-                                request-id
-                                (str "checkpoint:embedding:" (name status)))}
-                        error-message
-                        (assoc :error-message error-message))))]
-    (try
-      (let [revisions ((:list-revision-at-path-by-resource observations) resource-id)
-            extractions (into []
-                              (mapcat #((:list-section-extractions-by-revision observations)
-                                        (:revision-at-path/id %)))
-                              revisions)
-            hydrated (mapv #(hydrate-extraction-content repository-path %) extractions)
-            embeddings-port (:embeddings adapters)
-            embedding-version ((:embedding-version embeddings-port))
-            embeddings (mapv #(assoc %
-                                     :resource-id resource-id
-                                     :embedding-version embedding-version)
-                             ((:embed-sections! embeddings-port) hydrated))]
-        ((:index-embeddings! (:index adapters)) embeddings)
-        ((:record-checkpoint! observations)
-         (checkpoint :completed (count embeddings) nil))
-        (count embeddings))
-      (catch Exception error
-        ((:record-checkpoint! observations)
-         (checkpoint :failed 0 (.getMessage error)))
-        (throw error)))))
+  ([adapters repository-path resource-id ingestion-run-id request-id] (embed-extractions! adapters repository-path resource-id ingestion-run-id request-id nil nil))
+  ([adapters repository-path resource-id ingestion-run-id request-id policy selected-commit-oids]
+   (let [observations (:observations adapters)
+         checkpoint (fn [status processed-count error-message]
+                      (ingestion/make-checkpoint-record
+                       (cond-> {:resource-id resource-id
+                                :projection-name "embedding"
+                                :projection-version 1
+                                :ingestion-run-id ingestion-run-id
+                                :status status
+                                :processed-count processed-count
+                                :request-id
+                                (ingestion/derived-request-id
+                                 request-id
+                                 (str "checkpoint:embedding:" (name status)))}
+                         error-message
+                         (assoc :error-message error-message))))]
+     (try
+       (let [revisions (resource-selection/filter-revisions
+                        ((:list-revision-at-path-by-resource observations) resource-id) policy selected-commit-oids)
+             extractions (into []
+                               (mapcat #((:list-section-extractions-by-revision observations)
+                                         (:revision-at-path/id %)))
+                               revisions)
+             hydrated (mapv #(hydrate-extraction-content repository-path % policy) extractions)
+             embeddings-port (:embeddings adapters)
+             embedding-version ((:embedding-version embeddings-port))
+             embeddings (mapv #(assoc %
+                                      :resource-id resource-id
+                                      :embedding-version embedding-version)
+                              ((:embed-sections! embeddings-port) hydrated))]
+         ((:index-embeddings! (:index adapters)) embeddings)
+         ((:record-checkpoint! observations)
+          (checkpoint :completed (count embeddings) nil))
+         (count embeddings))
+       (catch Exception error
+         ((:record-checkpoint! observations)
+          (checkpoint :failed 0 (.getMessage error)))
+         (throw error))))))
 
 (defn- run-ingest
   "Execute the ingest subcommand: register, walk commits, project
@@ -618,6 +631,8 @@
       :else
       (try
         (let [repository-path (first arguments)
+              policy (selection-file/read-policy! (:selection-policy options) repository-path)
+              refs (vec (sort (distinct (string/split (:refs options) #","))))
               request-id (or (:request-id options) (random-uuid))
               _ (resolve-common-git-dir repository-path)
               _ (when (:embed options)
@@ -625,36 +640,54 @@
           (make-ingest-adapters
            profile (:index-dir options)
            (fn [adapters]
-             (let [{:keys [resource-id]}
+             (let [walk-result (git/reachable-commits repository-path refs)
+                   _ (when (and policy (seq (:failures walk-result)))
+                       (throw (ex-info "Selected Git history is unavailable; no bodies were read" {:code :unavailable})))
+                   selected-commit-oids (set (map :commit/oid (:commits walk-result)))
+                   prior-registration ((:find-by-request-id (:observations adapters))
+                                       (ingestion/derived-request-id request-id "registration"))
+                   previous (when prior-registration
+                              (some #(when (= request-id (:observation/request-id %)) %)
+                                    ((:list-ingestion-runs (:observations adapters))
+                                     (:resource-id prior-registration))))
+                   _ (resource-selection/assert-retry! previous policy refs repository-path selected-commit-oids)
+                   {:keys [resource-id]}
                    (registration/register!
                     adapters
                     {:repository-path repository-path
                      :request-id (ingestion/derived-request-id
                                   request-id "registration")})
                    observations (:observations adapters)
-                   refs (string/split (:refs options) #",")
                    run-record (ingestion/run-ingestion
                                {:git {:reachable-commits
-                                      (fn [path refs'] (git/reachable-commits path refs'))}
+                                      (fn [_ _] walk-result)}
                                 :observations observations}
                                {:resource-id resource-id
                                 :repository-path repository-path
                                 :selected-refs refs
+                                :selection policy
                                 :request-id request-id})
                    revision-count (project-revision-at-path!
-                                   observations repository-path resource-id refs)
+                                   observations repository-path resource-id refs policy (:commits walk-result))
                    projection (extraction/run-extraction-projection
-                               {:git {:read-blob (fn [_ oid] (git/read-blob repository-path oid))}
+                               {:git {:read-blob (fn [_ oid]
+                                                   (if policy
+                                                     (git/read-blob repository-path oid resource/max-source-bytes)
+                                                     (git/read-blob repository-path oid)))}
                                 :observations observations
-                                :index (:index adapters)}
+                                :index (:index adapters)
+                                :parse-resource (fn [path blob]
+                                                  (resource/parse path (or (:blob/bytes blob)
+                                                                           (.getBytes ^String (:blob/content blob) "UTF-8"))))}
                                {:resource-id resource-id
                                 :ingestion-run-id (:observation/id run-record)
                                 :repository-path repository-path
+                                :selection policy :selected-commit-oids selected-commit-oids
                                 :request-id request-id})
                    embedded (when (:embed options)
                               (embed-extractions! adapters repository-path resource-id
-                                                  (:observation/id run-record) request-id))]
-               {:exit 0
+                                                  (:observation/id run-record) request-id policy selected-commit-oids))]
+               {:exit (if (and policy (seq (:projection/failures projection))) 1 0)
                 :out (string/join
                       \newline
                       (cond-> [(str "Ingested: " repository-path)
@@ -837,6 +870,43 @@
           {:exit (if (:evidence/unavailable result) 1 0) :out output})
         (catch clojure.lang.ExceptionInfo e (git-boundary-error e))
         (catch Exception e {:exit 1 :out (str "Error: " (.getMessage e))})))))
+
+(def inspect-options
+  [repo-option
+   [nil "--path PATH" "Literal Git path, without expression delimiters"]
+   [nil "--commit REF" "Commit expression for --path" :default "HEAD"]
+   ["-f" "--format FORMAT" "Typed output: edn" :default :edn :parse-fn keyword
+    :validate [#{:edn} "Must be edn"]]
+   ["-h" "--help" "Show inspect help and exit."]])
+
+(defn- run-inspect
+  "Inspect a selected historical typed resource without executing its content."
+  [args]
+  (let [{:keys [options errors arguments]} (cli/parse-opts args inspect-options)]
+    (cond
+      (:help options) {:exit 0 :out "Usage: ep inspect --repo PATH <path@commit> [--format edn]"}
+      (or errors (if (:path options) (seq arguments) (not= 1 (count arguments))))
+      {:exit 1 :out "Error: one exact resource expression is required."}
+      :else
+      (try
+        (let [repo (:repo options)
+              request (if (:path options)
+                        {:path (:path options) :commit-oid (:commit options) :heading []}
+                        (resolve-evidence-request repo (first arguments)))
+              _ (when (seq (:heading request))
+                  (throw (ex-info "Inspect requires a whole resource; heading selectors are unsupported" {:code :bad-request})))
+              commit (git/resolve-commit-oid repo (or (:commit-oid request) "HEAD"))
+              entry (some #(when (and (= :file (:git/type %)) (= (:path request) (:git/path %))) %)
+                          (:entries (git/commit-tree-entries repo commit)))
+              _ (when-not entry (throw (ex-info "Resource path is unavailable" {:code :unavailable})))
+              blob (git/read-blob repo (:git/blob-oid entry) resource/max-source-bytes)
+              _ (when-let [failure (:blob/failure blob)]
+                  (throw (ex-info (str "Resource body unavailable: " (:failure/reason failure)) {:code :unavailable})))
+              result (assoc (resource/parse (:path request) (:blob/bytes blob))
+                            :resource/provenance {:source/repository-path repo :source/commit-oid commit
+                                                  :source/path-raw (:path request) :source/blob-oid (:git/blob-oid entry)})]
+          {:exit (if (= :parsed (:resource/status result)) 0 1) :out (pr-str result)})
+        (catch Exception e (git-boundary-error e))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Diff subcommand
@@ -1315,6 +1385,7 @@
     "  search      Search sections by query (lexical, semantic, or hybrid)"
     "  status      Show ingestion run status for a resource"
     "  show        Open exact historical evidence for a section expression"
+    "  inspect     Inspect typed JSON/JSONC/JSONL/EDN/TOML/YAML and recognized conversations"
     "  diff        Compare two historical section expressions"
     "  trace       Trace a section's Git-history lineage chronology"
     "  inbox       Review the lineage-candidate queue; 'inbox decide' records a decision"
@@ -1361,6 +1432,7 @@
           "search"   (run-search cmd-args)
           "status"   (run-status cmd-args)
           "show"     (run-show cmd-args)
+          "inspect"  (run-inspect cmd-args)
           "diff"     (run-diff cmd-args)
           "trace"    (run-trace cmd-args)
           "inbox"    (run-inbox cmd-args)
